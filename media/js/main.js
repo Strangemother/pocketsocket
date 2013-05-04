@@ -4,3 +4,5 @@ pocket.socket.on('socket', 'receive', function(e){
 
 // Send a signal, evoking the auto connect.
 pocket.socket.signal('client', 'connect');
+
+

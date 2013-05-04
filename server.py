@@ -72,23 +72,25 @@ class SimpleMultiClient(WebSocket):
 
     def __send_to(self, client, msg):
         # import pdb; pdb.set_trace()
-        j = json_serialize(msg)
+        j = str(json_serialize(msg))
         try:
             if self.verbose:
-                print 'send', j
-            client.sendMessage(str(j))
+                print 'Send:', type(j), j
+
+            client.sendMessage(j)
             # client.sendMessage(str(self.address[0]) + ' - ' + str(self.data))
         except Exception as n:
             print n
 
     def handleConnected(self):
-        self.send_to_all('client.connected',  str(self.address[0]))
+
+        self.send_to_all('client','connected',  str(self.address[0]))
 
     def handleClose(self):
-        self.send_to_all('client.disconnected', str(self.address[0]))
+        self.send_to_all('client', 'disconnected', str(self.address[0]))
 
 from json import loads
-
+from datetime import datetime
 
 class PocketSocketServer(SimpleWebSocketServer):
     
@@ -103,9 +105,32 @@ class PocketSocketServer(SimpleWebSocketServer):
 class PocketSocket(SimpleMultiClient):
 
     def receive(self, msg):
-        self.send_to_all('socket', 'receive', client_safe=False)
+        '''Recieve a JSON String and call methods'''
+        try:
+            json = True
+            s = loads(msg)
+            sid = s.get('id', None)
+        except Exception, n:
+            json = False
+            print 'JSON conversion error:', s
+            sid = len(msg)
+            s = msg
+
+        # Not sending information.
+        # ? Perhaps send size and other message info..
+        self.send_to_all('socket', 'receive', {}, client_safe=True)
+        # Send receipt
+        j = str(json_serialize({
+            'socket': 'sent', 
+            'attr': 'json' if json else 'string',
+            'messageId': sid,
+            'time': str(datetime.now()), 
+        }))
+        # Pipe a message back to the client.
+        self.sendMessage(j)
+
         if self.verbose:
-            print "Receive:", msg
+            print "Receive:", type(s), s
 
 def main(client=None):
     arguments = docopt(__doc__, version='0.1')  

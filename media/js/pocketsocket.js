@@ -62,18 +62,17 @@ methods = {
         signal: function(channel, eventName) {
 
             // send a signal to the server.
-            var self = this;
-            var id= null;
-            var val = arg(arguments, 2, undefined);
-
+            var self    = this;
+            var id      = null;
+            var val     = arg(arguments, 2, undefined);
             var sendStr = channel + '.' +  eventName;
 
             if(val && (!val instanceof Function)) {
                 sendStr += '.' + val
-
             }
 
             // if val is function, special hook to use with ID.
+            console.log('Signal called');
 
             if(!this.__socket) {
                 var c = this.connect('ws://127.0.0.1:8001', function(name, ev){
@@ -82,17 +81,16 @@ methods = {
                         for(var h in methods.websocket.__data.prehooks) {
                             self.on.call(self, methods.websocket.__data.prehooks[h])
                         }
-                        id = this.send_json(sendStr);
-
+                        id = this.send_json(sendStr, val || {});
                     }
                 })
                 // console.log( c )
             } else {
-                id = this.__socket.send_json(sendStr);
+                id = this.__socket.send_json(sendStr, val || {});
             }
 
             if(val instanceof Function) {
-                // id hook
+                // Message with the same ID has been returned.
                 this.on(id, function(data, ev){
                     // call ID Hook
                     val(data, ev)
@@ -102,44 +100,48 @@ methods = {
         },
         on: function(){
             // two methods to call
-            // on('socket', function(name, event))
-            // on('socket', 'name', function(ev))
-            var channel = arg(arguments, 0, null);
-            var cf1 = arg(arguments, 1, null);
-            var cf2 = arg(arguments, 2, null);
+            
+            // on('socket', function(data, event))
+            //  // Channel in data object.
+            
+            // on('socket', 'name', function(data, event))
+            //  // Data is the object sent from the signal.
+            console.log("On called")
 
+            var channel  = arg(arguments, 0, null);
+            var cf1      = arg(arguments, 1, null);
+            var cf2      = arg(arguments, 2, null);
             var callfunc = cf2;
-            // arg swapping
-            if(!this.__socket) {
-                if(!methods.websocket.__data.hasOwnProperty('prehooks') ) {
-                    methods.websocket.__data.prehooks = [];
-                }
-                methods.websocket.__data.prehooks.push([channel, cf1, cf2]);
+            var socket   = this.__socket;
+
+            if(!socket) {
+                // store hooks for later.
+                var _d = methods.websocket.__data;
+                if(!_d.hasOwnProperty('prehooks') ) {  _d.prehooks = []; };
+                _d.prehooks.push([channel, cf1, cf2]);
                 return this
             }
 
-
-            this.__socket.eventHook(channel, function(name, ev) {
-                 if(cf2 == null) {
-                    this.__socket.eventHook(channel, cf1);
+            socket.eventHook(channel, function(name, ev) {
+                if(cf2 == null) {
+                    socket.eventHook(channel, cf1);
+                    // Call single  message  hook.
+                    cf1(ev, ev.__event);
                 } else {
-                    if(name == cf1) {
-                        cf2(name, ev)
-                    }
+                    if(name == cf1) cf2(name, ev);
                 }
             });
-
 
             return this;
         },
         connect: function(){
-            // url
-            var u = arguments[0];
-            // callback
-            var c = arguments[1] || function(){};
+            
+            var u    = arguments[0];                 // url
+            var c    = arguments[1] || function(){}; // callback
             var self = this;
-            var handler = function(name, ev) {
 
+            console.log("Connect")
+            var handler = function(name, data) {
                 switch(name) {
                     case 'open':
                         console.log("iSocket Connected");
@@ -151,7 +153,7 @@ methods = {
                         self.start_timer()
                         break;
                     case 'message':
-                        // console.log("iSocket message", ev.data);
+                        // console.log("iSocket message", data);
                         break;
                     case 'error':
                         console.log("iSocket error");
@@ -159,10 +161,7 @@ methods = {
 
                         break;
                 }
-
-                c.call(this, name, ev)
-                // console.log(ev)
-
+                c.call(this, name, data)
             }
 
             this.__socket = methods.websocket.eventHook('socket', handler).connect(u)
@@ -203,12 +202,45 @@ methods = {
             w.onclose = function(evt) {
                 self.__callHook('socket', 'close', evt)
             };
-            w.onmessage = function(evt) {
-                var id = evt.data.split('::')[0];
-                evt.messageId  = id;
-                evt.data= evt.data.split('::').slice(1).join('::');
+            w.onmessage = function(ev) {
+                var json = null;
 
-                self.__callHook('socket', 'message', evt)
+                try {
+                    var json = JSON.parse(ev.data)
+                } catch(e) {
+                    json = false;
+                }
+                
+                console.log("json:", json)
+
+                if(!json) {
+                    self.__callHook('socket', 'message', ev)
+                    return
+                }
+
+                json.__event = ev;
+
+                //  detect and apply a message
+                if(json.hasOwnProperty('socket') ){
+
+                    self.__callHook('socket', json.socket, json);
+
+                } else if(json.hasOwnProperty('message')) {
+                    // sent from pocketsocket
+                    var channel = json.message.split('.')[0];
+                    var eventName = json.message.split('.')[1];
+                    var data = json.data;
+                    
+                    json.__channel = channel;
+                    json.__eventName = eventName;
+                    json.__event = ev;
+
+                    self.__callHook('socket', 'message', json);
+                } else {
+                    self.__callHook('socket', 'message', ev);
+                }
+
+
             };
             w.onerror = function(evt) {
                 self.__callHook('socket', 'error', evt)
@@ -218,16 +250,20 @@ methods = {
 
             return this;
         },
-        send_json: function(msg){
+        send_json: function(){
+            var message = arg(arguments, 0, null)
+            var data = arg(arguments, 1, {})            
             // send a message
             // returns the unique id of the message
             var o = {
                 id: Math.random().toString(32),
-                data: msg
-            }
-            var json = JSON.stringify(o)
-            this.send(json)
-            return o.id
+                message: message,
+                data: data
+            };
+
+            var json = JSON.stringify(o);
+            this.send(json);
+            return o.id;
         },
         send: function(d){
             // Send content to the active socket.
@@ -241,12 +277,9 @@ methods = {
             // call all function hooking channel.
             // eventName and eventData are passed to the called function.
             // console.log(channel, eventName, eventData);
-
             if(this.__data.hooks.hasOwnProperty(channel)) {
                 for(var hookMethod in this.__data.hooks[channel]) {
-
                     var func = this.__data.hooks[channel][hookMethod];
-
                     if(func) {
                         func.call(this, eventName, eventData);
                     }
@@ -263,6 +296,7 @@ methods = {
                 delete methods.websocket.__data.hooks[eventData.messageId]
             }
         },
+
         eventHook: function(name, func) {
             // Pass a listener hook and a function to receive a signal
             // when called
