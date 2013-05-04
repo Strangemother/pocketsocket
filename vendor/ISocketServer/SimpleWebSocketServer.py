@@ -519,20 +519,12 @@ class SimpleWebSocketServer(object):
 
 			for ready in rList:
 				if ready == self.serversocket:
-					try:
 						sock, address = self.serversocket.accept()
 						newsock = self.decorateSocket(sock)
 						newsock.setblocking(0)
 						fileno = newsock.fileno()
 						self.listeners.append(fileno)
 						self.connections[fileno] = self.constructWebSocket(newsock, address)
-
-					except Exception as n:
-						print n
-						logging.debug(str(address) + ' ' + str(n))
-
-						if sock is not None:
-							sock.close()
 				else:
 					client = self.connections[ready]
 					fileno = client.client.fileno()
@@ -541,7 +533,7 @@ class SimpleWebSocketServer(object):
 						client.handleData()
 
 					except Exception as n:
-
+						print 'client Exception', n
 						logging.debug(str(client.address) + ' ' + str(n))
 
 						

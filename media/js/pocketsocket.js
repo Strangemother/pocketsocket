@@ -151,7 +151,7 @@ methods = {
                         self.start_timer()
                         break;
                     case 'message':
-                        console.log("iSocket message", ev.data);
+                        // console.log("iSocket message", ev.data);
                         break;
                     case 'error':
                         console.log("iSocket error");
