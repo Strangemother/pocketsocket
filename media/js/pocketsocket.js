@@ -28,6 +28,17 @@ function arg(_a, ia, def, returnArray) {
     }
 }
 
+function AddresseException(message) {
+    this.message = message;
+    this.data = arg(arguments, 1, null);
+    this.caption = arg(arguments, 2, this.message);
+    this.name = "AddressesMistchException";
+
+    this.toString = function(){
+        return this.name + ':' + this.caption;
+    }
+}
+
 methods = {
     isocket: {
         start_connect_timer: function(){
@@ -137,7 +148,8 @@ methods = {
         setup: function(){
             var address = arg(arguments, 0, '127.0.0.1');
             var ports   = arg(arguments, 1, null);
-            var conType = arg(arguments, 2, null);
+            var listType = arg(arguments, 2, null);
+            var conType = arg(arguments, 3, null);
 
             // setup('127.0.0.1:8001')
             // setup('127.0.0.1:8001', 'broadcast')
@@ -151,6 +163,7 @@ methods = {
                 // List of ips, should have list of ports
                 // [ '127.0.0.1', '127.0.0.2' ]
                 a = address
+      
 
             } else if(typeof(address) == 'string') {
 
@@ -167,8 +180,8 @@ methods = {
                 for(var name in address) {
                     // Named pair
                     // Add ports to array, add addresses to array
-                    _a.push(address[name][0]);
-                    _p.push(address[name][1]);
+                    _a.push(address[name][0] || address[name].ip);
+                    _p.push(address[name][1] || address[name].port);
                 }
 
                 a = _a;
@@ -193,6 +206,8 @@ methods = {
                 p = [ports];
             }
 
+            debugger;
+
             if(conType == null) {
                 conType = 'broadcast';
             }
@@ -200,10 +215,14 @@ methods = {
             this.connection.addresses = a;
             this.connection.ports = p;
             this.connection.connectionType = conType;
-             //  ports is conType
+            //  ports is conType
+            if(conType === false) {
+                conType = 'mix'
+                this.connect(this.connection.list(listType), listType, conType)
+            }
             return this.connection;
         },
-        connection:  {
+        connection: {
             // Receive the next address from a created list.
             isSetup: function(){
                 /* Has the library been setup and has at least one connection */
@@ -216,7 +235,7 @@ methods = {
                 return false;
             },
             list: function(){
-                var listType = arg(arguments, 0, 'mix')
+                var listType = arg(arguments, 0, this.listType || 'mix')
                 /* Build the complete list of all connection types.
                 As this is never exists. - Instead, the index counter
                 used to provide the next permutation of the next() counter
@@ -243,17 +262,36 @@ methods = {
                                 'port': p
                             })
                         };
-                    } else if(listType == 'flat' &&
-                        this.addresses.length == this.ports.length) {
+                    } else if(listType == 'flat') {
+                    
+                        if (this.addresses.length == this.ports.length) {
+                    
                             _list.push({
                                 'ip': a,
                                 'port': this.ports[i]
                             })
-                    }
+                        } else if(this.addresses.ip && this.addresses.port) {
+
+                            _list.push({
+                                'ip': this.address.ip,
+                                'port': this.address.port
+                            })
+                        } else {
+                            var s ='IP and Port Array are not the same length for "flat" enumeration.'
+                            var d = {
+                                'addresses': this.addresses,
+                                'ports': this.ports,
+                                'listType': listType
+                            }
+
+                            throw new AddresseException(s, d);
+                        }
+                    } 
                 };
 
                 return _list;
             }, 
+
             getNextOrFirst: function(list, index) {
                 var l = (list instanceof Function)? list.call(this, index): list[0];
 
@@ -294,6 +332,35 @@ methods = {
             }
         },
         connect: function(){
+            /*
+            Receives object list
+            default is elements setup through connection.setup()
+            Data passed will be implemented through the connection.setup()
+            method.
+            */
+            var connections = arg(arguments, 0, null);
+
+            // mix or overflow
+            var listType = arg(arguments, 0, this.connection.listType);
+
+            // Broadcast or overflow
+            var connectionType = arg(arguments, 3, this.connection.connectionType);
+             // Connect to every 
+            if(!connections) {
+                connections = this.connection.list(listType)
+            } else {
+                debugger;
+                // connections = this.setup(connections, listType, connectionType, false)
+            }
+            
+            if(connectionType == 'broadcast') {
+                // Connect to all.
+                for(var connection in connections) {
+                    debugger
+                }
+            }
+        },
+        _connect: function(){
             
             var u    = arguments[0];                 // url
             var c    = arguments[1] || function(){}; // callback
