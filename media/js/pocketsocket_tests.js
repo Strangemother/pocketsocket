@@ -64,6 +64,22 @@ describe('pocketsocket', function(){
             expect( ps.connection.list('mix').length ).toEqual(4);
         })
 
+        it('should mix enumerate with many combinations', function(){
+            var _expected = ["a:1", "a:2", "a:3", "a:4", "a:5", 
+                            "b:1", "b:2", "b:3", "b:4", "b:5", 
+                            "c:1", "c:2", "c:3", "c:4", "c:5", 
+                            "d:1", "d:2", "d:3", "d:4", "d:5", 
+                            "e:1", "e:2", "e:3", "e:4", "e:5", 
+                            "f:1", "f:2", "f:3", "f:4", "f:5", 
+                            "g:1", "g:2", "g:3", "g:4", "g:5"]
+            var reta = pocket.socket.setup(
+                ['a', 'b', 'c', 'd','e', 'f', 'g'],
+                ['1', '2', '3', '4', '5']
+            ).list('mix').toArray()
+
+            expect(reta.equals(_expected)).toBeTruthy()
+
+        })
         // 192.168.0.55:8001
         // 192.168.0.55:8009
         // 127.0.0.1:8001
@@ -95,6 +111,21 @@ describe('pocketsocket', function(){
             expect( ps.connection.list('mix').length ).toEqual(4);
         })
     })
+
+    describe('can broadcast', function(){
+        
+        beforeEach(function() {
+            pocket.socket.setup(['127.0.0.1', '43.137.157.170'], [8001], 'mix', 'broadcast');
+        });
+
+        it('should render 2 addresses', function(){
+            // Retrieve a mix list
+            var mix = pocket.socket.connection.list('mix').toArray()
+            // pocket.socket.connection.list('mix').toString()
+            expect(mix.length).toEqual(2)
+        }) 
+    })
+
     /*
 
     // pairs

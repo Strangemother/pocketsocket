@@ -15,7 +15,7 @@ Options:
   -h --help      Show this screen.
   -e --echo      reply a client message back to the sender client
   --version      Show version.
-  -s --spy       Print the recieved data [default: False].
+  -v --verbose   Print the recieved data [default: False].
   --host=<host>  Provide a IP address to host the server [default: 127.0.0.1] 
   --port=<port>  Provide a port to host the server [default: 8001]
 '''
@@ -97,11 +97,14 @@ class SimpleMultiSocket(WebSocket):
             print n
 
     def handleConnected(self):
-
-        self.send_to_all('client','connected',  str(self.address[0]))
+        if self.verbose:
+            print 'connected', self.address
+        self.send_to_all('socket','connected',  str(self.address[0]))
 
     def handleClose(self):
-        self.send_to_all('client', 'disconnected', str(self.address[0]))
+        if self.verbose:
+            print 'disconnected', self.address
+        self.send_to_all('socket', 'disconnected', str(self.address[0]))
 
 
 class PocketSocket(SimpleMultiSocket):
@@ -141,9 +144,9 @@ def main(client=None):
     host = arguments.get('<host>', None) or arguments['--host']
     port = int(arguments.get('<port>', None) or arguments['--port'])
     socket = PocketSocket if client is None else client
-    spy = arguments['--spy']
-    server = PocketSocketServer(host, port, socket, verbose=spy)
-    if spy:
+    verbose = arguments['--verbose']
+    server = PocketSocketServer(host, port, socket, verbose=verbose)
+    if verbose:
         print 'Ready', host, port
     server.serveforever()
 

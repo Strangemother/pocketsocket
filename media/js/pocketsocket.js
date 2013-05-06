@@ -28,54 +28,141 @@ function arg(_a, ia, def, returnArray) {
     }
 }
 
-function AddresseException(message) {
+function AddressException(message) {
     this.message = message;
     this.data = arg(arguments, 1, null);
     this.caption = arg(arguments, 2, this.message);
-    this.name = "AddressesMistchException";
+    this.name = "AddressException";
 
     this.toString = function(){
         return this.name + ':' + this.caption;
     }
 }
 
+Object.prototype.equals = function(x)
+{
+  var p;
+  for(p in this) {
+      if(typeof(x[p])=='undefined') {return false;}
+  }
+
+  for(p in this) {
+      if (this[p]) {
+          switch(typeof(this[p])) {
+              case 'object':
+                  if (!this[p].equals(x[p])) { return false; } break;
+              case 'function':
+                  if (typeof(x[p])=='undefined' ||
+                      (p != 'equals' && this[p].toString() != x[p].toString()))
+                      return false;
+                  break;
+              default:
+                  if (this[p] != x[p]) { return false; }
+          }
+      } else {
+          if (x[p])
+              return false;
+      }
+  }
+
+  for(p in x) {
+      if(typeof(this[p])=='undefined') {return false;}
+  }
+
+  return true;
+}
+
 methods = {
+    retryLimit: 5,
     isocket: {
         start_connect_timer: function(){
-            // reconnect
-            var self = this;
+            var socket  = arg(arguments, 0, null)
+            var self    = this;
 
-            if(self._connectAttempts > 5) {
-                window.clearInterval(self.t)
+            if(!this.retryTimers)         this.retryTimers         = [];
+            if(!this.retryTimers[socket]) this.retryTimers[socket] = {};
+            console.log('retryTimer created')
+            var rts = this.retryTimers[socket];
+            rts.socket = socket;
+            if(rts._connectAttempts > (this.retryLimit)) {
+                stop_connect_timer(socket)
+                console.log("socket fail after too many retry attempts", socket)
                 return false;
             }
-            if(!self.t){
 
-                self.t = window.setInterval(function(){
-                    if(!self._connectAttempts) {
-                        self._connectAttempts = 0;
-                    }
-                    self._connectAttempts += 1;
+            if(!rts.timer){
+                rts.timer = window.setInterval(function(){
+                    if(!rts._connectAttempts) rts._connectAttempts = 0;
+                    rts._connectAttempts += 1;
 
-                    if(!self.__socket) {
-                        self.signal('connect', self._connectAttempts)
+                    if(!socket || socket.readyState == 3) {
+                        debugger
+
+                        self.signal('socket', 'reconnect', rts)
                     } else {
-                        self.stop_connect_timer()
+                        self.stop_connect_timer(socket)
                     }
+
                 }, 1000)
             }
         },
 
         stop_connect_timer:function(){
-            window.clearInterval(this.t);
+            var socket = arg(arguments, 0, null);
+            if(this.retryTimers && this.retryTimers[socket])
+                window.clearInterval(this.retryTimers[socket].timer);
         },
+        sendTo: function(socket, str, val){
+            
+            if(socket) {
 
+                if( socket.connected ) {
+                    var sent = socket.sendJson(str, val || {});
+                    console.log('Message', name, sent)
+                    return sent;
+                }
+            
+            } else {
+                throw new AddressException('Socket does not exist', name);
+            }
+
+        },
+        sendToAll: function(str, val){
+            /*
+            send message  to all connected. 
+            If in broadcast, all open sockets will be used.
+            If the socket (or any broadcast socket) is disconnected, 
+            reconnect will be initiated and a queued message will be sent later
+            */
+           
+            // loop connections
+            var _sents = []
+            for(var socketName in this.__sockets) {
+                var socket = this.__sockets[socketName];
+                _sents.push(this.sendTo(socket, str, val) );
+            }
+
+            return _sents
+            // check status
+            // send message
+            // return sent bool.
+           
+        },
         signal: function(channel, eventName) {
+            /*
+            Signal is passed to method to be pushed into the 
+            websocket streams. This should be successful for broadcast and
+            overflow.
 
+            If the connection does not exist, a new connection will be 
+            created based on connection setup.
+
+             */
             // send a signal to the server.
             var self    = this;
             var id      = null;
             var val     = arg(arguments, 2, undefined);
+            var socketName = arg(arguments, 3, null);
             var sendStr = channel + '.' +  eventName;
 
             if(val && (!val instanceof Function)) {
@@ -84,20 +171,38 @@ methods = {
 
             // if val is function, special hook to use with ID.
 
-            if(!this.__socket) {
-                var c = this.connect('ws://127.0.0.1:8001', function(name, ev){
-                    if(name == 'open') {
-                        // add pre hooks
-                        for(var h in methods.websocket.__data.prehooks) {
-                            self.on.call(self, methods.websocket.__data.prehooks[h])
-                        }
-                        id = this.send_json(sendStr, val || {});
-                    }
-                })
-                // console.log( c )
+            if(socketName == null){ 
+                // send on every available socket.
+                debugger
+                // check socket exist.
+                
+                if(this.connection.connectionType == 'broadcast') {
+                    // Connect to every dead connection using the 
+                    // reconnect method on a socket.
+                    // send all.
+                    this.sendToAll(sendStr, val || {});
+                }
+                // if not connected, connect.
+                
             } else {
-                id = this.__socket.send_json(sendStr, val || {});
-            }
+                // if socket name exists/
+                // send
+                // if dead:
+                //  reconnect, send later.
+                this.sendTo(socketName, sendStr, val || {})
+            } 
+
+            /*
+            var c = this.connect('ws://127.0.0.1:8001', function(name, ev){
+                if(name == 'open') {
+                    // add pre hooks
+                    for(var h in methods.webSocket.__data.prehooks) {
+                        self.on.call(self, methods.webSocket.__data.prehooks[h])
+                    }
+                    id = this.send_json(sendStr, val || {});
+                }
+            })
+             */
 
             if(val instanceof Function) {
                 // Message with the same ID has been returned.
@@ -125,7 +230,7 @@ methods = {
 
             if(!socket) {
                 // store hooks for later.
-                var _d = methods.websocket.__data;
+                var _d = methods.webSocket.__data;
                 if(!_d.hasOwnProperty('prehooks') ) {  _d.prehooks = []; };
                 _d.prehooks.push([channel, cf1, cf2]);
                 return this
@@ -153,9 +258,7 @@ methods = {
 
             // setup('127.0.0.1:8001')
             // setup('127.0.0.1:8001', 'broadcast')
-            if(this.connection.isSetup()) {
-                this.connection.empty()
-            } 
+            this.connection.empty()
             // sort other object.
             
             var a, p;
@@ -206,7 +309,7 @@ methods = {
                 p = [ports];
             }
 
-            debugger;
+            //debugger;
 
             if(conType == null) {
                 conType = 'broadcast';
@@ -215,11 +318,17 @@ methods = {
             this.connection.addresses = a;
             this.connection.ports = p;
             this.connection.connectionType = conType;
+            this.connection.listType = listType
             //  ports is conType
             if(conType === false) {
                 conType = 'mix'
                 this.connect(this.connection.list(listType), listType, conType)
             }
+
+            if(this.connection.isSetup()) {
+                this.connection.connect = this.connect
+            }
+
             return this.connection;
         },
         connection: {
@@ -233,6 +342,23 @@ methods = {
                 };
 
                 return false;
+            },
+            addToList: function(list, ip, port, name) {
+                // Crate a connection element to be enumerated and 
+                // used for connections
+                var o = {};
+                if(ip && port) {
+                    o.ip = ip;
+                    o.port = port;
+                    o.name = name || '';
+                    
+                    o.toString = function(){
+                        return this.ip + ':' + this.port;
+                    }
+                    list.push(o);
+                }
+
+                return o;
             },
             list: function(){
                 var listType = arg(arguments, 0, this.listType || 'mix')
@@ -257,25 +383,19 @@ methods = {
                     if(listType == 'mix') {
                         for (var j = 0; j < this.ports.length; j++) {
                             var p = this.ports[j];
-                            _list.push({
-                                'ip': a,
-                                'port': p
-                            })
+                            this.addToList(_list, a, p)
                         };
                     } else if(listType == 'flat') {
-                    
                         if (this.addresses.length == this.ports.length) {
-                    
-                            _list.push({
-                                'ip': a,
-                                'port': this.ports[i]
-                            })
+                            if(a && this.ports[i]) {
+                                this.addToList(_list, a, this.ports[i])
+                            }
                         } else if(this.addresses.ip && this.addresses.port) {
 
-                            _list.push({
-                                'ip': this.address.ip,
-                                'port': this.address.port
-                            })
+                            if(this.addresses.ip && this.addresses.port) {
+                                this.addToList(_list, this.address.ip,
+                                    this.address.port);
+                            }
                         } else {
                             var s ='IP and Port Array are not the same length for "flat" enumeration.'
                             var d = {
@@ -284,10 +404,19 @@ methods = {
                                 'listType': listType
                             }
 
-                            throw new AddresseException(s, d);
+                            throw new AddressException(s, d);
                         }
                     } 
                 };
+                _list.toArray = function(){
+                    // Tidy output for flat view :)
+                    // ['ip:port', ip:port]
+                    var ra = [];
+                    for (var i = 0; i < this.length; i++) {
+                        ra.push( this[i].ip + ':' + this[i].port);
+                    };
+                    return ra;
+                }
 
                 return _list;
             }, 
@@ -339,66 +468,90 @@ methods = {
             method.
             */
             var connections = arg(arguments, 0, null);
+            
+            if(typeof(connections) == 'string' && 
+                arg(arguments,1, null) instanceof Function) {
+
+            }
 
             // mix or overflow
-            var listType = arg(arguments, 0, this.connection.listType);
+            var listType = arg(arguments, 0, (this.connection)? this.connection.listType: this.listType);
 
             // Broadcast or overflow
-            var connectionType = arg(arguments, 3, this.connection.connectionType);
+            var connectionType = arg(arguments, 3, (this.connection)? this.connection.connectionType: this.connectionType);
              // Connect to every 
             if(!connections) {
-                connections = this.connection.list(listType)
+                connections = (this.connection)? this.connection.list(listType): this.list(listType)
             } else {
-                debugger;
+                throw new AddressException('Missing connections')
                 // connections = this.setup(connections, listType, connectionType, false)
             }
             
             if(connectionType == 'broadcast') {
                 // Connect to all.
-                for(var connection in connections) {
-                    debugger
-                }
+                var open = [],
+                    connected = [];
+                
+                // Create connections.
+                connections.forEach(function(e,i,a){
+                    // debugger;
+                    pocket.socket.makeSocket(e, function(name, data){
+                        if(name == 'open') {
+                            open.push(data);
+                            console.log("Socket has opened", data.name);
+                            if(open.length == 2) {
+                                pocket.socket.signal('socket', 'broadcast-all-connected', data)
+                            }
+                        }
+                    })
+                })
             }
         },
-        _connect: function(){
+        makeSocket: function(){
             
             var u    = arguments[0];                 // url
             var c    = arguments[1] || function(){}; // callback
             var self = this;
+            if(!self.__sockets) self.__sockets = {};
 
             var handler = function(name, data) {
                 switch(name) {
                     case 'open':
                         console.log("iSocket Connected");
-                        self.stop_connect_timer()
+                        self.stop_connect_timer(self.__sockets[u])
                         break;
                     case 'close':
+                        debugger;
                         console.log("iSocket closed");
-                        self.__socket = null;
-                        self.start_connect_timer()
+                        self.start_connect_timer(self.__sockets[u])
+                        
                         break;
                     case 'message':
                         console.log("iSocket message", data);
                         break;
                     case 'error':
                         console.log("iSocket error");
-                        self.start_connect_timer()
+                        self.start_connect_timer(self.__sockets[u])
 
                         break;
                 }
-                c.call(this, name, data)
+                c.call(this, name, {
+                    name: u,
+                    socket: self.__sockets[u],
+                    data: data
+                })
             }
 
-            this.__socket = methods.websocket.eventHook('socket', handler).connect(u)
+            this.__sockets[u] = methods.webSocket.eventHook('socket', handler).connect(u)
 
-            return this.__socket
+            return this.__sockets[u]
         }
 
     },
-    websocket: {
+    webSocket: {
         __data: {},
         getActiveSocket: function(){
-            // return an active websocket.
+            // return an active webSocket.
             for(var socket in this.__data.sockets) {
                 if(this.__data.sockets[socket].readyState == 1) {
 
@@ -408,23 +561,112 @@ methods = {
             return false;
         },
         isConnected: function(){
-            // 'Is the websocket connected'
+            // 'Is the webSocket connected'
             // returns true/false
             return (this.getActiveSocket())? true: false;
         },
-        connect: function(url){
+        socketString: function(url){
+            // pass a url entity to be converted to a string for use
+            // with the webSocket
+            var _url = url;
+            var secure = arg(arguments, 1, false);
+
+            if(url.hasOwnProperty('ip') && url.hasOwnProperty('port')) {
+                /*
+                connect({
+                    ip: '127.0.0.1',
+                    port: 8001
+                })
+                 */
+                _url = url.ip + ':' + url.port;
+
+            } else if(url instanceof Array && url.length >= 2) {
+                /*
+                connect(['127.0.0.1', 8001])
+                 */
+                _url = url[0] + ':' + url[1];
+            } else if(url instanceof Function) {
+                /*
+                connect(function(){
+                    return '12.0.0.1:8001'
+                })
+                 */
+                _url = url(this)
+            }
+
+            if(typeof(_url) == 'string') {
+                var sli = _url.slice(0, 3);
+                if(sli != 'ws:' && sli != 'wss') { 
+                    if(secure) {
+                        return 'wss://' + _url;
+                    }
+                    return 'ws://' + _url;   
+                } 
+            } else {
+                console.warn("Error with url", url, _url)
+            }
+
+            return _url
+        },
+        AugmentedWebSocket: function() {
+            // new AugementedWebSocket(url)
+            var uri = arg(arguments, 0, null);
+            var socket = new WebSocket(uri)
+            
+            var reconnect = function reconnect() {
+                socket.close()
+               
+                pocket.socket.websocket.close(socket)
+                // reapply reconnect function
+                socket = this.connect(uri, function(){
+                    console.log("Socket reconnected", socket)
+                })
+
+            } 
+
+            var sendJson = function sendJson(message, data){
+                pocket.webSocket.sendJson(socket, message, data);
+            }
+            
+            socket.uri = uri
+            socket.connected = false;
+            socket.sendJson = sendJson;
+            socket.reconnect = reconnect;
+
+            return socket
+        },
+        connect: function(){
+            var uri = arg(arguments, 0, null);
+            var success = arg(arguments, 1, function(){});
+            var self = this;
+
+            if(!uri) {
+                // Should pick up first default.
+                throw new AddressException('Cannot connect without URI')
+            }
             // returns connected socket,
             if(!this.__data.sockets) {
                 this.__data.sockets = [];
             }
 
-            var w  = new WebSocket(url);
+            var _uri = this.socketString(uri);
+ 
+            // Send out a connecting signal
+            this.__callHook('socket', 'connecting', [uri, _uri]);
+            
+            // ws-URI = "ws:" "//" host [ ":" port ] path [ "?" query ]
+            // wss-URI = "wss:" "//" host [ ":" port ] path [ "?" query ]
+            var w  = new this.AugmentedWebSocket(_uri);
+
             this.__data.sockets.push(w);
-            var self = this;
             w.onopen = function(e) {
+                success(e)
+                // From AugmentedWebSocket
+                w.connected=true; 
                 self.__callHook('socket', 'open', e)
             };
             w.onclose = function(evt) {
+                w.connected=false; 
                 self.__callHook('socket', 'close', evt)
             };
             w.onmessage = function(ev) {
@@ -471,11 +713,12 @@ methods = {
             // add listener
             //  on listener handle, call all sub hooks.
 
-            return this;
+            return w;
         },
-        send_json: function(){
-            var message = arg(arguments, 0, null)
-            var data = arg(arguments, 1, {})            
+        sendJson: function(){
+            var socket = arg(arguments, 0, null)
+            var message = arg(arguments, 1, null)
+            var data = arg(arguments, 2, {})            
             // send a message
             // returns the unique id of the message
             var o = {
@@ -485,8 +728,15 @@ methods = {
             };
 
             var json = JSON.stringify(o);
-            this.send(json);
-            return o.id;
+            if(socket) {   
+                socket.send(json);
+                return o.id;
+            } else {
+                return false;
+            }
+        },
+        close: function(socket){
+            return socket.close()
         },
         send: function(d){
             // Send content to the active socket.
@@ -509,14 +759,14 @@ methods = {
                 }
             }
 
-            if( eventData.messageId in methods.websocket.__data.hooks){
-                var ef = methods.websocket.__data.hooks[eventData.messageId]
+            if( eventData.messageId in methods.webSocket.__data.hooks){
+                var ef = methods.webSocket.__data.hooks[eventData.messageId]
                 for(var func in ef) {
 
                     ef[func](eventData.data, eventData)
                 }
-                methods.websocket.__data.hooks[eventData.messageId] = null;
-                delete methods.websocket.__data.hooks[eventData.messageId]
+                methods.webSocket.__data.hooks[eventData.messageId] = null;
+                delete methods.webSocket.__data.hooks[eventData.messageId]
             }
         },
 
