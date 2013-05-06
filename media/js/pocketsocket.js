@@ -30,7 +30,7 @@ function arg(_a, ia, def, returnArray) {
 
 methods = {
     isocket: {
-        start_timer: function(){
+        start_connect_timer: function(){
             // reconnect
             var self = this;
 
@@ -49,14 +49,14 @@ methods = {
                     if(!self.__socket) {
                         self.signal('connect', self._connectAttempts)
                     } else {
-                        self.stop_timer()
+                        self.stop_connect_timer()
                     }
                 }, 1000)
             }
         },
 
-        stop_timer:function(){
-            window.clearInterval(self.t);
+        stop_connect_timer:function(){
+            window.clearInterval(this.t);
         },
 
         signal: function(channel, eventName) {
@@ -72,7 +72,6 @@ methods = {
             }
 
             // if val is function, special hook to use with ID.
-            console.log('Signal called');
 
             if(!this.__socket) {
                 var c = this.connect('ws://127.0.0.1:8001', function(name, ev){
@@ -106,7 +105,6 @@ methods = {
             
             // on('socket', 'name', function(data, event))
             //  // Data is the object sent from the signal.
-            console.log("On called")
 
             var channel  = arg(arguments, 0, null);
             var cf1      = arg(arguments, 1, null);
@@ -123,16 +121,177 @@ methods = {
             }
 
             socket.eventHook(channel, function(name, ev) {
-                if(cf2 == null) {
-                    socket.eventHook(channel, cf1);
+                if(cf2 == null && cf2 == name) {
+                    console.log("Found channel hook for '" + channel + "' '" + name +"'")
+                    socket.eventHook(channel, ev);
+                    
                     // Call single  message  hook.
-                    cf1(ev, ev.__event);
+                    // cf1(ev, ev.__event);
                 } else {
-                    if(name == cf1) cf2(name, ev);
+                    if(name == cf1) cf2(ev.data, ev);
                 }
             });
 
             return this;
+        },
+        setup: function(){
+            var address = arg(arguments, 0, '127.0.0.1');
+            var ports   = arg(arguments, 1, null);
+            var conType = arg(arguments, 2, null);
+
+            // setup('127.0.0.1:8001')
+            // setup('127.0.0.1:8001', 'broadcast')
+            if(this.connection.isSetup()) {
+                this.connection.empty()
+            } 
+            // sort other object.
+            
+            var a, p;
+            if(address instanceof Array) {
+                // List of ips, should have list of ports
+                // [ '127.0.0.1', '127.0.0.2' ]
+                a = address
+
+            } else if(typeof(address) == 'string') {
+
+                if(address.indexOf(':') > -1)  {
+                    a = [ address.split(':')[0] ];
+                    p = [ address.split(':')[1] ];
+                } else {
+                    a = [address];
+                }
+            } else if(typeof(address) == 'object') {
+                var _a = [], 
+                    _p = [];
+
+                for(var name in address) {
+                    // Named pair
+                    // Add ports to array, add addresses to array
+                    _a.push(address[name][0]);
+                    _p.push(address[name][1]);
+                }
+
+                a = _a;
+                p = _p;
+            }
+
+            if(ports instanceof Array) {
+                if(!p) {
+                    p = ports;
+                } else {
+                    // swap p to
+                    p = ports.push(p);
+                }
+            } else if(typeof(ports) == 'string' && conType != null) {
+                if(p) {
+                    p.push(ports)
+                } else {
+                    p = [ports]
+                }
+            } else if(parseInt(ports)) {
+                // type or argument mismatch
+                p = [ports];
+            }
+
+            if(conType == null) {
+                conType = 'broadcast';
+            }
+            
+            this.connection.addresses = a;
+            this.connection.ports = p;
+            this.connection.connectionType = conType;
+             //  ports is conType
+            return this.connection;
+        },
+        connection:  {
+            // Receive the next address from a created list.
+            isSetup: function(){
+                /* Has the library been setup and has at least one connection */
+                if(this.addresses 
+                    && (this.addresses instanceof Array)
+                    && this.addresses.length > 0) {
+                        return true;
+                };
+
+                return false;
+            },
+            list: function(){
+                var listType = arg(arguments, 0, 'mix')
+                /* Build the complete list of all connection types.
+                As this is never exists. - Instead, the index counter
+                used to provide the next permutation of the next() counter
+                is reset and the lists are enumerated until all 
+                possible outcomes are created.
+                If listType is  'mix' 
+                                'flat'
+                Returned is an Array of objects
+                [
+                    {
+                        ip: '127.0.0.1',
+                        port: 8001
+                    }
+                ]
+                */ 
+                var _list =  [];
+                for (var i = 0; i < this.addresses.length; i++) {
+                    var a = this.addresses[i];
+                    if(listType == 'mix') {
+                        for (var j = 0; j < this.ports.length; j++) {
+                            var p = this.ports[j];
+                            _list.push({
+                                'ip': a,
+                                'port': p
+                            })
+                        };
+                    } else if(listType == 'flat' &&
+                        this.addresses.length == this.ports.length) {
+                            _list.push({
+                                'ip': a,
+                                'port': this.ports[i]
+                            })
+                    }
+                };
+
+                return _list;
+            }, 
+            getNextOrFirst: function(list, index) {
+                var l = (list instanceof Function)? list.call(this, index): list[0];
+
+                if(l) {
+                    var n = (list instanceof Function)? list.call(this, index+1): list[index+1];
+                    if(n)
+                        return [l, index+1];
+                    else {
+                        return [l, 0];
+                    }
+
+                } else {
+                    return (list instanceof Function)? list.call(this, 0): list[0];
+                    // return [l[0], 0]
+                }
+            },
+            getPort: function(index) {
+                /* Get a connection based on index or key/value pair key 
+                */
+                if (this.ports[index])
+                    return this.ports[index];
+                return null;
+            },
+            getIp: function(index) {
+                /* Get a connection based on index or key/value pair key 
+                */
+                if (this.addresses && this.addresses[index])
+                    return this.addresses[index];
+                return null;
+            },
+            empty: function() {
+                /* Remove all ip's and port's. 
+                Does not close the live connection. */
+                this.ips = [];
+                this.ports = [];
+                this.addresses = [];
+                return true;
+            }
         },
         connect: function(){
             
@@ -140,24 +299,23 @@ methods = {
             var c    = arguments[1] || function(){}; // callback
             var self = this;
 
-            console.log("Connect")
             var handler = function(name, data) {
                 switch(name) {
                     case 'open':
                         console.log("iSocket Connected");
-                        self.stop_timer()
+                        self.stop_connect_timer()
                         break;
                     case 'close':
                         console.log("iSocket closed");
                         self.__socket = null;
-                        self.start_timer()
+                        self.start_connect_timer()
                         break;
                     case 'message':
-                        // console.log("iSocket message", data);
+                        console.log("iSocket message", data);
                         break;
                     case 'error':
                         console.log("iSocket error");
-                        self.start_timer()
+                        self.start_connect_timer()
 
                         break;
                 }
@@ -210,9 +368,7 @@ methods = {
                 } catch(e) {
                     json = false;
                 }
-                
-                console.log("json:", json)
-
+    
                 if(!json) {
                     self.__callHook('socket', 'message', ev)
                     return
@@ -235,7 +391,7 @@ methods = {
                     json.__eventName = eventName;
                     json.__event = ev;
 
-                    self.__callHook('socket', 'message', json);
+                    self.__callHook(channel, eventName, json);
                 } else {
                     self.__callHook('socket', 'message', ev);
                 }
@@ -309,6 +465,7 @@ methods = {
                 this.__data.hooks[name] = [];
             }
 
+            console.log("Event hook added to channel", name);
             this.__data.hooks[name].push(func);
 
             return this;

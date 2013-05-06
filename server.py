@@ -24,15 +24,27 @@ from docopt import docopt
 from vendor.ISocketServer.SimpleWebSocketServer import WebSocket, SimpleWebSocketServer
 from vendor.poo.overloader import overload
 from vendor.serializers import json_serialize
+from json import loads
+from datetime import datetime
 
 
-class SimpleMultiClient(WebSocket):
+class PocketSocketServer(SimpleWebSocketServer):
+    
+    def __init__(self, host, port, websocketclass, verbose=False):
+        self.verbose = verbose
+        super(PocketSocketServer, self).__init__(host, port, websocketclass)
+
+    def constructWebSocket(self, sock, address):
+        return self.websocketclass(self, sock, address, verbose=self.verbose)
+
+
+class SimpleMultiSocket(WebSocket):
     
     def __init__(self, server, sock, address, verbose=False, client_safe=True):
         self.verbose = verbose
         self.client_safe = client_safe
-        print 'SimpleMultiClient', self.verbose
-        super(SimpleMultiClient, self).__init__(server, sock, address)
+        print 'SimpleMultiSocket', self.verbose
+        super(SimpleMultiSocket, self).__init__(server, sock, address)
 
     def receive(self, msg):
         '''method to hook data received for user override'''
@@ -61,7 +73,7 @@ class SimpleMultiClient(WebSocket):
         self._iter_send(o, **kwargs)
 
     def _iter_send(self, o, **kwargs):
-
+        '''Iter through all connected clients, __send_to called multiple times'''
         for client in self.server.connections.itervalues():
             if kwargs.get('client_safe', True):
                 if client != self:
@@ -71,14 +83,16 @@ class SimpleMultiClient(WebSocket):
                 self.__send_to(client, o)
 
     def __send_to(self, client, msg):
-        # import pdb; pdb.set_trace()
-        j = str(json_serialize(msg))
+        '''Receive an object to send as a string via JSON serializer'''
+        if type(msg).__name__ != 'str':
+            j = str(json_serialize(msg))
+        else:
+            j = msg
+
         try:
             if self.verbose:
                 print 'Send:', type(j), j
-
             client.sendMessage(j)
-            # client.sendMessage(str(self.address[0]) + ' - ' + str(self.data))
         except Exception as n:
             print n
 
@@ -89,20 +103,8 @@ class SimpleMultiClient(WebSocket):
     def handleClose(self):
         self.send_to_all('client', 'disconnected', str(self.address[0]))
 
-from json import loads
-from datetime import datetime
 
-class PocketSocketServer(SimpleWebSocketServer):
-    
-    def __init__(self, host, port, websocketclass, verbose=False):
-        self.verbose = verbose
-        super(PocketSocketServer, self).__init__(host, port, websocketclass)
-
-    def constructWebSocket(self, sock, address):
-        return self.websocketclass(self, sock, address, verbose=self.verbose)
-
-
-class PocketSocket(SimpleMultiClient):
+class PocketSocket(SimpleMultiSocket):
 
     def receive(self, msg):
         '''Recieve a JSON String and call methods'''
@@ -118,19 +120,21 @@ class PocketSocket(SimpleMultiClient):
 
         # Not sending information.
         # ? Perhaps send size and other message info..
-        self.send_to_all('socket', 'receive', {}, client_safe=True)
-        # Send receipt
+        # self.send_to_all('socket', 'receive', { 'messageId': sid }, client_safe=True)
+
+        # Send receipt 
         j = str(json_serialize({
             'socket': 'sent', 
             'attr': 'json' if json else 'string',
             'messageId': sid,
             'time': str(datetime.now()), 
         }))
-        # Pipe a message back to the client.
-        self.sendMessage(j)
-
         if self.verbose:
             print "Receive:", type(s), s
+
+        # Pipe a receipt back to the client.
+        self.sendMessage(j)
+
 
 def main(client=None):
     arguments = docopt(__doc__, version='0.1')  
