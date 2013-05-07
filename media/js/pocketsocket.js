@@ -106,20 +106,31 @@ methods = {
                 }, 1000)
             }
         },
-
+        send: function(m, v){
+            /*
+            sendToAll proxy
+             */
+            var s = this.sendToAll(m, v);
+            return s;
+        },
         stop_connect_timer:function(){
             var socket = arg(arguments, 0, null);
             if(this.retryTimers && this.retryTimers[socket])
                 window.clearInterval(this.retryTimers[socket].timer);
         },
         sendTo: function(socket, str, val){
-            
+            /*
+            Send a str to a socket
+
+             */
             if(socket) {
 
                 if( socket.connected ) {
                     var sent = socket.sendJson(str, val || {});
-                    console.log('Message', name, sent)
+                    console.log('Message', str.length, sent)
                     return sent;
+                } else {
+                    console.log('Not Connected', socket)
                 }
             
             } else {
@@ -134,19 +145,21 @@ methods = {
             If the socket (or any broadcast socket) is disconnected, 
             reconnect will be initiated and a queued message will be sent later
             */
-           
-            // loop connections
+            var str = arg(arguments, 0, null);
+            if(!str) return false;
+
+            var val = arg(arguments, 1, {});
+
+            
             var _sents = []
             for(var socketName in this.__sockets) {
                 var socket = this.__sockets[socketName];
-                _sents.push(this.sendTo(socket, str, val) );
+                if(socket instanceof WebSocket) {
+                    _sents.push(this.sendTo(socket, str, val) );
+                }
             }
 
-            return _sents
-            // check status
-            // send message
-            // return sent bool.
-           
+            return _sents;
         },
         signal: function(channel, eventName) {
             /*
@@ -173,7 +186,7 @@ methods = {
 
             if(socketName == null){ 
                 // send on every available socket.
-                debugger
+                 
                 // check socket exist.
                 
                 if(this.connection.connectionType == 'broadcast') {
@@ -225,12 +238,33 @@ methods = {
             var channel  = arg(arguments, 0, null);
             var cf1      = arg(arguments, 1, null);
             var cf2      = arg(arguments, 2, null);
+        
             var callfunc = cf2;
             var socket   = this.__socket;
+            var _d = methods.webSocket.__data;
 
+            channels = [channel]
+
+            if(typeof(cf1)  == 'string' && cf2 instanceof Function)  {
+                channels.push(channel + '.' + cf1);
+            }
+
+            methods.webSocket.eventHook(channels, function(e, name, data){
+                 if(cf1 instanceof Function && (!cf2)) {
+                    cf1(e,name, data);
+                } else if(typeof(cf1)  == 'string' && cf2 instanceof Function) {
+                    if(name == cf1) {
+                        console.log("Found channel hook for '" + channel + "' '" + name +"'")
+                        cf2(e, data);
+                    }
+                }
+                
+            })
+            
+            /*
+            
             if(!socket) {
                 // store hooks for later.
-                var _d = methods.webSocket.__data;
                 if(!_d.hasOwnProperty('prehooks') ) {  _d.prehooks = []; };
                 _d.prehooks.push([channel, cf1, cf2]);
                 return this
@@ -238,7 +272,6 @@ methods = {
 
             socket.eventHook(channel, function(name, ev) {
                 if(cf2 == null && cf2 == name) {
-                    console.log("Found channel hook for '" + channel + "' '" + name +"'")
                     socket.eventHook(channel, ev);
                     
                     // Call single  message  hook.
@@ -247,6 +280,7 @@ methods = {
                     if(name == cf1) cf2(ev.data, ev);
                 }
             });
+             */
 
             return this;
         },
@@ -487,6 +521,8 @@ methods = {
                 // connections = this.setup(connections, listType, connectionType, false)
             }
             
+            // check extra undefined connection
+            //  
             if(connectionType == 'broadcast') {
                 // Connect to all.
                 var open = [],
@@ -497,10 +533,9 @@ methods = {
                     // debugger;
                     pocket.socket.makeSocket(e, function(name, data){
                         if(name == 'open') {
-                            open.push(data);
-                            console.log("Socket has opened", data.name);
-                            if(open.length == 2) {
-                                pocket.socket.signal('socket', 'broadcast-all-connected', data)
+                            open.push(data); 
+                            if(open.length == 2) { 
+                                pocket.socket.signal('socket', 'broadcast-all-connected', data.name)
                             }
                         }
                     })
@@ -517,17 +552,15 @@ methods = {
             var handler = function(name, data) {
                 switch(name) {
                     case 'open':
-                        console.log("iSocket Connected");
+                        //console.log("iSocket Connected");
                         self.stop_connect_timer(self.__sockets[u])
                         break;
                     case 'close':
-                        debugger;
-                        console.log("iSocket closed");
-                        self.start_connect_timer(self.__sockets[u])
-                        
+                        //console.log("iSocket closed");
+                        self.start_connect_timer(self.__sockets[u]) 
                         break;
                     case 'message':
-                        console.log("iSocket message", data);
+                        //console.log("iSocket message", data);
                         break;
                     case 'error':
                         console.log("iSocket error");
@@ -625,7 +658,7 @@ methods = {
             } 
 
             var sendJson = function sendJson(message, data){
-                pocket.webSocket.sendJson(socket, message, data);
+                return pocket.webSocket.sendJson(socket, message, data);
             }
             
             socket.uri = uri
@@ -663,7 +696,10 @@ methods = {
                 success(e)
                 // From AugmentedWebSocket
                 w.connected=true; 
-                self.__callHook('socket', 'open', e)
+                self.__callHook('socket', 'open', {
+                    socket: w,
+                    data: e,
+                })
             };
             w.onclose = function(evt) {
                 w.connected=false; 
@@ -728,12 +764,14 @@ methods = {
             };
 
             var json = JSON.stringify(o);
+            
             if(socket) {   
                 socket.send(json);
                 return o.id;
             } else {
                 return false;
             }
+
         },
         close: function(socket){
             return socket.close()
@@ -749,13 +787,27 @@ methods = {
         __callHook: function(channel, eventName, eventData){
             // call all function hooking channel.
             // eventName and eventData are passed to the called function.
-            // console.log(channel, eventName, eventData);
+
             if(this.__data.hooks.hasOwnProperty(channel)) {
+               
                 for(var hookMethod in this.__data.hooks[channel]) {
                     var func = this.__data.hooks[channel][hookMethod];
                     if(func) {
                         func.call(this, eventName, eventData);
                     }
+                }
+
+            }
+
+            for(var _eventName in this.__data.hooks) {
+                if(_eventName == eventData.message) {
+
+                    for (var i = 0; i < this.__data.hooks[_eventName].length; i++) {
+                        var func = this.__data.hooks[_eventName][i];
+                        if(func) {
+                            func.call(this, _eventName, eventData);
+                        }
+                    };
                 }
             }
 
@@ -774,21 +826,30 @@ methods = {
             // Pass a listener hook and a function to receive a signal
             // when called
             // add func to name stack object caller
-            if(!this.__data.hooks) {
-                this.__data.hooks = {};
-            }
+            if(!(name instanceof Array) ) {
+                name = [name]
+            } 
 
-            if(!this.__data.hooks[name]) {
-                this.__data.hooks[name] = [];
-            }
+            for (var i = 0; i < name.length; i++) {
+                var _name = name[i]
 
-            console.log("Event hook added to channel", name);
-            this.__data.hooks[name].push(func);
+                if(!this.__data.hooks) {
+                    this.__data.hooks = {};
+                }
 
-            return this;
+                if(!this.__data.hooks[_name]) {
+                    this.__data.hooks[_name] = [];
+                }
+
+                this.__data.hooks[_name].push(func);
+
+                return this;
+            };
         }
     },
 }
+
+
 
 pocket = methods
 pocket.socket = methods.isocket
