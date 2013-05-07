@@ -44,6 +44,78 @@ You could role out your own websocket solution, but consider using a pocketsocke
 
 ----
 
+# TL;DR:
+
+A quick list of the main features of pocketsocket.
+
+
+### setup()
+
+Intialize the library with socket setup to IPs and ports
+
+
+    pocket.socket.setup('127.0.0.1:8001');
+    
+    pocket.socket.setup('127.0.0.1', 8001);
+
+    var addresses = ['192.168.0.55', '127.0.0.1'];
+    var ports     = [8001, 8009];
+    pocket.socket.setup(addresses, ports, 'broadcast');
+
+    var addressPair = {
+        'local': ['120.0.0.1', 8001],
+        'dev': ['192.168.0.55', 8009]
+    };
+    pocket.socket.setup(addressPair)
+
+
+### connect()
+
+Perform the connection routine
+
+    // no parameters after .setup() called
+    pocket.socket.connect()
+    
+    // With url list
+    pocket.socket.connect(['127.0.0.1:8001'])
+
+
+### on()
+
+setup an event listener
+
+    pocket.socket.on('fooChannel', function(name, data) {
+        switch(name) {
+            case 'connecting':
+                console.log("connecting", data[1]);
+                break;
+            case 'open':
+                console.log("open", data.socket.uri)
+        }
+         console.log("data replied: ", name, data)
+    })
+
+
+    pocket.socket.on('fooChannel', 'barEvent', function(e, socket){
+        console.log("fooChannel has barEvent", socket)
+    });
+
+
+### signal()
+
+Dispatch a message through the channel framework
+
+    // Dispatch an empty signal
+    pocket.socket.signal('fooChannel', 'barEvent')
+    
+    // Dispatch with some json data
+    pocket.socket.signal('fooChannel', 'barEvent', {})
+
+    // pass an event AugmentedWebSocket (overrides a broadcast setup)
+    pocket.socket.signal('fooChannel', 'barEvent', {}, socket)
+
+----
+
 # Getting Started.
 
 First get the server running on your server. To get it going, not to much is needed.
@@ -251,9 +323,7 @@ Okay, you've supplied your list of sockets, you've started your server. Next is 
 ### makeSocket(url, *[callback]*)
 
 ready up a websocket for connection. pass an optional callback; used for every returned event from the socket.
-
 Returned is a new socket.
-
 
     $ pocket.socket.makeSocket('127..0.0.1:8001', function(name obj){
             // name == open, close, message, error
