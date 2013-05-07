@@ -461,6 +461,10 @@ methods = {
                 this.ports = [];
                 this.addresses = [];
                 return true;
+            },
+            on: function() {
+                var v = pocket.socket.on.apply(this, arguments);
+                 return v;
             }
         },
         connect: function(){
@@ -476,7 +480,6 @@ methods = {
                 arg(arguments,1, null) instanceof Function) {
 
             }
-
             // mix or overflow
             var listType = arg(arguments, 0, (this.connection)? this.connection.listType: this.listType);
 
@@ -756,7 +759,6 @@ methods = {
         __callHook: function(channel, eventName, eventData){
             // call all function hooking channel.
             // eventName and eventData are passed to the called function.
-
             if(this.__data.hooks.hasOwnProperty(channel)) {
                
                 for(var hookMethod in this.__data.hooks[channel]) {

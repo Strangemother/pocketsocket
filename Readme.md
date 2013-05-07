@@ -2,6 +2,13 @@
 
 A fast all round solution to websockets using python and javascript.
 
+    $ python server.py -ev
+
+    >>> pocket.socket.setup('127.0.0.1:8001').on('socket', function (name){
+            console.log("socket", name);
+        }).connect();
+
+
 In this library, you'll find a nice basic javascript API for handling and creating channels and extendable server based on http://opiate.github.io/SimpleWebSocketServer.
 
 You could role out your own websocket solution, but consider using a pocketsocket to get you started on your realtime massive project.
