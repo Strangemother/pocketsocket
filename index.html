@@ -1,65 +1,467 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
+
   <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <title>Pocketsocket by Strangemother</title>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="Pocketsocket : Plug and play Python / Javascript websockets" />
 
-    <link rel="stylesheet" href="stylesheets/styles.css">
-    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
-    <script src="javascripts/scale.fix.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
-    <!--[if lt IE 9]>
-    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
+    <title>Pocketsocket</title>
   </head>
+
   <body>
-    <div class="wrapper">
-      <header>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/Strangemother/pocketsocket">View on GitHub</a>
+
+          <h1 id="project_title">Pocketsocket</h1>
+          <h2 id="project_tagline">Plug and play Python / Javascript websockets</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/Strangemother/pocketsocket/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/Strangemother/pocketsocket/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
         <h1>Pocketsocket</h1>
-        <p>Plug and play Python / Javascript websockets</p>
-        <p class="view"><a href="https://github.com/Strangemother/pocketsocket">View the Project on GitHub <small>Strangemother/pocketsocket</small></a></p>
-        <ul>
-          <li><a href="https://github.com/Strangemother/pocketsocket/zipball/master">Download <strong>ZIP File</strong></a></li>
-          <li><a href="https://github.com/Strangemother/pocketsocket/tarball/master">Download <strong>TAR Ball</strong></a></li>
-          <li><a href="https://github.com/Strangemother/pocketsocket">View On <strong>GitHub</strong></a></li>
-        </ul>
-      </header>
-      <section>
-        <h3>Welcome to GitHub Pages.</h3>
 
-<p>This automatic page generator is the easiest way to create beautiful pages for all of your projects. Author your page content here using GitHub Flavored Markdown, select a template crafted by a designer, and publish. After your page is generated, you can check out the new branch:</p>
+<p>A fast all round solution to websockets using python and javascript.</p>
 
-<pre><code>$ cd your_repo_root/repo_name
-$ git fetch origin
-$ git checkout gh-pages
+<p><em>python</em></p>
+
+<pre><code>$ virtualenv env
+$ pip install docopts
+$ python server.py -ev
 </code></pre>
 
-<p>If you're using the GitHub for Mac, simply sync your repository and you'll see the new branch.</p>
+<p><em>javascript</em></p>
 
-<h3>Designer Templates</h3>
+<pre><code>pocket.socket.setup('127.0.0.1:8001').on('socket', function (name){
+        console.log("socket", name);
+    }).connect();
+</code></pre>
 
-<p>We've crafted some handsome templates for you to use. Go ahead and continue to layouts to browse through them. You can easily go back to edit your page before publishing. After publishing your page, you can revisit the page generator and switch to another theme. Your Page content will be preserved if it remained markdown format.</p>
+<p><strong>web sockets are done!</strong></p>
 
-<h3>Rather Drive Stick?</h3>
+<p>In this library, you'll find a nice basic javascript API for handling and creating channels and extendable server based on <a href="http://opiate.github.io/SimpleWebSocketServer">http://opiate.github.io/SimpleWebSocketServer</a>.</p>
 
-<p>If you prefer to not use the automatic generator, push a branch named <code>gh-pages</code> to your repository to create a page manually. In addition to supporting regular HTML content, GitHub Pages support Jekyll, a simple, blog aware static site generator written by our own Tom Preston-Werner. Jekyll makes it easy to create site-wide headers and footers without having to copy them across every page. It also offers intelligent blog support and other advanced templating features.</p>
+<p>You could role out your own websocket solution, but consider using a pocketsocket to get you started on your realtime massive project.</p>
 
-<h3>Authors and Contributors</h3>
+<h2>Features</h2>
 
-<p>You can <a href="https://github.com/blog/821" class="user-mention">@mention</a> a GitHub username to generate a link to their profile. The resulting <code>&lt;a&gt;</code> element will link to the contributor's GitHub Profile. For example: In 2007, Chris Wanstrath (<a href="https://github.com/defunkt" class="user-mention">@defunkt</a>), PJ Hyett (<a href="https://github.com/pjhyett" class="user-mention">@pjhyett</a>), and Tom Preston-Werner (<a href="https://github.com/mojombo" class="user-mention">@mojombo</a>) founded GitHub.</p>
+<ul>
+<li>Connect to many websockets at once and send to all simultaneously (broadcast)</li>
+<li>Auto reconnect feature for lost websocket connection.</li>
+<li>Light channel based client communication</li>
+<li>Auto json</li>
+<li>
+<p>use sockets with a familiar and simple API:</p>
 
-<h3>Support or Contact</h3>
+<ul>
+<li> <code>setup(*addressConfig*)</code>            - setup your websocket connection</li>
+<li> <code>connect()</code>                         - start socketing...</li>
+<li> <code>on('channel', 'event', function)</code>  - listen to your signals</li>
+<li> <code>signal('channel', 'event', data)</code>  - send a signal</li>
+</ul>
+</li>
+</ul><h3>Extending features.</h3>
 
-<p>Having trouble with Pages? Check out the documentation at <a href="http://help.github.com/pages">http://help.github.com/pages</a> or contact <a href="mailto:support@github.com">support@github.com</a> and we’ll help you sort it out.</p>
+<ul>
+<li>Communicate without channels easily.</li>
+<li>Clever url parsing at setup (makes it easier to integrate)</li>
+<li>automatic socket communication for core message</li>
+</ul><hr><h1>TL;DR:</h1>
+
+<p>A quick list of the main features of pocketsocket.</p>
+
+<h3>setup()</h3>
+
+<p>Intialize the library with socket setup to IPs and ports</p>
+
+<pre><code>pocket.socket.setup('127.0.0.1:8001');
+
+pocket.socket.setup('127.0.0.1', 8001);
+
+var addresses = ['192.168.0.55', '127.0.0.1'];
+var ports     = [8001, 8009];
+pocket.socket.setup(addresses, ports, 'broadcast');
+
+var addressPair = {
+    'local': ['120.0.0.1', 8001],
+    'dev': ['192.168.0.55', 8009]
+};
+pocket.socket.setup(addressPair)
+</code></pre>
+
+<h3>connect()</h3>
+
+<p>Perform the connection routine</p>
+
+<pre><code>// no parameters after .setup() called
+pocket.socket.connect()
+
+// With url list
+pocket.socket.connect(['127.0.0.1:8001'])
+</code></pre>
+
+<h3>on()</h3>
+
+<p>setup an event listener</p>
+
+<pre><code>pocket.socket.on('fooChannel', function(name, data) {
+    switch(name) {
+        case 'connecting':
+            console.log("connecting", data[1]);
+            break;
+        case 'open':
+            console.log("open", data.socket.uri)
+    }
+     console.log("data replied: ", name, data)
+})
+
+
+pocket.socket.on('fooChannel', 'barEvent', function(e, socket){
+    console.log("fooChannel has barEvent", socket)
+});
+</code></pre>
+
+<h3>signal()</h3>
+
+<p>Dispatch a message through the channel framework</p>
+
+<pre><code>// Dispatch an empty signal
+pocket.socket.signal('fooChannel', 'barEvent')
+
+// Dispatch with some json data
+pocket.socket.signal('fooChannel', 'barEvent', {})
+
+// pass an event AugmentedWebSocket (overrides a broadcast setup)
+pocket.socket.signal('fooChannel', 'barEvent', {}, socket)
+</code></pre>
+
+<hr><h1>Getting Started.</h1>
+
+<p>First get the server running on your server. To get it going, not to much is needed.</p>
+
+<h3>Requirements</h3>
+
+<pre><code>docopts
+* opaite/SimpleWebSocketServer      supplied
+* strangemother/poo                 supplied
+* strangemother/django-djansoner    supplied
+</code></pre>
+
+<h4>Installing requirements</h4>
+
+<pre><code>$ virtualenv env
+$ pip install docopts
+</code></pre>
+
+<hr><h2>Running server.py</h2>
+
+<p>Your websocket server has a few options</p>
+
+<pre><code>--verbose    prints data when supplied from a socket
+--echo       return message to sender as echo response
+</code></pre>
+
+<p>We'll use these options because it's easier to see whats happening to our messages!</p>
+
+<p>You can also specify an IP address and port. By default they are <code>127.0.0.1</code> and <code>8001</code> respectively. You can pass these into the command line.</p>
+
+<pre><code>// example map to external listening IP
+$ python server.py 0.0.0.0 8001
+</code></pre>
+
+<p><em>Run this one</em> In our example, it's best to run simple like this. The server will tell you it's ready.</p>
+
+<pre><code>$ python server.py -ev
+</code></pre>
+
+<p>It'll return something like <code>Ready 127.0.0.1 8001</code>. All information proceeding will be communications sent and received.</p>
+
+<hr><h2>Running pocket.socket javascript</h2>
+
+<p>Now your server is running, we can take a look at how to send information to it. </p>
+
+<p>First we need to give pocket.socket connection information. This can range from a single string to a large array of possible connections.</p>
+
+<h3>Setting up connections</h3>
+
+<p>Lets have a look at the <code>.setup()</code> method</p>
+
+<h4>Basic Setup</h4>
+
+<p>pass a single string to the setup method. You can combine your ip and port into a single connection address.</p>
+
+<pre><code>pocket.socket.setup('127.0.0.1:8001');
+</code></pre>
+
+<h4>Pair Setup</h4>
+
+<p>Alternatively, you can supply the IP and port individually. </p>
+
+<pre><code>pocket.socket.setup('127.0.0.1', 8001);
+</code></pre>
+
+<h4>Duplex Setup</h4>
+
+<p>You can now do something very advanced - connect to many concurrent websocket connections and broadcast a message across all.</p>
+
+<p>This will allow you to host lots of server's on many different IP addresses. 
+In the example below, we have a local IP and a dev machine; both listening to the same event. Both will send and receive the same information.</p>
+
+<pre><code>var addresses = ['192.168.0.55', '127.0.0.1'];
+var ports     = [8001, 8009];
+
+pocket.socket.setup(addresses, ports, 'broadcast');
+</code></pre>
+
+<p><em>Something interesting</em></p>
+
+<p>Duplicating addresses can do more and enumerate a flat pair. You can specify a <code>mix</code> or <code>flat</code> enumeration.</p>
+
+<p>The following methods will provide a list of socket address enumerated based upon <code>mix</code> of <code>flat</code>.</p>
+
+<pre><code>pocket.socket.connection.list('mix');
+pocket.socket.connection.list('flat');
+</code></pre>
+
+<p>To make it easier to ead these back, You have some helper functions:</p>
+
+<pre><code>// Provides an array of socket string uri's
+socket.socket.connection.list('flat').toArray();
+
+// Provides a comma delimited string of socket connection uri's
+socket.socket.connection.list('flat').toString();
+</code></pre>
+
+<h4>Dictionary (object) Setup</h4>
+
+<p>You can also supply an object to setup, with array's of IP, port pairs. The key names are ignored within <code>pocket.socket</code>.</p>
+
+<pre><code>var addressPair = {
+    'local': ['120.0.0.1', 8001],
+    'dev': ['192.168.0.55', 8009]
+};
+pocket.socket.setup(addressPair)
+</code></pre>
+
+<h3>Mix Enumeration</h3>
+
+<p>Receive a list of all possible cominations for all ports and IP's passed to the setup method. In the above example you would receive a list of 12 possible connection to use.</p>
+
+<pre><code>var addresses = ['192.168.0.55', '127.0.0.1', '44.343.134.135'];
+var ports     = [8001, 8002, 8009, 8010];
+
+pocket.socket.setup(addresses, ports, 'broadcast');
+
+pocket.socket.connection.list('mix');
+
+[
+ "192.168.0.55:8001", 
+ "192.168.0.55:8002", 
+ "192.168.0.55:8009", 
+ "192.168.0.55:8010", 
+ // ... snip ...
+ "44.343.134.135:8009", 
+ "44.343.134.135:8010"
+]
+</code></pre>
+
+<h3>Flat Enumeration</h3>
+
+<p>Recieve a list of possible combinations based upon a flat enumeration of IP's ans ports. <em>You must supply a IP array and a port array of the same length</em>. </p>
+
+<p>The mix enumeration example, 3 addresses are supplied and 4 ports. This will fail in flat enueration.</p>
+
+<pre><code>var addresses = ['192.168.0.55', '127.0.0.1'];
+var ports     = [8001, 8009];
+
+pocket.socket.setup(addresses, ports, 'broadcast');
+
+pocket.socket.connection.list('flat');
+
+[
+ "192.168.0.55:8001", 
+ "127.0.0.1:8009"
+]
+</code></pre>
+
+<hr><h2>Connection</h2>
+
+<p>You can use the <code>pocket.socket.connection</code> object to alter the connection list. This is recevied back from the <code>.setup()</code> method for lovely chaining.</p>
+
+<pre><code>var connection = pocket.socket.setup()
+</code></pre>
+
+<h3>isSetup()</h3>
+
+<p>Returns a boolean value to define if there are addresses to connect to.</p>
+
+<pre><code>pocket.socket.connection.isSetup()
+true/false
+</code></pre>
+
+<h3>list(*'mix' || 'flat'*)</h3>
+
+<p>Call the list method with <code>mix</code> or <code>flat</code> as the first argument.
+returned is a list of string socket uri's. Read 'Mix Enumeration' and 'Flat Enumeration' for outcome</p>
+
+<pre><code>pocket.socket.connection.list('mix');
+pocket.socket.connection.list('flat');
+</code></pre>
+
+<h3>addToList(list, ip, port, name)</h3>
+
+<p>Correctly implement a new connection to a provided list. This is mainly an internal method and shouldn't be called externally.</p>
+
+<pre><code>pocket.socket.connection.addToList()
+</code></pre>
+
+<h3>empty()</h3>
+
+<p>delete all ips, ports and addresses - this does not disconnect any active connections.</p>
+
+<pre><code>pocket.socket.connection.empty()
+</code></pre>
+
+<hr><h2>Connect to sockets.</h2>
+
+<p>Okay, you've supplied your list of sockets, you've started your server. Next is to connect.</p>
+
+<pre><code>$ pocket.socket.connect()
+$ pocket.socket.setup(addresses, ports).connect()
+$ pocket.socket.connect(pocket.socket.connection.list(), 'broadcast')
+</code></pre>
+
+<h3>makeSocket(url, <em>[callback]</em>)</h3>
+
+<p>ready up a websocket for connection. pass an optional callback; used for every returned event from the socket.
+Returned is a new socket.</p>
+
+<pre><code>$ pocket.socket.makeSocket('127..0.0.1:8001', function(name obj){
+        // name == open, close, message, error
+        // obj == { name, socket, data }
+
+    })
+</code></pre>
+
+<hr><h1>Sending Messages</h1>
+
+<p>Two very simple methods have been created for use. The <code>on()</code> and <code>signal()</code> methods used to send and listen for data.</p>
+
+<h2>sendToAll(channel, object)</h2>
+
+<p>send a message to the client on a channel with some data. This is also the <code>send()</code> method. This method will continually call the <code>sendTo()</code> method</p>
+
+<p><em>send() method is the same</em></p>
+
+<h3>Simple messaging</h3>
+
+<p>The channel is in essence the message and is received on the server as <code>message</code> You can send any information on the channel. for example:</p>
+
+<pre><code>// javascript 
+$ pocket.socket.sendToAll('Art can be very abstract.')
+</code></pre>
+
+<p>will successfully send a message to the server and received as something like:</p>
+
+<pre><code>// python
+{"id":"0.lchkqdo","message":"Art can be very abstract.","data":{}}
+</code></pre>
+
+<h3>Channel Messaging</h3>
+
+<p>To utlise the messaging framework and JSONification of your data into a channel, reformat your message to read.</p>
+
+<pre><code>// javascript
+$ pocket.socket.sendToAll('socket.message', 'milk');
+</code></pre>
+
+<p>Of which appears on the server as:</p>
+
+<pre><code>// python
+{"id":"0.12l60m","message":"socket.message","data":"milk"}
+</code></pre>
+
+<h3>Channel message JSON</h3>
+
+<p>You can send a block of data through a channel. by providing an object as the second argument.</p>
+
+<pre><code>pocket.socket.sendToAll('socket.message', {
+        apples:'green',
+        pie: 'cherry',
+        animal: 'fishy'
+    })
+</code></pre>
+
+<h2>sendTo(AugementedWebSocket, str, val)</h2>
+
+<p>Accepts the same parameters as <code>sendToAll()</code> method, but the first argument is a WebSocket element.</p>
+
+<p><em>This is an AugementedWebSocket, of which is a WebSocket but with a couple of extra methods</em></p>
+
+<h2>signal(channel, eventName, <em>[data, AugementedWebSocket]</em>)</h2>
+
+<p>Signal is pushed into the websocket streams. This should be successful for broadcast and overflow. </p>
+
+<p>provide a channel name, event name, optionally some data and or a socket.
+If the setup is in broadcast mode for connection type, the forth parameter AugementedWebSocket is ignored as it's not required.</p>
+
+<pre><code>pocket.socket.signal('socket' 'message')
+</code></pre>
+
+<p>This is the preferred way to send information through the sockets.</p>
+
+<h2>on()</h2>
+
+<p>Listening to events is again simple but powerful. There are many ways to setup a listener</p>
+
+<h4>Channel Listener</h4>
+
+<p>Listen to all events on a single channel. Passed to the the callback function is the name of the event along with the data (socket, event)</p>
+
+<pre><code>pocket.socket.on('socket', function(name, data) {
+    switch(name) {
+        case 'connecting':
+            console.log("connecting", data[1]);
+            break;
+        case 'open':
+            console.log("open", data.socket.uri)
+    }
+     console.log("data replied: ", name, data)
+})
+</code></pre>
+
+<h4>Event Listener</h4>
+
+<p>You can listen to a single event on a channel by specifying the event name as the second parameter.</p>
+
+<pre><code>pocket.socket.on('socket', 'connected', function(e, socket){
+    console.log("Socket has connected", socket)
+});
+</code></pre>
       </section>
     </div>
-    <footer>
-      <p>Project maintained by <a href="https://github.com/Strangemother">Strangemother</a></p>
-      <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
-    </footer>
-    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Pocketsocket maintained by <a href="https://github.com/Strangemother">Strangemother</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
     
+
   </body>
 </html>
