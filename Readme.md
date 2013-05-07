@@ -5,7 +5,7 @@ A fast all round solution to websockets using python and javascript.
 *python*
     
     $ virtualenv env
-    $ pip insta docopts
+    $ pip install docopts
     $ python server.py -ev
 
 
@@ -42,6 +42,8 @@ You could role out your own websocket solution, but consider using a pocketsocke
 * Clever url parsing at setup (makes it easier to integrate)
 * automatic socket communication for core message
 
+----
+
 # Getting Started.
 
 First get the server running on your server. To get it going, not to much is needed.
@@ -59,6 +61,8 @@ First get the server running on your server. To get it going, not to much is nee
     $ virtualenv env
     $ pip install docopts
 
+
+----
 
 ## Running server.py
 
@@ -83,6 +87,7 @@ You can also specify an IP address and port. By default they are `127.0.0.1` and
 
 It'll return something like `Ready 127.0.0.1 8001`. All information proceeding will be communications sent and received.
 
+----
 
 ## Running pocket.socket javascript
 
@@ -193,6 +198,7 @@ The mix enumeration example, 3 addresses are supplied and 4 ports. This will fai
      "127.0.0.1:8009"
     ]
 
+----
 
 ## Connection
 
@@ -209,7 +215,7 @@ Returns a boolean value to define if there are addresses to connect to.
     true/false
 
 
-### list(['mix' || 'flat'])
+### list(*'mix' || 'flat'*)
 
 Call the list method with `mix` or `flat` as the first argument.
 returned is a list of string socket uri's. Read 'Mix Enumeration' and 'Flat Enumeration' for outcome
@@ -231,6 +237,7 @@ delete all ips, ports and addresses - this does not disconnect any active connec
 
     pocket.socket.connection.empty()
 
+----
 
 ## Connect to sockets.
 
@@ -254,6 +261,7 @@ Returned is a new socket.
             
         })
 
+----
 
 # Sending Messages
 
