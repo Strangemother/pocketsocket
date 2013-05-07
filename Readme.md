@@ -2,11 +2,21 @@
 
 A fast all round solution to websockets using python and javascript.
 
+*python*
+    
+    $ virtualenv env
+    $ pip insta docopts
     $ python server.py -ev
 
-    >>> pocket.socket.setup('127.0.0.1:8001').on('socket', function (name){
+
+*javascript*
+
+    pocket.socket.setup('127.0.0.1:8001').on('socket', function (name){
             console.log("socket", name);
         }).connect();
+
+
+**web sockets are done!**
 
 
 In this library, you'll find a nice basic javascript API for handling and creating channels and extendable server based on http://opiate.github.io/SimpleWebSocketServer.
@@ -19,6 +29,12 @@ You could role out your own websocket solution, but consider using a pocketsocke
 * Auto reconnect feature for lost websocket connection.
 * Light channel based client communication
 * Auto json
+* use sockets with a familiar and simple API:
+    
+    *  `setup(*addressConfig*)`            - setup your websocket connection
+    *  `connect()`                         - start socketing...
+    *  `on('channel', 'event', function)`  - listen to your signals
+    *  `signal('channel', 'event', data)`  - send a signal
 
 ### Extending features.
 
