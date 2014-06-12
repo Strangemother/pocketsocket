@@ -19,7 +19,13 @@ Options:
   --host=<host>  Provide a IP address to host the server [default: 127.0.0.1] 
   --port=<port>  Provide a port to host the server [default: 8001]
 '''
-from docopt import docopt
+
+try:
+    from docopt import docopt
+    docopt_module = True
+except ImportError, e:
+    print 'no docopts'
+    docopt_module = False
 
 from vendor.ISocketServer.SimpleWebSocketServer import WebSocket, SimpleWebSocketServer
 
@@ -187,23 +193,6 @@ class PocketSocket(SimpleMultiSocket):
         self.sendMessage(j)
 
 
-
-def file_filter(name):
-    return (not name.startswith(".")) and (not name.endswith(".swp"))
-
-
-def file_times(path):
-    for top_level in filter(file_filter, os.listdir(path)):
-        for root, dirs, files in os.walk(top_level):
-            for file in filter(file_filter, files):
-                yield os.stat(os.path.join(root, file)).st_mtime
-
-
-def print_stdout(process):
-    stdout = process.stdout
-    if stdout != None:
-        print stdout
-
 def serve_forever(host, port, socket=None, verbose=False, queue=None):
     socket = PocketSocket if socket is None else socket
     server = PocketSocketServer(host, port, socket, verbose=verbose, queue=queue)
@@ -218,7 +207,6 @@ def served(process, queue=None):
 
     print 'Socket Served:', process.name, process.pid
 
-
     while True:
         try:
             msg = queue.get_nowait()
@@ -232,12 +220,26 @@ def served(process, queue=None):
 def main(queue=None, client=None):
     if queue is None:
         queue = multiprocessing.Queue()
-    arguments = docopt(__doc__, version='0.1')  
-    host = arguments.get('<host>', None) or arguments['--host']
-    port = int(arguments.get('<port>', None) or arguments['--port'])
-    # socket = PocketSocket if client is None else client
-    verbose = arguments['--verbose']
+    if docopt_module:
+        arguments = docopt(__doc__, version='0.1')  
+        host = arguments.get('<host>', None) or arguments['--host']
+        port = int(arguments.get('<port>', None) or arguments['--port'])
+        verbose = arguments['--verbose']
+    else:
+        import sys
+        args = sys.argv[1:]
+        l = len(args)
+        host = '127.0.0.1'
+        port = 8001
+        verbose = True
 
+        if l >= 1:
+            host = args[0]
+        elif l >= 2:
+            port = int(args[1])
+        elif l >= 3:
+            verbose = bool(args[2])
+    # socket = PocketSocket if client is None else client
     server_proc = multiprocessing.Process(target=serve_forever, args=(host, port, client, verbose, queue))
     server_proc.start()
 
@@ -247,7 +249,6 @@ def main(queue=None, client=None):
         print 'Kill'
         server_proc.terminate()
         print 'Dead'
-
 
 
 if __name__ == '__main__':
