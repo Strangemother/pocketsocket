@@ -527,6 +527,7 @@ class SimpleWebSocketServer(object):
                         self.connections[fileno] = self.constructWebSocket(newsock, address)
                 else:
                     client = self.connections[ready]
+                    print self, self.connections
                     fileno = client.client.fileno()
                 
                     try:

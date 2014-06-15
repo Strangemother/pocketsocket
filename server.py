@@ -1,7 +1,7 @@
 '''
 This is the localwebsocket server to provide
 an async service for itunes integration to the interface.
-This needs to be booted as a seperate process 
+This needs to be booted as a seperate process
 
 Usage:
   server.py
@@ -16,8 +16,8 @@ Options:
   -e --echo      reply a client message back to the sender client
   --version      Show version.
   -v --verbose   Print the recieved data [default: False].
-  --host=<host>  Provide a IP address to host the server [default: 127.0.0.1] 
-  --port=<port>  Provide a port to host the server [default: 8001]
+  -i --host=<host>  Provide a IP address to host the server [default: 127.0.0.1]
+  -p --port=<port>  Provide a port to host the server [default: 8001]
 '''
 
 try:
@@ -27,38 +27,15 @@ except ImportError, e:
     print 'no docopts'
     docopt_module = False
 
-from vendor.ISocketServer.SimpleWebSocketServer import WebSocket, SimpleWebSocketServer
+from vendor.ISocketServer.SimpleWebSocketServer import WebSocket, \
+    SimpleWebSocketServer
 
 from vendor.poo.overloader import overload
-from vendor.serializers import json_serialize
-from json import loads
+from json import loads, dumps
 from datetime import datetime
 import multiprocessing
 import Queue
-
-
-'''
-Concept implemenation:
-
-    if used and ready, automatically implement.
-
-'''
-
-
-class PocketSocketServer(SimpleWebSocketServer):
-
-    def __init__(self, host, port, websocketclass, verbose=False, queue=None):
-        self.verbose = verbose
-        self.queue= queue
-        super(PocketSocketServer, self).__init__(host, port, websocketclass)
-
-    def constructWebSocket(self, sock, address):
-        if self.websocketclass:
-            return self.websocketclass(self, sock, address, verbose=self.verbose,queue= self.queue)
-        else:
-            print 'no websocketclass'
-            if self.queue: self.queue.put('Error: No WebSocket class provided')
-
+from time import sleep
 
 
 class SimpleMultiSocket(WebSocket):
@@ -81,8 +58,8 @@ class SimpleMultiSocket(WebSocket):
     def handleMessage(self):
         if self.data is None:
             self.data = ''
+
         self.data = str(self.data)
-        
         self.receive(self.data)
         self._iter_send(self.data)
 
@@ -114,7 +91,7 @@ class SimpleMultiSocket(WebSocket):
     def __send_to(self, client, msg):
         '''Receive an object to send as a string via JSON serializer'''
         if type(msg).__name__ != 'str':
-            j = str(json_serialize(msg))
+            j = str(dumps(msg))
         else:
             j = msg
 
@@ -158,7 +135,7 @@ class PocketSocketProtocol(SimpleMultiSocket):
         pass
 
 
-class PocketSocket(SimpleMultiSocket):
+class JsonMultiSocket(SimpleMultiSocket):
 
     def receive(self, msg):
         '''Recieve a JSON String and call methods'''
@@ -176,14 +153,15 @@ class PocketSocket(SimpleMultiSocket):
 
         # Not sending information.
         # ? Perhaps send size and other message info..
-        # self.send_to_all('socket', 'receive', { 'messageId': sid }, client_safe=True)
+        # self.send_to_all('socket', 'receive', { 'messageId': sid },
+        #   client_safe=True)
 
-        # Send receipt 
-        j = str(json_serialize({
-            'socket': 'sent', 
+        # Send receipt
+        j = str(dumps({
+            'socket': 'sent',
             'attr': 'json' if json else 'string',
             'messageId': sid,
-            'time': str(datetime.now()), 
+            'time': str(datetime.now()),
         }))
         if self.verbose:
             print "Receive:", type(s), s
@@ -193,35 +171,93 @@ class PocketSocket(SimpleMultiSocket):
         self.sendMessage(j)
 
 
-def serve_forever(host, port, socket=None, verbose=False, queue=None):
-    socket = PocketSocket if socket is None else socket
-    server = PocketSocketServer(host, port, socket, verbose=verbose, queue=queue)
-    if verbose:
-        print 'Ready', host, port
-    server.serveforever()
-    return server
+class ThreadedSocketServer(SimpleWebSocketServer):
+    # A threaded server creates a socketed client and
+    # cares for a threaded process running the socket.
 
-from time import sleep
+    def __init__(self, host, port, websocketclass, verbose=False, queue=None):
+        self.host = host
+        self.port = port
+        self.client = JsonMultiSocket if websocketclass is None else websocketclass
+        self.verbose = verbose
+        self.queue = queue
 
-def served(process, queue=None):
+        super(ThreadedSocketServer, self).__init__(host, port, websocketclass)
 
-    print 'Socket Served:', process.name, process.pid
+    def constructWebSocket(self, sock=None, address=None):
+        '''
+        Create a new websocket based upon the socket address and cliet.
+        returned is a ready
+        '''
+        _sock = sock or self.sock
+        _add = address or self.address
+        if self.websocketclass:
+            return self.websocketclass(self, _sock, _add, verbose=self.verbose, queue=self.queue)
+        else:
+            print 'no websocketclass'
+            if self.queue: self.queue.put('Error: No WebSocket class provided')
 
-    while True:
+    def start(self, host=None, port=None, client=None, verbose=False, queue=None):
+        '''
+        Begin the multi thread process of the WebSockets.
+        '''
+        print 'Begin multiprocess'
+        host = host or self.host
+        port = port or self.port
+        client = client or self.client
+        # Multiprocessing queue o communicate to each thread
+        queue = queue or self.queue
+        if queue is None:
+            queue = multiprocessing.Queue()
+        self.queue = queue
+        server_proc = multiprocessing.Process(target=self.start_serveforever, args=(host, port, client, verbose, queue))
+        self.multiprocess = server_proc
+        server_proc.start()
+        self.wait_serve()
+
+    def start_serveforever(self, host, port, socket=None, verbose=False, queue=None):
+        print 'Serving', host, port, socket
+        self.serveforever()
+        return self.multiprocess
+
+    def wait_serve(self):
         try:
-            msg = queue.get_nowait()
-            print process.name, process.is_alive(), ':"%s"' % msg
-        except Queue.Empty as e:
-            pass
-        sleep(.1)
-        # com = raw_input('Input')
-        # print com
+            self.served(self.multiprocess)
+        except KeyboardInterrupt, e:
+            self.terminate(e)
+
+    def served(self, process, queue=None):
+        queue = queue or self.queue
+        print 'Socket Served:', process.name, process.pid
+        while True:
+            try:
+                msg = queue.get_nowait()
+                print process.name, process.is_alive(), ':"%s"' % msg
+            except Queue.Empty as e:
+                pass
+            sleep(.1)
+            # com = raw_input('Input')
+            # print com
+
+    def terminate(self, error=None):
+        print 'Kill'
+        self.multiprocess.terminate()
+        print 'Dead'
+
+    def put(self, *args, **kwargs):
+        if self.queue:
+            self.queue.put(*args, **kwargs)
+
+
+
+def start(host, port, verbose, socket=None):
+    server = ThreadedSocketServer(host, port, socket, verbose=verbose)
+    server.start()
+
 
 def main(queue=None, client=None):
-    if queue is None:
-        queue = multiprocessing.Queue()
     if docopt_module:
-        arguments = docopt(__doc__, version='0.1')  
+        arguments = docopt(__doc__, version='0.1')
         host = arguments.get('<host>', None) or arguments['--host']
         port = int(arguments.get('<port>', None) or arguments['--port'])
         verbose = arguments['--verbose']
@@ -239,17 +275,7 @@ def main(queue=None, client=None):
             port = int(args[1])
         elif l >= 3:
             verbose = bool(args[2])
-    # socket = PocketSocket if client is None else client
-    server_proc = multiprocessing.Process(target=serve_forever, args=(host, port, client, verbose, queue))
-    server_proc.start()
-
-    try:
-        served(server_proc, queue)
-    except KeyboardInterrupt, e:
-        print 'Kill'
-        server_proc.terminate()
-        print 'Dead'
-
+    start(host, port, verbose)
 
 if __name__ == '__main__':
     main()

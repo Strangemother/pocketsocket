@@ -3,7 +3,6 @@ from io import StringIO
 from datetime import datetime, date
 
 try:
-
     from django.db.models import Model
     from django.db.models.query import QuerySet
     from django.utils.encoding import smart_unicode
