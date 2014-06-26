@@ -27,233 +27,223 @@ except ImportError, e:
     print 'no docopts'
     docopt_module = False
 
-from vendor.ISocketServer.SimpleWebSocketServer import WebSocket, \
-    SimpleWebSocketServer
+from vendor.ISocketServer.SimpleWebSocketServer import SimpleWebSocketServer
 
-from vendor.poo.overloader import overload
-from json import loads, dumps
-from datetime import datetime
+from sockets import ThreadSocket as _WebSocket
 import multiprocessing
+from multiprocessing import Pipe
 import Queue
 from time import sleep
+from utils import get_local_ip
+from termcolor import cprint
 
+class PocketSocketError(Exception):
 
-class SimpleMultiSocket(WebSocket):
-
-    def __init__(self, server, sock, address, verbose=False, client_safe=True, queue=None):
-        self.verbose = verbose
-        self.client_safe = client_safe
-        print 'SimpleMultiSocket', self.verbose
-        self.queue = queue
-        super(SimpleMultiSocket, self).__init__(server, sock, address)
-
-    def put(self, *args, **kwargs):
-        if self.queue:
-            self.queue.put(*args, **kwargs)
-
-    def receive(self, msg):
-        '''method to hook data received for user override'''
-        pass
-
-    def handleMessage(self):
-        if self.data is None:
-            self.data = ''
-
-        self.data = str(self.data)
-        self.receive(self.data)
-        self._iter_send(self.data)
-
-    def send_to_all(self, *args, **kwargs):
-
-        o = {
-            'address': self.address[0],
-            'port': self.address[1],
-        }
-
-        # import pdb; pdb.set_trace()
-        if len(args) > 1:
-            o = overload(o, args[0], args[1])
-        else:
-            o['data'] = args[0]
-
-        self._iter_send(o, **kwargs)
-
-    def _iter_send(self, o, **kwargs):
-        '''Iter through all connected clients, __send_to called multiple times'''
-        for client in self.server.connections.itervalues():
-            if kwargs.get('client_safe', True):
-                if client != self:
-                    self.__send_to(client, o)
-            else:
-                # import pdb; pdb.set_trace()
-                self.__send_to(client, o)
-
-    def __send_to(self, client, msg):
-        '''Receive an object to send as a string via JSON serializer'''
-        if type(msg).__name__ != 'str':
-            j = str(dumps(msg))
-        else:
-            j = msg
-
-        try:
-            if self.verbose:
-                print 'Send:', type(j), j
-            client.sendMessage(j)
-        except Exception as n:
-            print n
-
-    def handleConnected(self):
-        if self.verbose:
-            print 'connected', self.address
-        self.send_to_all('socket','connected',  str(self.address[0]))
-
-    def handleClose(self):
-        if self.verbose:
-            print 'disconnected', self.address
-        self.send_to_all('socket', 'disconnected', str(self.address[0]))
-
-
-class PocketSocketProtocol(SimpleMultiSocket):
-    '''Easy implementable of a class to extend.
-    Each method in the class has been designed for easy hooks
-    to your python class.'''
-
-    def __init__(self):
-        '''Doesn't do much. it's override safe'''
-        pass
-
-    def output(self, msg, code):
-        '''implement to receive class messages from the framework. These 
-        are independant of the messaging server. This method is
-        used to capture errors and debug logs.'''
-        self.write("%s output: %s, %s" % (self.name, msg, code))
-
-    def write(self, data):
-        '''override to receive a write string'''
-
-    def send(self, s):
-        pass
-
-
-class JsonMultiSocket(SimpleMultiSocket):
-
-    def receive(self, msg):
-        '''Recieve a JSON String and call methods'''
-        try:
-            json = True
-            print msg
-            s = loads(msg)
-
-            sid = s.get('id', None)
-        except Exception, n:
-            json = False
-            print 'JSON conversion error:', n
-            sid = len(msg)
-            s = msg
-
-        # Not sending information.
-        # ? Perhaps send size and other message info..
-        # self.send_to_all('socket', 'receive', { 'messageId': sid },
-        #   client_safe=True)
-
-        # Send receipt
-        j = str(dumps({
-            'socket': 'sent',
-            'attr': 'json' if json else 'string',
-            'messageId': sid,
-            'time': str(datetime.now()),
-        }))
-        if self.verbose:
-            print "Receive:", type(s), s
-        self.put(s)
-
-        # Pipe a receipt back to the client.
-        self.sendMessage(j)
+    def __init__(self, value, msg):
+        self.value = value
+        self.msg = msg
 
 
 class ThreadedSocketServer(SimpleWebSocketServer):
+    '''
+    A SocketServer asyncronously threads a Socket and handled the process
+    until death.
+
+    Usage:
+    '''
     # A threaded server creates a socketed client and
     # cares for a threaded process running the socket.
 
-    def __init__(self, host, port, websocketclass, verbose=False, queue=None):
+    def __init__(self, host, port, client_socket, verbose=False, queue=None):
         self.host = host
         self.port = port
-        self.client = JsonMultiSocket if websocketclass is None else websocketclass
+        # Client socket implements the class constructed to handle connections.
+        #
+        self.client_socket = _WebSocket if client_socket is None \
+            else client_socket
         self.verbose = verbose
         self.queue = queue
 
-        super(ThreadedSocketServer, self).__init__(host, port, websocketclass)
+        self.clock_speed = .1 # Tickers in seconds for every mutliprocess
+                              # message queue check.
+
+        # Call the super, creating the simple web socket server and
+        # setting up websocket connections.
+        super(ThreadedSocketServer, self).__init__(host, port, client_socket)
 
     def constructWebSocket(self, sock=None, address=None):
         '''
-        Create a new websocket based upon the socket address and cliet.
-        returned is a ready
+        Create a new websocket based upon the socket address and client class
+        provided. Returned is a ready client serving a websocket receiver on
+        a host and unique port
         '''
         _sock = sock or self.sock
         _add = address or self.address
-        if self.websocketclass:
-            return self.websocketclass(self, _sock, _add, verbose=self.verbose, queue=self.queue)
+        if self.client_socket:
+            return self.client_socket(self, _sock, _add, verbose=self.verbose, \
+                queue=self.queue, pipe=self.child_pipe)
         else:
-            print 'no websocketclass'
+            print 'no client_socket'
             if self.queue: self.queue.put('Error: No WebSocket class provided')
 
-    def start(self, host=None, port=None, client=None, verbose=False, queue=None):
+    def get_queue(self):
+        '''
+        create and return or return a multiprocessing Queue for multithread
+        communication
+        '''
+        if self.queue is None:
+            self.queue = multiprocessing.Queue()
+        return self.queue
+
+    def from_pipe(self):
+        pipm = self.pipe.recv()
+       
+        return pipm
+
+    def term(self, text, color=None, **kwargs):
+        cprint(text, kwargs.get('color', color), kwargs.get('on', None))
+
+    def thread_messages(self):
+        queue = self.get_queue()
+        process = self.multiprocess
+        msg = None
+        ms = []
+
+        pipm = self.from_pipe()
+        ms.append(pipm)
+
+        try:
+            msg = queue.get_nowait()
+            ms.append(msg)
+            print process.name, process.is_alive(), ':"%s"' % msg
+        except Queue.Empty as e:
+            pass
+        return ms
+
+    def start(self, host=None, port=None, client_socket=None, verbose=False, \
+        queue=None):
         '''
         Begin the multi thread process of the WebSockets.
         '''
-        print 'Begin multiprocess'
         host = host or self.host
         port = port or self.port
-        client = client or self.client
-        # Multiprocessing queue o communicate to each thread
-        queue = queue or self.queue
-        if queue is None:
-            queue = multiprocessing.Queue()
-        self.queue = queue
-        server_proc = multiprocessing.Process(target=self.start_serveforever, args=(host, port, client, verbose, queue))
-        self.multiprocess = server_proc
+        client_socket = client_socket or self.client_socket
+        
+        self.spawn_process(host=host, port=port, client_socket=client_socket)
+        self.sync_process()
+
+    def sync_process(self, *args, **kwargs):
+        # Create a new multiprocess thread.
+        server_proc = multiprocessing.Process(target=self.wait_for_message, \
+            args=())
+        self.term('Create clock %s' % server_proc, 'yellow')
         server_proc.start()
+        self.clock = server_proc
+  
+    def send_to_all(self, *args, **kwargs):
+        self.pipe.send( ('send_to_all', args, kwargs,))
+
+    def spawn_process(self, *args, **kwargs):
+        '''
+        Spawn a threaded process adding it to the cared group of threads.
+        '''
+        # Multiprocessing queue o communicate to each thread
+        queue = kwargs.get('queue', self.get_queue() )
+        # Create the pipes to communicate through
+        self.pipe, self.child_pipe = Pipe()
+
+        host = kwargs.get('host', self.host)
+        port = kwargs.get('port', self.port)
+        client_socket = kwargs.get('client_socket', self.client_socket)
+        verbose = kwargs.get('verbose', self.verbose)
+
+
+        # Create a new multiprocess thread.
+        server_proc = multiprocessing.Process(target=self.start_serveforever, \
+            args=(host, port, client_socket, verbose, queue, self.child_pipe)
+            )
+        # Store the multiprocess
+        self.multiprocess = server_proc
+        self.term('Create WebSocket %s' % server_proc, 'yellow')
+        # start the multi process
+        server_proc.start()
+
+    def start_serveforever(self, host, port, socket=None, verbose=False, \
+        queue=None, child_pipe=None):
+        '''
+        Begin the parental start server. called by the multithreading
+        start() method
+        '''
+        print 'serve on', host, port
+        print 'internal ip:', get_local_ip()
+        self.socket_bind(host or self.host, port or self.port)
+        self.serveforever()
+
+    def start_wait(self, *args, **kwargs):
+        self.start(*args, **kwargs)
+        # serve the keyboard wait through the served method
         self.wait_serve()
 
-    def start_serveforever(self, host, port, socket=None, verbose=False, queue=None):
-        print 'Serving', host, port, socket
-        self.serveforever()
-        return self.multiprocess
-
     def wait_serve(self):
+        '''
+        Wait on the multiprocessing threads for entering messages
+        until a KeyboardInterrupt
+        '''
+
         try:
-            self.served(self.multiprocess)
+            self.wait_for_message(self.multiprocess)
         except KeyboardInterrupt, e:
-            self.terminate(e)
+            self.terminate(self.multiprocess, e)
 
-    def served(self, process, queue=None):
+    def wait_for_message(self, process=None, queue=None):
+        '''
+        Pool the multiprocessing queue for messages
+        '''
         queue = queue or self.queue
-        print 'Socket Served:', process.name, process.pid
+        process = process or self.multiprocess
         while True:
-            try:
-                msg = queue.get_nowait()
-                print process.name, process.is_alive(), ':"%s"' % msg
-            except Queue.Empty as e:
-                pass
+            msg = self.thread_messages()
+            if msg: 
+                print cprint(msg, 'green')
             sleep(.1)
-            # com = raw_input('Input')
-            # print com
 
-    def terminate(self, error=None):
+
+    def terminate(self, process=None, error=None):
+        # Terminate a multiprocess thread; i.e a client.
         print 'Kill'
-        self.multiprocess.terminate()
+        self.pipe.send(['close'])
+        self.close()
+        process = self.multiprocess if process is None else process
+        process.terminate()
         print 'Dead'
 
     def put(self, *args, **kwargs):
+        '''
+        Write to the multiprocess queue. All clients will receive it.
+        '''
         if self.queue:
             self.queue.put(*args, **kwargs)
 
 
+class PocketServer(ThreadedSocketServer):
+    
+    def __init__(self, host='127.0.0.1', port=8001, client_socket=None, \
+        verbose=True, queue=None):
+        super(PocketServer, self).__init__(host, port, client_socket, \
+            verbose, queue)
 
-def start(host, port, verbose, socket=None):
-    server = ThreadedSocketServer(host, port, socket, verbose=verbose)
+    def start_serveforever(self, *args, **kwargs):
+        '''
+        Begin the parental start server.
+        '''
+        super(PocketServer, self).start_serveforever(*args, **kwargs)
+        print get_local_ip()
+
+
+def cli(host, port=8001, verbose=True, socket=None):
+    server = PocketServer(host, port, socket, verbose=verbose)
     server.start()
-
+    return server
 
 def main(queue=None, client=None):
     if docopt_module:
@@ -275,7 +265,7 @@ def main(queue=None, client=None):
             port = int(args[1])
         elif l >= 3:
             verbose = bool(args[2])
-    start(host, port, verbose)
+    cli(host, port, verbose)
 
 if __name__ == '__main__':
     main()
