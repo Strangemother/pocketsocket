@@ -90,7 +90,7 @@ class WebSocket(object):
         self.handshaked = False
         self.readdraftkey = False
         self.hixie76 = False
-        self.headertoread = 2048 
+        self.headertoread = 2048
         self.headerbuffer = ''
         self.data = ''
 
@@ -103,6 +103,12 @@ class WebSocket(object):
     def handleClose(self):
         pass
 
+    def handlePing(self):
+        print 'Ping'
+
+    def handlePong(self):
+        print 'Pong'
+
     def handlePacket(self):
         # close
         if self.opcode == self.CLOSE:
@@ -110,85 +116,102 @@ class WebSocket(object):
             raise Exception("received client close")
         # ping
         elif self.opcode == self.PING:
-            pass
-        
+            self.handlePing()
+
         # pong
         elif self.opcode == self.PONG:
-            pass
-        
+            self.handlePong()
+
         # data
         elif self.opcode == self.STREAM or self.opcode == self.TEXT or self.opcode == self.BINARY:
-            self.handleMessage()    
+            self.handleMessage()
 
     def handleData(self):
-
-        # do the HTTP header and handshake
-        if self.handshaked is False:
+        '''
+        Read a chunk from the client pipe.
+        Perform the handshaked or accept the chunk of data.
+        This method is called from the server loop.
+        '''
+        if self.handshaked is not True:
+            # do the HTTP header and handshake
+            data = self.client.recv(2048)
+            self.handshake(data)
+        else:
             data = self.client.recv(self.headertoread)
             if data:
-                # accumulate
-                self.headerbuffer += data
-
-                if len(self.headerbuffer) >= self.maxheader:
-                    raise Exception('header exceeded allowable size')
-
-                # we need to read the entire 8 bytes of after the HTTP header, ensure we do
-                if self.readdraftkey is True:
-                    self.draftkey += self.headerbuffer
-                    read = self.headertoread - len(self.headerbuffer)
-
-                    if read != 0:
-                        self.headertoread = read
-                    else:
-                        # complete hixie76 handshake
-                        self.handshake_hixie76()
-                # indicates end of HTTP header
-                elif '\r\n\r\n' in self.headerbuffer:
-                    self.request = HTTPRequest(self.headerbuffer)
-                    # hixie handshake
-                    if self.request.headers.has_key('Sec-WebSocket-Key1'.lower()) and self.request.headers.has_key('Sec-WebSocket-Key2'.lower()):
-                        # check if we have the key in our buffer
-                        index = self.headerbuffer.find('\r\n\r\n') + 4
-                        # determine how much of the 8 byte key we have
-                        read = len(self.headerbuffer) - index
-                        # do we have all the 8 bytes we need?
-                        if read < 8:
-                            self.headertoread = 8 - read
-                            self.readdraftkey = True
-                            if read > 0:
-                                self.draftkey += self.headerbuffer[index:index+read]
-
-                        else:
-                            # get the key
-                            self.draftkey += self.headerbuffer[index:index+8]
-                            # complete hixie handshake
-                            self.handshake_hixie76()
-
-                    # handshake rfc 6455
-                    elif self.request.headers.has_key('Sec-WebSocket-Key'.lower()):
-                        key = self.request.headers['Sec-WebSocket-Key'.lower()]
-                        hStr = self.handshakeStr % {'acceptstr' :  base64.b64encode(hashlib.sha1(key + self.GUIDStr).digest()) }
-                        self.sendBuffer(hStr)
-                        self.handshaked = True
-                        self.headerbuffer = ''
-                        self.handleConnected()                   
-                    else:
-                        raise Exception('Sec-WebSocket-Key does not exist')
-
+                print data
+                self.accept_chuck(data)
             # remote connection has been closed
             else:
                 raise Exception("remote socket closed")
-        # else do normal data  
-        else:
-            data = self.client.recv(2048)
-            if data:
-                for val in data:
-                    if self.hixie76 is False:
-                        self.parseMessage(ord(val))
-                    else:
-                        self.parseMessage_hixie76(ord(val))
+
+    def accept_chuck(self, data):
+        '''
+        Receive data from the client pipe, the chunk of information
+        is pushed into an accumulation.
+        '''
+        # accumulate
+        self.headerbuffer += data
+
+        if len(self.headerbuffer) >= self.maxheader:
+            raise Exception('header exceeded allowable size')
+
+        # we need to read the entire 8 bytes of after the HTTP header,
+        # ensure we do
+        if self.readdraftkey is True:
+            self.draftkey += self.headerbuffer
+            read = self.headertoread - len(self.headerbuffer)
+
+            if read != 0:
+                self.headertoread = read
             else:
-                raise Exception("remote socket closed")
+                # complete hixie76 handshake
+                self.handshake_hixie76()
+        # indicates end of HTTP header
+        elif '\r\n\r\n' in self.headerbuffer:
+            self.request = HTTPRequest(self.headerbuffer)
+            # hixie handshake
+            if self.request.headers.has_key('Sec-WebSocket-Key1'.lower()) and self.request.headers.has_key('Sec-WebSocket-Key2'.lower()):
+                # check if we have the key in our buffer
+                index = self.headerbuffer.find('\r\n\r\n') + 4
+                # determine how much of the 8 byte key we have
+                read = len(self.headerbuffer) - index
+                # do we have all the 8 bytes we need?
+                if read < 8:
+                    self.headertoread = 8 - read
+                    self.readdraftkey = True
+                    if read > 0:
+                        self.draftkey += self.headerbuffer[index:index+read]
+
+                else:
+                    # get the key
+                    self.draftkey += self.headerbuffer[index:index+8]
+                    # complete hixie handshake
+                    self.handshake_hixie76()
+
+            # handshake rfc 6455
+            elif self.request.headers.has_key('Sec-WebSocket-Key'.lower()):
+                key = self.request.headers['Sec-WebSocket-Key'.lower()]
+                hStr = self.handshakeStr % {'acceptstr' :  base64.b64encode(hashlib.sha1(key + self.GUIDStr).digest()) }
+                self.sendBuffer(hStr)
+                self.handshaked = True
+                self.headerbuffer = ''
+                self.handleConnected()
+            else:
+                raise Exception('Sec-WebSocket-Key does not exist')
+
+    def handshake(self, data):
+        '''
+        Perform a handshake on a client.
+        '''
+        if data:
+            for val in data:
+                if self.hixie76 is False:
+                    self.parseMessage(ord(val))
+                else:
+                    self.parseMessage_hixie76(ord(val))
+        else:
+            raise Exception("remote socket closed")
 
     def handshake_hixie76(self):
 
@@ -376,7 +399,7 @@ class WebSocket(object):
 
             if len(self.lengtharray) == 2:
                 self.length = struct.unpack_from('!H', str(self.lengtharray))[0]
-                
+
                 if self.hasmask is True:
                     self.maskarray = bytearray()
                     self.state = self.MASK
@@ -438,7 +461,7 @@ class WebSocket(object):
                     finally:
                         self.state = self.HEADERB1
                         self.data = None
-                        
+
                 # we have no mask and some payload
                 else:
                     self.index = 0
@@ -541,7 +564,7 @@ class SimpleWebSocketServer(object):
     def new_connection(self):
         newsock, address = self.new_socket()
         fileno = self.append_socket(newsock, address)
-        print 'Connection:', fileno
+        return fileno
 
     def serve_loop(self):
         '''
@@ -550,31 +573,6 @@ class SimpleWebSocketServer(object):
         https://docs.python.org/2/library/select.html
         '''
         rList, wList, xList = select(self.listeners, [], self.listeners, 1)
-       
-        '''
-        for ready in rList:
-            if ready == self.serversocket:
-                    newsock, address = self.new_socket()
-                    fileno = self.append_socket(newsock, address)
-                    print 'Connection:', fileno
-            else:
-                # An instance of the websocket class
-                websocket = self.connections[ready]
-                try:
-                    websocket.handleData()
-                except Exception as n:
-                    self.client_exception(websocket, ready, n)
-
-        for failed in xList:
-            if failed == self.serversocket:
-                # If the failed socket is this master
-                # socket; a self close is performed.
-                self.close()
-                raise Exception("server socket failed")
-            else:
-                websocket = self.connections[failed]
-                self.client_failed(websocket, failed)
-        '''
 
         for ident in rList:
             self.check_ready_connection(ident)
