@@ -4,10 +4,9 @@ from vendor.ISocketServer.SimpleWebSocketServer import WebSocket, \
 
 from vendor.poo.overloader import overload
 from json import loads, dumps
-from datetime import datetime
 from termcolor import cprint
 
-class SimpleMultiSocket(WebSocket):
+class SimpleWebSocket(WebSocket):
 
     def __init__(self, server, websocketclass, address, verbose=False, \
         client_safe=True, queue=None, pipe=None):
@@ -17,13 +16,13 @@ class SimpleMultiSocket(WebSocket):
         self.verbose = verbose
         self.client_safe = client_safe
         self.queue = queue
-        super(SimpleMultiSocket, self).__init__(server, websocketclass, address)
+        super(SimpleWebSocket, self).__init__(server, websocketclass, address)
 
     def to_pipe(self, args):
         self.pipe.send(args)
 
     def from_pipe(self):
-        self.pipe.send()
+        return self.pipe.recv()
 
     def put(self, *args, **kwargs):
         '''Writes a message to the multiprocess queue'''
@@ -31,7 +30,7 @@ class SimpleMultiSocket(WebSocket):
             self.queue.put(*args, **kwargs)
 
     def handleConnected(self):
-        self.send_to_all('socket','connected',  str(self.address[0]))
+        self.send_to_all('socket','connected',  self.address[0])
         self.connect(self.address)   
 
     def handleMessage(self):
@@ -46,7 +45,7 @@ class SimpleMultiSocket(WebSocket):
     def handleClose(self):
         if self.verbose:
             print 'disconnected', self.address
-        self.send_to_all('socket', 'disconnected', str(self.address[0]))
+        self.send_to_all('socket', 'disconnected', self.address[0])
         self.disconnect()
 
     def receive(self, msg):
@@ -60,7 +59,7 @@ class SimpleMultiSocket(WebSocket):
     def close(self):
         # tell the client close will hand.
         # self.pipe.close()
-        super(SimpleMultiSocket, self).close()
+        super(SimpleWebSocket, self).close()
 
     def send_to_all(self, *args, **kwargs):
 
@@ -95,14 +94,12 @@ class SimpleMultiSocket(WebSocket):
             j = msg
 
         try:
-            if self.verbose:
-                print 'Send:', type(j), j
             client.sendMessage(j)
         except Exception as n:
             print "__send_to", n
 
 
-class PocketSocketProtocol(SimpleMultiSocket):
+class PocketSocketProtocol(SimpleWebSocket):
     '''Easy implementable of a class to extend.
     Each method in the class has been designed for easy hooks
     to your python class.'''
@@ -124,7 +121,7 @@ class PocketSocketProtocol(SimpleMultiSocket):
         pass
 
 
-class JsonMultiSocket(SimpleMultiSocket):
+class JsonMultiSocket(SimpleWebSocket):
     '''
     A Socket client receiver is provided to the SocketServer. This
     class receives messages and handles connections. This is essentially
@@ -163,6 +160,9 @@ class JsonMultiSocket(SimpleMultiSocket):
 
 class ThreadSocket(JsonMultiSocket):
 
+    def __unicode__(self):
+        return '%s-%s' % (self.address, self.sock,)
+
     def term(self, text, color=None, **kwargs):
         cprint(text, kwargs.get('color', color), kwargs.get('on', None))
     
@@ -182,5 +182,5 @@ class ThreadSocket(JsonMultiSocket):
         ''' 
         A client has connected to the socket
         '''
-        self.term('client connect %s' % address[0], 'blue')
+        # self.term('client connect %s' % address[0], 'blue')
         self.to_pipe(('connected', ) + address)

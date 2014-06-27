@@ -1,11 +1,11 @@
-import SocketServer
+#import SocketServer
 import hashlib
 import base64
 import socket
 import struct
 import ssl
 import time
-import sys
+#import sys
 import errno
 import logging
 from BaseHTTPServer import BaseHTTPRequestHandler
@@ -37,7 +37,7 @@ class WebSocket(object):
         "Sec-WebSocket-Origin: %(origin)s\r\n"
         "Sec-WebSocket-Location: %(type)s://%(host)s%(location)s\r\n\r\n"
     )
- 
+
     GUIDStr = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 
     STREAM = 0x0
@@ -58,14 +58,14 @@ class WebSocket(object):
         self.server = server
         self.client = sock
         self.address = address
-      
+
         self.handshaked = False
         self.headerbuffer = ''
         self.readdraftkey = False
         self.draftkey = ''
         self.headertoread = 2048
         self.hixie76 = False
-      
+
         self.fin = 0
         self.data = None
         self.opcode = 0
@@ -78,7 +78,7 @@ class WebSocket(object):
         self.usingssl = False
 
         self.state = self.HEADERB1
-  
+
         # restrict the size of header and payload for security reasons
         self.maxheader = 65536
         self.maxpayload = 4194304
@@ -93,7 +93,6 @@ class WebSocket(object):
         self.headertoread = 2048 
         self.headerbuffer = ''
         self.data = ''
-
 
     def handleMessage(self):
         pass
@@ -121,14 +120,11 @@ class WebSocket(object):
         elif self.opcode == self.STREAM or self.opcode == self.TEXT or self.opcode == self.BINARY:
             self.handleMessage()    
 
+    def handleData(self):
 
-    def handleData(self):       
-        
         # do the HTTP header and handshake
         if self.handshaked is False:
-            
             data = self.client.recv(self.headertoread)
-            
             if data:
                 # accumulate
                 self.headerbuffer += data
@@ -146,7 +142,6 @@ class WebSocket(object):
                     else:
                         # complete hixie76 handshake
                         self.handshake_hixie76()
-                    
                 # indicates end of HTTP header
                 elif '\r\n\r\n' in self.headerbuffer:
                     self.request = HTTPRequest(self.headerbuffer)
@@ -162,32 +157,28 @@ class WebSocket(object):
                             self.readdraftkey = True
                             if read > 0:
                                 self.draftkey += self.headerbuffer[index:index+read]
-                        
+
                         else:
                             # get the key
                             self.draftkey += self.headerbuffer[index:index+8]
                             # complete hixie handshake
                             self.handshake_hixie76()
-                            
+
                     # handshake rfc 6455
                     elif self.request.headers.has_key('Sec-WebSocket-Key'.lower()):
                         key = self.request.headers['Sec-WebSocket-Key'.lower()]
-                        hStr = self.handshakeStr % { 'acceptstr' :  base64.b64encode(hashlib.sha1(key + self.GUIDStr).digest()) }
+                        hStr = self.handshakeStr % {'acceptstr' :  base64.b64encode(hashlib.sha1(key + self.GUIDStr).digest()) }
                         self.sendBuffer(hStr)
                         self.handshaked = True
                         self.headerbuffer = ''
-                        
-                        
-                        self.handleConnected()
-                                
+                        self.handleConnected()                   
                     else:
                         raise Exception('Sec-WebSocket-Key does not exist')
 
             # remote connection has been closed
             else:
                 raise Exception("remote socket closed")
-                
-        # else do normal data       
+        # else do normal data  
         else:
             data = self.client.recv(2048)
             if data:
@@ -198,11 +189,9 @@ class WebSocket(object):
                         self.parseMessage_hixie76(ord(val))
             else:
                 raise Exception("remote socket closed")
-    
-
 
     def handshake_hixie76(self):
-    
+
         k1 = self.request.headers['Sec-WebSocket-Key1'.lower()]
         k2 = self.request.headers['Sec-WebSocket-Key2'.lower()]
 
@@ -228,11 +217,7 @@ class WebSocket(object):
         self.handshaked = True
         self.hixie76 = True
         self.headerbuffer = ''
-
-        
         self.handleConnected()
-        
-        
 
     def sendClose(self):
 
@@ -266,21 +251,20 @@ class WebSocket(object):
                 else:
                     raise e
 
-    
     #if s is a string then websocket TEXT is sent else BINARY
     def sendMessage(self, s):
-        
+
         if self.hixie76 is False:
 
             header = bytearray()
             isString = isinstance(s, str)
 
-            if isString is True: 
+            if isString is True:
                 header.append(0x81)
             else:
                 header.append(0x82)
 
-            b2 = 0      
+            b2 = 0
             length = len(s)
 
             if length <= 125:
@@ -291,12 +275,11 @@ class WebSocket(object):
                 b2 |= 126
                 header.append(b2)
                 header.extend(struct.pack("!H", length))
-        
             else:
                 b2 |= 127
                 header.append(b2)
                 header.extend(struct.pack("!Q", length))
-        
+
             self.sendBuffer(header)
             header = None
 
@@ -304,7 +287,7 @@ class WebSocket(object):
                 self.sendBuffer(s)
 
         else:
-            msg = bytearray()           
+            msg = bytearray()
             msg.append(0)
             if len(s) > 0:
                 msg.extend(str(s).encode("UTF8"))
@@ -312,7 +295,6 @@ class WebSocket(object):
 
             self.sendBuffer(msg)
             msg = None
-
 
     def parseMessage_hixie76(self, byte):
 
@@ -330,35 +312,35 @@ class WebSocket(object):
                 finally:
                     self.data = None
                     self.state = self.HEADERB1
-            else    :
+            else:
                 self.data.append(byte)
-                # if length exceeds allowable size then we except and remove the connection
+                # if length exceeds allowable size then we except and remove
+                # the connection
                 if len(self.data) >= self.maxpayload:
                     raise Exception('payload exceeded allowable size')
 
-
-    def parseMessage(self, byte):   
+    def parseMessage(self, byte):
         # read in the header
         if self.state == self.HEADERB1:
             # fin
             self.fin = (byte & 0x80)
             # get opcode
             self.opcode = (byte & 0x0F)
-            
+
             self.state = self.HEADERB2
-        
+
         elif self.state == self.HEADERB2:
-            mask = byte & 0x80              
+            mask = byte & 0x80
             length = byte & 0x7F
-            
+
             if mask == 128:
                 self.hasmask = True
             else:
                 self.hasmask = False
-            
+
             if length <= 125:
                 self.length = length
-                
+
                 # if we have a mask we must read it
                 if self.hasmask is True:
                     self.maskarray = bytearray()
@@ -371,22 +353,21 @@ class WebSocket(object):
                         finally:
                             self.state = self.HEADERB1
                             self.data = None
-                            
+
                     # we have no mask and some payload
                     else:
                         self.index = 0
                         self.data = bytearray()
                         self.state = self.PAYLOAD
-                    
+
             elif length == 126:
                 self.lengtharray = bytearray()
                 self.state = self.LENGTHSHORT
-                
+
             elif length == 127:
                 self.lengtharray = bytearray()
                 self.state = self.LENGTHLONG
 
-        
         elif self.state == self.LENGTHSHORT:
             self.lengtharray.append(byte)
 
@@ -413,7 +394,7 @@ class WebSocket(object):
                         self.index = 0
                         self.data = bytearray()
                         self.state = self.PAYLOAD
-            
+
         elif self.state == self.LENGTHLONG:
 
             self.lengtharray.append(byte)
@@ -441,7 +422,7 @@ class WebSocket(object):
                         self.index = 0
                         self.data = bytearray()
                         self.state = self.PAYLOAD
-            
+
         # MASK STATE
         elif self.state == self.MASK:
             self.maskarray.append(byte)
@@ -463,15 +444,16 @@ class WebSocket(object):
                     self.index = 0
                     self.data = bytearray()
                     self.state = self.PAYLOAD
-        
+
         # PAYLOAD STATE
         elif self.state == self.PAYLOAD:
             if self.hasmask is True:
-                self.data.append( byte ^ self.maskarray[self.index % 4] )
+                self.data.append(byte ^ self.maskarray[self.index % 4])
             else:
-                self.data.append( byte )
+                self.data.append(byte)
 
-            # if length exceeds allowable size then we except and remove the connection
+            # if length exceeds allowable size then we except and
+            # remove the connection
             if len(self.data) >= self.maxpayload:
                 raise Exception('payload exceeded allowable size')
 
@@ -487,27 +469,33 @@ class WebSocket(object):
 
 
 class SimpleWebSocketServer(object):
+
     def __init__(self, host, port, websocketclass):
         self.websocketclass = websocketclass
-        self.serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # self.socket_bind(host, port)
+        self.serversocket = self.create_serversocket()
+
         self.connections = {}
         self.listeners = [self.serversocket]
+        self.doloop = True
 
     def socket_bind(self, host, port):
+        if hasattr(self, 'serversocket') is not True:
+            self.serversocket = self.create_serversocket()
+
         self.serversocket.bind((host, port))
         self.serversocket.listen(5)
 
     def decorateSocket(self, sock):
         return sock
 
-    def constructWebSocket(self, sock, address):
-        return self.websocketclass(self, sock, address)
+    def create_serversocket(self):
+        serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        serversocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        return serversocket
 
     def close(self):
         self.serversocket.close()
-    
+
         for conn in self.connections.itervalues():
             conn.handleClose()
             conn.close()
@@ -515,51 +503,138 @@ class SimpleWebSocketServer(object):
     def serveforever(self):
         while True:
             self.serve_loop()
+        self.close()
+
+    def new_socket(self):
+        '''
+        Create a new decorated socket object returning the
+        newly constructed socket and the address
+        '''
+        sock, address = self.serversocket.accept()
+        newsock = self.decorateSocket(sock)
+        newsock.setblocking(0)
+        return (newsock, address,)
+
+    def append_socket(self, newsock, address):
+        '''
+        Construct a new websocket and append it to the listeners
+        and active connections.
+        '''
+
+        # The file becomes the ident for the listeners and the
+        # server loop.
+        fileno = newsock.fileno()
+        self.listeners.append(fileno)
+        # The connections define a list of WebSocket classes,
+        # communication
+        self.connections[fileno] = self.constructWebSocket(
+            newsock, address)
+        return fileno
+
+    def constructWebSocket(self, sock, address):
+        # Create an instance of the websocket, of which is appended
+        # to a list of socket connections
+        print 'Constructing new connection', sock, address
+        websocket = self.websocketclass(self, sock, address)
+        return websocket
+
+    def new_connection(self):
+        newsock, address = self.new_socket()
+        fileno = self.append_socket(newsock, address)
+        print 'Connection:', fileno
 
     def serve_loop(self):
-        rList, wList, xList = select(self.listeners, [], self.listeners, 1) 
+        '''
+        Read the Unix pipe and check the ready connections and failed
+        connections.
+        https://docs.python.org/2/library/select.html
+        '''
+        rList, wList, xList = select(self.listeners, [], self.listeners, 1)
+       
+        '''
         for ready in rList:
             if ready == self.serversocket:
-                    sock, address = self.serversocket.accept()
-                    newsock = self.decorateSocket(sock)
-                    newsock.setblocking(0)
-                    fileno = newsock.fileno()
-                    self.listeners.append(fileno)
-                    self.connections[fileno] = self.constructWebSocket(
-                        newsock, address)
+                    newsock, address = self.new_socket()
+                    fileno = self.append_socket(newsock, address)
+                    print 'Connection:', fileno
             else:
-                client = self.connections[ready]
-                # print self, self.connections
-                fileno = client.client.fileno()
-            
+                # An instance of the websocket class
+                websocket = self.connections[ready]
                 try:
-                    client.handleData()
-
+                    websocket.handleData()
                 except Exception as n:
-                    print 'client Exception', n
-                    logging.debug(str(client.address) + ' ' + str(n))
-                    client.handleClose()
-                    client.close()
+                    self.client_exception(websocket, ready, n)
 
-                    del self.connections[fileno]
-                    self.listeners.remove(ready)
-    
         for failed in xList:
             if failed == self.serversocket:
+                # If the failed socket is this master
+                # socket; a self close is performed.
                 self.close()
                 raise Exception("server socket failed")
             else:
-                client = self.connections[failed]
-                fileno = client.client.fileno()
-                client.handleClose()
-                client.close()
+                websocket = self.connections[failed]
+                self.client_failed(websocket, failed)
+        '''
 
-                del self.connections[fileno]
-                self.listeners.remove(failed)
+        for ident in rList:
+            self.check_ready_connection(ident)
+
+        for ident in xList:
+            self.check_failed_connection(ident)
+
+    def check_failed_connection(self, ident):
+        if ident == self.serversocket:
+            # If the failed socket is this master
+            # socket; a self close is performed.
+            self.close()
+            raise Exception("server socket failed")
+        else:
+            websocket = self.connections[ident]
+            self.client_failed(websocket, ident)
+
+    def check_ready_connection(self, ident):
+        '''
+        This method is called by the main serve_loop. On each call,
+        A ident and it's list iden is passed as arguments.
+        This method will check the handled socket and perform and
+        normal handling routin such as handle a new connection or check
+        for data.
+        '''
+        if ident == self.serversocket:
+            self.new_connection()
+        else:
+            # An instance of the websocket class
+            websocket = self.connections[ident]
+            try:
+                websocket.handleData()
+            except Exception as n:
+                self.client_exception(ident, n)
+
+    def client_exception(self, ident, exception):
+        websocket = self.connections[ident]
+        print 'websocket Exception', exception
+        logging.debug("%s %s" % (websocket.address, exception))
+        fileno = websocket.client.fileno()
+
+        websocket.handleClose()
+        websocket.close()
+
+        del self.connections[fileno]
+        self.listeners.remove(ident)
+
+    def client_failed(self, websocket, ident):
+        fileno = websocket.client.fileno()
+        websocket.handleClose()
+        websocket.close()
+
+        del self.connections[fileno]
+        self.listeners.remove(ident)
+
 
 class SimpleSSLWebSocketServer(SimpleWebSocketServer):
 
-    def __init__(self, host, port, websocketclass, certfile, keyfile, version = ssl.PROTOCOL_TLSv1):
+    def __init__(self, host, port, websocketclass, certfile, keyfile, \
+        version=ssl.PROTOCOL_TLSv1):
 
         SimpleWebSocketServer.__init__(self, host, port, websocketclass)
 
@@ -585,4 +660,3 @@ class SimpleSSLWebSocketServer(SimpleWebSocketServer):
 
     def serveforever(self):
         super(SimpleSSLWebSocketServer, self).serveforever()
-                    

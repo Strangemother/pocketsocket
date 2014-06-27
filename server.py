@@ -44,7 +44,7 @@ class PocketSocketError(Exception):
         self.msg = msg
 
 
-class ThreadedSocketServer(SimpleWebSocketServer):
+class ThreadedWebSocketServer(SimpleWebSocketServer):
     '''
     A SocketServer asyncronously threads a Socket and handled the process
     until death.
@@ -63,13 +63,13 @@ class ThreadedSocketServer(SimpleWebSocketServer):
             else client_socket
         self.verbose = verbose
         self.queue = queue
-
-        self.clock_speed = .1 # Tickers in seconds for every mutliprocess
+        self.loop_count = 0
+        self.message_pipe_speed = .1 # Tickers in seconds for every mutliprocess
                               # message queue check.
 
         # Call the super, creating the simple web socket server and
         # setting up websocket connections.
-        super(ThreadedSocketServer, self).__init__(host, port, client_socket)
+        super(ThreadedWebSocketServer, self).__init__(host, port, client_socket)
 
     def constructWebSocket(self, sock=None, address=None):
         '''
@@ -80,8 +80,8 @@ class ThreadedSocketServer(SimpleWebSocketServer):
         _sock = sock or self.sock
         _add = address or self.address
         if self.client_socket:
-            return self.client_socket(self, _sock, _add, verbose=self.verbose, \
-                queue=self.queue, pipe=self.child_pipe)
+            return self.client_socket(self, _sock, _add, verbose=self.verbose,
+                        queue=self.queue, pipe=self.child_pipe)
         else:
             print 'no client_socket'
             if self.queue: self.queue.put('Error: No WebSocket class provided')
@@ -95,9 +95,11 @@ class ThreadedSocketServer(SimpleWebSocketServer):
             self.queue = multiprocessing.Queue()
         return self.queue
 
+    def server_loop(self):
+        self.term(self.thread_messages())
+
     def from_pipe(self):
         pipm = self.pipe.recv()
-       
         return pipm
 
     def term(self, text, color=None, **kwargs):
@@ -128,7 +130,7 @@ class ThreadedSocketServer(SimpleWebSocketServer):
         host = host or self.host
         port = port or self.port
         client_socket = client_socket or self.client_socket
-        
+
         self.spawn_process(host=host, port=port, client_socket=client_socket)
         self.sync_process()
 
@@ -136,10 +138,10 @@ class ThreadedSocketServer(SimpleWebSocketServer):
         # Create a new multiprocess thread.
         server_proc = multiprocessing.Process(target=self.wait_for_message, \
             args=())
-        self.term('Create clock %s' % server_proc, 'yellow')
+        self.term('Create message_pipe %s' % server_proc, 'yellow')
         server_proc.start()
-        self.clock = server_proc
-  
+        self.message_pipe = server_proc
+
     def send_to_all(self, *args, **kwargs):
         self.pipe.send( ('send_to_all', args, kwargs,))
 
@@ -148,7 +150,7 @@ class ThreadedSocketServer(SimpleWebSocketServer):
         Spawn a threaded process adding it to the cared group of threads.
         '''
         # Multiprocessing queue o communicate to each thread
-        queue = kwargs.get('queue', self.get_queue() )
+        queue = kwargs.get('queue', self.get_queue())
         # Create the pipes to communicate through
         self.pipe, self.child_pipe = Pipe()
 
@@ -157,9 +159,8 @@ class ThreadedSocketServer(SimpleWebSocketServer):
         client_socket = kwargs.get('client_socket', self.client_socket)
         verbose = kwargs.get('verbose', self.verbose)
 
-
         # Create a new multiprocess thread.
-        server_proc = multiprocessing.Process(target=self.start_serveforever, \
+        server_proc = multiprocessing.Process(target=self.serveforever, \
             args=(host, port, client_socket, verbose, queue, self.child_pipe)
             )
         # Store the multiprocess
@@ -168,7 +169,7 @@ class ThreadedSocketServer(SimpleWebSocketServer):
         # start the multi process
         server_proc.start()
 
-    def start_serveforever(self, host, port, socket=None, verbose=False, \
+    def serveforever(self, host, port, socket=None, verbose=False, \
         queue=None, child_pipe=None):
         '''
         Begin the parental start server. called by the multithreading
@@ -177,12 +178,19 @@ class ThreadedSocketServer(SimpleWebSocketServer):
         print 'serve on', host, port
         print 'internal ip:', get_local_ip()
         self.socket_bind(host or self.host, port or self.port)
-        self.serveforever()
+
+        while True:
+            self.serve_loop()
+        self.close()
 
     def start_wait(self, *args, **kwargs):
         self.start(*args, **kwargs)
         # serve the keyboard wait through the served method
         self.wait_serve()
+
+    def serve_loop(self):
+        self.loop_count += 1
+        super(ThreadedWebSocketServer, self).serve_loop()
 
     def wait_serve(self):
         '''
@@ -207,10 +215,8 @@ class ThreadedSocketServer(SimpleWebSocketServer):
                 print cprint(msg, 'green')
             sleep(.1)
 
-
     def terminate(self, process=None, error=None):
         # Terminate a multiprocess thread; i.e a client.
-        print 'Kill'
         self.pipe.send(['close'])
         self.close()
         process = self.multiprocess if process is None else process
@@ -225,18 +231,18 @@ class ThreadedSocketServer(SimpleWebSocketServer):
             self.queue.put(*args, **kwargs)
 
 
-class PocketServer(ThreadedSocketServer):
-    
+class PocketServer(ThreadedWebSocketServer):
+
     def __init__(self, host='127.0.0.1', port=8001, client_socket=None, \
         verbose=True, queue=None):
         super(PocketServer, self).__init__(host, port, client_socket, \
             verbose, queue)
 
-    def start_serveforever(self, *args, **kwargs):
+    def serveforever(self, *args, **kwargs):
         '''
         Begin the parental start server.
         '''
-        super(PocketServer, self).start_serveforever(*args, **kwargs)
+        super(PocketServer, self).serveforever(*args, **kwargs)
         print get_local_ip()
 
 
