@@ -475,9 +475,9 @@ class SocketClient(object):
             If data is a unicode object then the frame is sent as Text.
             If the data is a bytearray object then the frame is sent as Binary.
         """
-        opcode = BINARY
+        opcode = OPTION_CODE.BINARY
         if _check_unicode(data):
-            opcode = TEXT
+            opcode = OPTION_CODE.TEXT
         self._sendMessage(False, opcode, data)
 
     def _sendMessage(self, fin, opcode, data):
@@ -503,11 +503,13 @@ class SocketClient(object):
         elif length >= 126 and length <= 65535:
             b2 |= 126
             payload.append(b2)
+            # unasigned short
             payload.extend(struct.pack("!H", length))
 
         else:
             b2 |= 127
             payload.append(b2)
+            # unassigned long long
             payload.extend(struct.pack("!Q", length))
 
         if length > 0:
