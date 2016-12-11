@@ -68,6 +68,13 @@ class HTTPRequest(BaseHTTPRequestHandler):
         self.parse_request()
 
 
+def _check_unicode(val):
+    if VER >= 3:
+        return isinstance(val, str)
+    else:
+        return isinstance(val, unicode)
+
+
 class SocketClient(object):
     '''
     A client for the Connections
@@ -79,12 +86,35 @@ class SocketClient(object):
         self.headerbuffer = bytearray()
         self.sendq = deque()
         self.connected = False
-
+        self.closed = False
         self.state = STATE.HEADERB1
         self.frag_start = False
         self.frag_type = OPTION_CODE.BINARY
         self.frag_buffer = None
         self.frag_decoder = codecs.getincrementaldecoder('utf-8')(errors='strict')
+
+    def close(self, status, reason):
+        print 'client close', status, reason
+        """
+           Send Close frame to the client. The underlying socket is only closed
+           when the client acknowledges the Close frame.
+
+           status is the closing identifier.
+           reason is the reason for the close.
+        """
+        try:
+            if self.closed is False:
+                close_msg = bytearray()
+                close_msg.extend(struct.pack("!H", status))
+                if _check_unicode(reason):
+                    close_msg.extend(reason.encode('utf-8'))
+                else:
+                    close_msg.extend(reason)
+
+                self._sendMessage(False, OPTION_CODE.CLOSE, close_msg)
+
+        finally:
+            self.closed = True
 
     def handshake(self):
 
@@ -127,8 +157,6 @@ class SocketClient(object):
 
         self.connected = True
 
-        return self.socket, self.address
-
     def _handleData(self):
         # do the HTTP header and handshake
         if self.connected is False:
@@ -145,6 +173,9 @@ class SocketClient(object):
             else:
                 for d in data:
                     self._parseMessage(ord(d))
+
+    def handleError(self, msg, exc=None, client=None):
+        print 'Error:', msg, exc, client
 
     def _parseMessage(self, byte):
         # read in the header
@@ -436,6 +467,53 @@ class SocketClient(object):
                     raise e
 
         return None
+
+    def sendMessage(self, data):
+        """
+            Send websocket data frame to the client.
+
+            If data is a unicode object then the frame is sent as Text.
+            If the data is a bytearray object then the frame is sent as Binary.
+        """
+        opcode = BINARY
+        if _check_unicode(data):
+            opcode = TEXT
+        self._sendMessage(False, opcode, data)
+
+    def _sendMessage(self, fin, opcode, data):
+
+        payload = bytearray()
+
+        b1 = 0
+        b2 = 0
+        if fin is False:
+            b1 |= 0x80
+        b1 |= opcode
+
+        if _check_unicode(data):
+            data = data.encode('utf-8')
+
+        length = len(data)
+        payload.append(b1)
+
+        if length <= 125:
+            b2 |= length
+            payload.append(b2)
+
+        elif length >= 126 and length <= 65535:
+            b2 |= 126
+            payload.append(b2)
+            payload.extend(struct.pack("!H", length))
+
+        else:
+            b2 |= 127
+            payload.append(b2)
+            payload.extend(struct.pack("!Q", length))
+
+        if length > 0:
+            payload.extend(data)
+
+        self.sendq.append((opcode, payload))
 
     def __unicode__(self):
         return 'Client: %s' % self.address
