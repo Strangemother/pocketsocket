@@ -80,9 +80,8 @@ class SocketClient(object):
     A client for the Connections
     '''
 
-    def __init__(self, sock, address):
-        self.socket = sock
-        self.address = address
+    def __init__(self):#, sock, address):
+        self.address = None
         self.headerbuffer = bytearray()
         self.sendq = deque()
         self.connected = False
@@ -92,6 +91,18 @@ class SocketClient(object):
         self.frag_type = OPTION_CODE.BINARY
         self.frag_buffer = None
         self.frag_decoder = codecs.getincrementaldecoder('utf-8')(errors='strict')
+
+    def accept(self, socket):
+
+        sock, addr = socket.accept()
+        self.socket = sock
+        self.address = addr
+        print 'create_client', sock
+        fileno = sock.fileno()
+        sock.setblocking(0)
+        # TODO: Be websocket client
+        # client = SocketClient(sock, addr)
+        return fileno
 
     def close(self, status, reason):
         print 'client close', status, reason
@@ -160,6 +171,7 @@ class SocketClient(object):
     def _handleData(self):
         # do the HTTP header and handshake
         if self.connected is False:
+
             self.handshake()
         # else do normal data
         else:
