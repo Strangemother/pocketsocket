@@ -94,7 +94,7 @@ class ConnectionIteratorMixin(object):
                 continue
 
             client = connections[sock]
-
+            client._connection_id = sock
             if hasattr(client, 'sendq'):
                 r += (sock, )
         return r
@@ -137,7 +137,10 @@ class ConnectionIteratorMixin(object):
                     break
                 else:
                     if opcode == OPTION_CODES.CLOSE:
-                        raise Exception("received client close")
+                        print 'Closing socket'
+                        self.client_close(client, listeners, connections)
+                        # client.socket.close()
+                        # raise Exception("received client close")
 
     def read_list(self, rlist, listeners, connections):
         # list of clients to read from.
@@ -166,16 +169,17 @@ class ConnectionIteratorMixin(object):
         raise Exception('Socket close %s' % sock)
 
     def client_close(self, client, listeners, connections):
-        print 'close a client', client, dir(client)
+        print 'close a client', client
         if hasattr(client, 'socket'):
+            print 'closing socket'
             client.socket.close()
 
-        if client in listeners:
+        if client._connection_id in listeners:
             'Removing client from listeners'
-            listeners.remove(client)
-        if client in connections:
-            print 'deleting connection'
-            del connections[client]
+            listeners.remove(client._connection_id)
+        if client._connection_id in connections:
+            print 'deleting connection', client._connection_id
+            del connections[client._connection_id]
 
     def close(self, sock):
         sock.close()
