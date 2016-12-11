@@ -43,9 +43,6 @@ class SocketCreateMixin(object):
 
         listeners = self.bind_pairs(hosts, ports)
 
-        # TODO: Change this...
-        self._socket = listeners[0]
-
         return listeners
 
     def bind_pairs(self, hosts, ports):
@@ -74,16 +71,9 @@ class ConnectionIteratorMixin(object):
         '''
         return True
 
-    def select(self, listeners, writers):
-        '''
-        Using select system call return the waiting objects of the listeners.
-        https://docs.python.org/2/library/select.html#select.select
-        '''
-        timeout = 4
-
-        # time.sleep(.5)
-
-        # print '.',
+    def select(self, listeners, writers, timeout=None):
+        '''Using select system call return the waiting objects of the listeners.
+        https://docs.python.org/2/library/select.html#select.select'''
         return select(listeners, writers, listeners, timeout)
 
     def writers(self, listeners, connections):
@@ -112,7 +102,6 @@ class ConnectionIteratorMixin(object):
         while self.served():
             writers = self.writers(listeners, connections)
             # read, write, exception list
-
             rl, wl, xl = self.select(listeners, writers)
             for name, sl in zip(methods, (wl, rl, xl)):
                 getattr(self, name)(sl, listeners, connections)
@@ -139,17 +128,16 @@ class ConnectionIteratorMixin(object):
                     if opcode == OPTION_CODES.CLOSE:
                         print 'Closing socket'
                         self.client_close(client, listeners, connections)
-                        # client.socket.close()
-                        # raise Exception("received client close")
 
     def read_list(self, rlist, listeners, connections):
         # list of clients to read from.
         for sock in rlist:
-
-            if self.raw_socket_match(sock, listeners):
+            if self.raw_socket_match(sock, listeners, connections):
+                print '  Raw match accept'
+                # TODO: remove this from the internal logic; resolve
+                # before this method.
                 if isinstance(sock, long):
                     sock = connections[sock]
-                print '  Raw match accept'
                 client = self.accept_socket(sock, listeners, connections)
             else:
                 print '  Handle',
@@ -158,7 +146,7 @@ class ConnectionIteratorMixin(object):
 
     def fail_list(self, xlist, listeners, connections):
         for failed in xlist:
-            if self.raw_socket_match(failed, listeners):
+            if self.raw_socket_match(failed, listeners, connections):
                 self.exception_close(failed, listeners, connections)
             else:
                 self.client_close(failed, listeners, connections)
@@ -184,12 +172,24 @@ class ConnectionIteratorMixin(object):
     def close(self, sock):
         sock.close()
 
-    def raw_socket_match(self, client, listeners):
+    def raw_socket_match(self, client, listeners, connections):
         '''
         Determine if the given client is a server socket for clients.
         '''
-        if client == self._socket:
-            # if fileno == client:
+
+        # TODO: Get this removed by ensuring the client is resolved
+        # before hand.
+        if isinstance(client, long):
+            client = connections[client]
+
+        if isinstance(client, SocketClient):
+            ip, port = client.socket.getpeername()
+        else:
+            ip, port = client.getsockname()
+
+        # Check against any open IPS and ports for a true
+        # parent match. Given at listen() time.
+        if (ip in self.hosts) and (port in self.ports):
                 return True
         return False
 
@@ -203,28 +203,27 @@ class ConnectionIteratorMixin(object):
         # TODO: Wtf the eww.
         if isinstance(socket, SocketClient):
             print '  resocket', socket
-            sock, addr = socket.handshake()
+            socket.handshake()
             return socket
         else:
-            sock, addr = socket.accept()
-            print 'A socket accept', socket
-            fileno, client = self.create_client(sock, addr)
+            fileno, client = self.create_client(socket)
             print '  Socket:', client
-
             listeners.append(fileno)
             connections[fileno] = client
             return client
 
-    def create_client(self, sock, addr):
+    def create_client(self, socket):
         '''
         Create and return a new Websocket class and client.
         The client is appended to a list of receivers, handling in/out data.
         '''
-        print 'create_client', sock
-        fileno = sock.fileno()
-        sock.setblocking(0)
+        # sock, addr = socket.accept()
+        # print 'create_client', sock
+        # fileno = sock.fileno()
+        # sock.setblocking(0)
         # TODO: Be websocket client
-        client = SocketClient(sock, addr)
+        client = SocketClient()
+        fileno = client.accept(socket)
         return fileno, client
 
 
