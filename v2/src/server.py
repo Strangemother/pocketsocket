@@ -76,19 +76,6 @@ class ConnectionIteratorMixin(object):
         https://docs.python.org/2/library/select.html#select.select'''
         return select(listeners, writers, listeners, timeout)
 
-    def writers(self, listeners, connections):
-        r = tuple()
-        for sock in listeners:
-
-            if (sock in connections) is False:
-                continue
-
-            client = connections[sock]
-            client._connection_id = sock
-            if hasattr(client, 'sendq'):
-                r += (sock, )
-        return r
-
     def loop_forever(self, listeners):
         '''
         Start the server loop, forever receiving clients and serving
@@ -106,28 +93,54 @@ class ConnectionIteratorMixin(object):
             for name, sl in zip(methods, (wl, rl, xl)):
                 getattr(self, name)(sl, listeners, connections)
 
+    def writers(self, listeners, connections):
+        '''
+        Return a list of writers for the UNIX system select()
+            wlist: wait until ready for writing
+            If the socket is in the listeners, and does not exist in the
+            connections, the client is added to the write list.
+
+        '''
+
+        r = tuple()
+        for sock in listeners:
+
+            if (sock in connections) is False:
+                continue
+
+            client = connections[sock]
+            client.set_id(sock)
+            # client._connection_id = sock
+
+            if self.is_writable(client):
+                r += (sock, )
+        return r
+
+    def is_writable(self, sock):
+        '''
+        Determine if the socket is writable
+        Return boolean
+        '''
+        return hasattr(sock, 'writable') and sock.writable is True
+
     def write_list(self, wlist, listeners, connections):
         # Iterate write to client, Pushing client.sendq
         # data to the Websocket._sendBuffer
         client = None
 
-        for ready in wlist:
+        for fileno in wlist:
 
             #try:
-            client = connections[ready]
+            client = connections[fileno]
             # print 'write_list', ready, len(client.sendq), client
 
-            while client.sendq:
+            while client.has_data():
                 print 'write_list Sending payload:', client
-                opcode, payload = client.sendq.popleft()
-                remaining = client._sendBuffer(payload)
-                if remaining is not None:
-                    client.sendq.appendleft((opcode, remaining))
-                    break
-                else:
-                    if opcode == OPTION_CODES.CLOSE:
-                        print 'Closing socket'
-                        self.client_close(client, listeners, connections)
+                opcode, remaining = client._send_next_buffer()
+                print 'Next trip:', remaining
+                if opcode == OPTION_CODES.CLOSE:
+                    print 'Closing socket'
+                    self.client_close(client, listeners, connections)
 
     def read_list(self, rlist, listeners, connections):
         # list of clients to read from.

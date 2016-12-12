@@ -75,7 +75,39 @@ def _check_unicode(val):
         return isinstance(val, unicode)
 
 
-class SocketClient(object):
+class WriterSocketMixin(object):
+
+    writable = True
+
+    def has_data(self):
+        '''
+        Determine if the socket has any content to send, Returns true if the
+        socket queue has content, false if the queue length is 0;
+        '''
+        return len(self.sendq) > 0
+
+    def get_data(self):
+        # opcode, payload = client.sendq.popleft()
+        return self.sendq.popleft()
+
+    def _send_next_buffer(self):
+        opcode, payload = self.get_data()
+        remaining = self._sendBuffer(payload)
+        # Push the unsent content back into the send buffer
+        # for the next loop.
+        if remaining is not None:
+            client.sendq.appendleft((opcode, remaining))
+        return opcode, remaining
+
+
+class ServerIntegrationMixin(object):
+
+    def set_id(self, value):
+        self._connection_id = value
+
+
+
+class SocketClient(WriterSocketMixin, ServerIntegrationMixin):
     '''
     A client for the Connections
     '''
