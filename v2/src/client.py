@@ -48,6 +48,8 @@ else:
 class OPTION_CODE:
     '''
     An option code from the client stream
+
+    https://tools.ietf.org/html/rfc6455#page-29
     '''
     STREAM = 0x0
     TEXT = 0x1
@@ -81,57 +83,69 @@ class BufferMixin(object):
     writable = True
 
     def has_data(self):
-        '''
-        Determine if the socket has any content to send, Returns true if the
-        socket queue has content, false if the queue length is 0;
-        '''
+        ''' Determine if the socket has any content to send, Returns true if
+        the socket queue has content, false if the queue length is 0; '''
         return len(self.buffer_queue) > 0
 
-    def get_data(self):
+    def next_buffer(self):
         # opcode, payload = client.buffer_queue.popleft()
         return self.buffer_queue.popleft()
 
+    def add_buffer(self, opcode, data, top=False):
+        ''' Set the queue entry to the output buffer queue.
+        Provide `opcode<OPTION_CODE>` and `data`.
+        If `top` is True, the data is applied to the top
+        of the bugger queue. '''
+        v = (opcode, data)
+
+        if top is True:
+            self.buffer_queue.appendleft(v)
+        else:
+            self.buffer_queue.append(v)
+
+
     def loop_buffer(self):
         while self.has_data():
-            opcode, remaining = self._loop_next_buffer()
+            opcode, remaining = self._loop_send_buffer()
             if opcode == OPTION_CODE.CLOSE:
                 print 'BufferMixin.loop_buffer.CLOSE'
                 return opcode, remaining
         return True, 0
 
-    def _loop_next_buffer(self):
-        opcode, payload = self.get_data()
-        remaining = self._sendBuffer(payload)
+    def _loop_send_buffer(self):
+        opcode, payload = self.next_buffer()
+        remaining = self._send_payload(payload)
         # Push the unsent content back into the send buffer
         # for the next loop.
         if remaining is not None:
-            client.buffer_queue.appendleft((opcode, remaining))
+            # self.buffer_queue.appendleft((opcode, remaining))
+            self.add_buffer(opcode, remaining)
         return opcode, remaining
 
-    def _sendBuffer(self, buff):
-        size = len(buff)
-        tosend = size
-        already_sent = 0
+    def _send_payload(self, payload):
+        '''
+        Send the payload using `socket.send`. Iterate any chunk remaining
+        from the socket send result until nothing remains.
+        Returns the remaining amount <int> of payload. None if no payload content
+        remains
+        '''
+        remaining = len(payload)
+        total_sent = 0
 
-        print self, 'send', size
-        while tosend > 0:
+        while remaining > 0:
+            slice = payload[total_sent:]
             try:
                 # i should be able to send a bytearray
-                sent = self.socket.send(buff[already_sent:])
+                sent = self.socket.send(slice)
                 if sent == 0:
                     self.handleError("socket connection broken")
-
-                already_sent += sent
-                tosend -= sent
-
+                total_sent += sent
+                remaining -= sent
             except socket.error as e:
-                # if we have full buffers then wait for them to drain and try
-                # again
                 if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK]:
-                    return buff[already_sent:]
+                    return slice
                 else:
                     raise e
-
         return None
 
 class ServerIntegrationMixin(object):
@@ -140,18 +154,14 @@ class ServerIntegrationMixin(object):
         self._connection_id = value
 
     def accept(self, socket):
-        '''
-        Server has given a socket parent to accept this client on.
-        Return an identifier; the socket fileno.
-        '''
+        ''' Server has given a socket parent to accept this client on.
+        Return an identifier; the socket fileno. '''
         sock, addr = socket.accept()
         self.socket = sock
         self.address = addr
-        print 'create_client', sock
+        print 'create_client', addr
         fileno = sock.fileno()
         sock.setblocking(0)
-        # TODO: Be websocket client
-        # client = SocketClient(sock, addr)
         return fileno
 
     def getsockname(self):
@@ -181,10 +191,12 @@ class ServerIntegrationMixin(object):
         finally:
             self.closed = True
 
-    def handshake(self):
+    def start(self, server=None, listeners=None, connections=None):
 
         print '\nSocketClient.handshake', self
+        return self.handshake()
 
+    def handshake(self):
         # self.socket.accept()
         # Start handshake
         if self.connected is False:
@@ -205,20 +217,26 @@ class ServerIntegrationMixin(object):
         if (b'\r\n\r\n' in self.headerbuffer) is False:
             # Data is not complete. Wait until the buffer is complete
             return
+
         # Build a HTTP request with the finished data.
         request = HTTPRequest(self.headerbuffer)
-        print '  building handshake'
-        # handshake rfc 6455
-        key = request.headers['Sec-WebSocket-Key']
-        k = key.encode('ascii') + GUID_STR.encode('ascii')
-        k_s = base64.b64encode(hashlib.sha1(k).digest()).decode('ascii')
-        hStr = HANDSHAKE_STR % {'acceptstr': k_s}
-        v = (OPTION_CODE.BINARY, hStr.encode('ascii'))
+        response = self.handshake_response(request.headers)
+        v = (OPTION_CODE.BINARY, response)
         self.buffer_queue.append(v)
-        print '  size', len(self.buffer_queue)
-
         self.connected = True
         return self.connected
+
+    def handshake_response(self, headers):
+        # handshake rfc 6455
+        # print '  Headers: ', headers.keys()
+        key = headers['Sec-WebSocket-Key']
+        ascii_guid = GUID_STR.encode('ascii')
+        ascii_key = key.encode('ascii')
+        k = ascii_key + ascii_guid
+        sha_key = hashlib.sha1(k).digest()
+        k_s = base64.b64encode(sha_key).decode('ascii')
+        hStr = HANDSHAKE_STR % {'acceptstr': k_s}
+        return hStr.encode('ascii')
 
 
 class SocketClient(BufferMixin, ServerIntegrationMixin):
@@ -525,15 +543,22 @@ class SocketClient(BufferMixin, ServerIntegrationMixin):
             If data is a unicode object then the frame is sent as Text.
             If the data is a bytearray object then the frame is sent as Binary.
         """
-        opcode = OPTION_CODE.BINARY
-        if _check_unicode(data):
-            opcode = OPTION_CODE.TEXT
-        self._sendMessage(False, opcode, data)
+        self._sendMessage(False, None, data)
 
     def _sendMessage(self, fin, opcode, data):
+        op_payload = self._create_payload(data, opcode, fin)
+        self.buffer_queue.append(op_payload)
 
+    def _create_payload(self, data, opcode=None, fin=False):
+        '''
+        https://tools.ietf.org/html/rfc6455#page-28
+        '''
         payload = bytearray()
 
+        if opcode is None:
+            opcode = OPTION_CODE.BINARY
+            if _check_unicode(data):
+                opcode = OPTION_CODE.TEXT
         b1 = 0
         b2 = 0
         if fin is False:
@@ -565,12 +590,12 @@ class SocketClient(BufferMixin, ServerIntegrationMixin):
         if length > 0:
             payload.extend(data)
 
-        self.buffer_queue.append((opcode, payload))
+        return opcode, payload
 
     def __unicode__(self):
         return 'Client: %s' % self.address
 
     def __repr__(self):
-        s = u'<SocketClient "%s" Queue: %s>' % (self.address, len(self.buffer_queue))
+        s = u'<SocketClient "%s">' % (self.address)
         return s
 
