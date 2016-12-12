@@ -1,18 +1,7 @@
 import socket
 from select import select
-from client import SocketClient
-
-
-class OPTION_CODE:
-    '''
-    An option code from the client stream
-    '''
-    STREAM = 0x0
-    TEXT = 0x1
-    BINARY = 0x2
-    CLOSE = 0x8
-    PING = 0x9
-    PONG = 0xA
+from client import SocketClient, OPTION_CODE
+import errno
 
 
 def main():
@@ -21,35 +10,49 @@ def main():
     server.loop()
 
 
-def socket_bind(host='127.0.0.1', port=None):
+class Listener(socket.socket):
     '''
-    A server socket readied with a host and port.
+    A Listener is a socket, defined as a parental socket managing the
+    main open port for clients.
+
+    It's mainly written so it's easier to identify on the command line.
     '''
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.bind((host, port))
-    s.listen(5)
-    return s, host, port
+    def __repr__(self):
+        try:
+            name = 'peer'
+            pn = self.getpeername()
+        except socket.error as e:
+            # https://msdn.microsoft.com/en-us/library/windows/desktop/
+            # ms740668(v=vs.85).aspx
+            if e.errno in [errno.WSAENOTCONN]:
+                name = 'sock'
+                pn = self.getsockname()
+            else:
+                raise e
+        # import pdb; pdb.set_trace()  # breakpoint 5f2f3c04 //
+        return r'<Listener(socket.socket): %s %s>' % (name, pn, )
+
 
 
 class SocketCreateMixin(object):
 
+    ''' Class used to maintain a socket.
+    Wrapper to socket.socket
+    '''
+    socket_class = Listener
+
     def setup_listeners(self, host=None, port=None):
-        '''
-        Setup the internal listeners of the server.
-        '''
+        '''Setup the internal listeners of the server.'''
         hosts = (host,) if host is not None else self.hosts
         ports = (port,) if port is not None else self.ports
 
         listeners = self.bind_pairs(hosts, ports)
-
         return listeners
 
     def bind_pairs(self, hosts, ports):
-        '''
-        Given a list of hosts and ports of equal length, return a list of ready sockets
-        each with a uniqe host and port. Will call `self.create_socket`
-        '''
+        ''' Given a list of hosts and ports of equal length, return a list of
+        readysocketseach with a uniqe host and port. Will call
+        `self.create_socket`'''
         r = []
         for host, port in zip(hosts, ports):
             sock, h, p = self.create_socket(host, port)
@@ -60,15 +63,24 @@ class SocketCreateMixin(object):
         '''
         Create and return a ready bound socket using the given host and port.
         '''
-        return socket_bind(host, port)
+        return self.socket_bind(host, port, socket_class=Listener)
+
+    def socket_bind(host='127.0.0.1', port=None, socket_class=None):
+        '''A server socket readied with a host and port.
+        provide a socket class or socket.socket is used.'''
+        SocketClass = socket_class or socket.socket
+        s = SocketClass(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.bind((host, port))
+        s.listen(5)
+        return s, host, port
 
 
 class ConnectionIteratorMixin(object):
 
     def served(self):
         '''Return boolean if the the socket should be served.
-        Is used by the  service loop for each iteration.
-        '''
+        Is used by the  service loop for each iteration.'''
         return True
 
     def select(self, listeners, writers, timeout=None):
@@ -112,10 +124,7 @@ class ConnectionIteratorMixin(object):
         return r
 
     def is_writable(self, sock):
-        '''
-        Determine if the socket is writable
-        Return boolean
-        '''
+        ''' Determine if the socket is writable Return boolean'''
         return hasattr(sock, 'writable') and sock.writable is True
 
     def write_list(self, wlist, listeners, connections):
@@ -125,17 +134,12 @@ class ConnectionIteratorMixin(object):
             client = connections[fileno]
             opcode, remaining = client.loop_buffer()
             if opcode == OPTION_CODE.CLOSE:
-                #print 'Closing socket'
                 self.client_close(client, listeners, connections)
 
     def read_list(self, rlist, listeners, connections):
         # list of clients to read from.
         for sock in rlist:
             if self.raw_socket_match(sock, listeners, connections):
-                # TODO: remove this from the internal logic; resolve
-                # before this method.
-                if isinstance(sock, long):
-                    sock = connections[sock]
                 client = self.accept_socket(sock, listeners, connections)
             else:
                 client = connections[sock]
@@ -155,15 +159,19 @@ class ConnectionIteratorMixin(object):
     def client_close(self, client, listeners, connections):
         print 'close a client', client
         if hasattr(client, 'socket'):
-            print 'closing socket'
-            client.socket.close()
+            self.close(client.socket)
 
-        if client._connection_id in listeners:
-            'Removing client from listeners'
-            listeners.remove(client._connection_id)
-        if client._connection_id in connections:
-            print 'deleting connection', client._connection_id
-            del connections[client._connection_id]
+        _id = client._connection_id
+
+        if _id in listeners:
+            listeners.remove(_id)
+
+        if _id in connections:
+            del connections[_id]
+
+        del_con = (_id in connections) is False
+        del_lis = (_id in listeners) is False
+        return del_con and del_lis
 
     def close(self, sock):
         sock.close()
@@ -186,19 +194,25 @@ class ConnectionIteratorMixin(object):
                 return True
         return False
 
-    def accept_socket(self, socket, listeners, connections):
+    def accept_socket(self, sock, listeners, connections):
         '''
-        Accet the given socket and append to the connections and listeners
+        Accet the given sock and append to the connections and listeners
         for iteration.
         Returned is the client from `self.create_client`
         '''
 
+        # TODO: remove this from the internal logic; resolve
+        # before this method.
+        if isinstance(sock, long):
+            sock = connections[sock]
+
         # TODO: fix this, it's terrible
-        if isinstance(socket, SocketClient):
-            socket.handshake()
-            return socket
+        if isinstance(sock, SocketClient):
+            connected = sock.start(self, listeners, connections)
+            print 'connected %s: %s' % (sock, connected)
+            return sock
         else:
-            return self.add_socket(socket, listeners, connections)
+            return self.add_socket(sock, listeners, connections)
 
     def add_socket(self, sock, listeners, connections):
         ''' Add a socket to the connections and listeners sets.
@@ -235,7 +249,7 @@ class Server(SocketServer):
     '''
     The server handles the Service, Client and Config
     '''
-    pass
+
 
 
 if __name__ == '__main__':
