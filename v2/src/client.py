@@ -15,6 +15,7 @@ class STATE:
     MASK = 6
     PAYLOAD = 7
 
+CHUNK = 8192
 MAXHEADER = 65536
 MAXPAYLOAD = 33554432
 
@@ -75,7 +76,7 @@ def _check_unicode(val):
         return isinstance(val, unicode)
 
 
-class WriterSocketMixin(object):
+class BufferMixin(object):
 
     writable = True
 
@@ -84,48 +85,65 @@ class WriterSocketMixin(object):
         Determine if the socket has any content to send, Returns true if the
         socket queue has content, false if the queue length is 0;
         '''
-        return len(self.sendq) > 0
+        return len(self.buffer_queue) > 0
 
     def get_data(self):
-        # opcode, payload = client.sendq.popleft()
-        return self.sendq.popleft()
+        # opcode, payload = client.buffer_queue.popleft()
+        return self.buffer_queue.popleft()
 
-    def _send_next_buffer(self):
+    def loop_buffer(self):
+        while self.has_data():
+            opcode, remaining = self._loop_next_buffer()
+            if opcode == OPTION_CODE.CLOSE:
+                print 'BufferMixin.loop_buffer.CLOSE'
+                return opcode, remaining
+        return True, 0
+
+    def _loop_next_buffer(self):
         opcode, payload = self.get_data()
         remaining = self._sendBuffer(payload)
         # Push the unsent content back into the send buffer
         # for the next loop.
         if remaining is not None:
-            client.sendq.appendleft((opcode, remaining))
+            client.buffer_queue.appendleft((opcode, remaining))
         return opcode, remaining
 
+    def _sendBuffer(self, buff):
+        size = len(buff)
+        tosend = size
+        already_sent = 0
+
+        print self, 'send', size
+        while tosend > 0:
+            try:
+                # i should be able to send a bytearray
+                sent = self.socket.send(buff[already_sent:])
+                if sent == 0:
+                    self.handleError("socket connection broken")
+
+                already_sent += sent
+                tosend -= sent
+
+            except socket.error as e:
+                # if we have full buffers then wait for them to drain and try
+                # again
+                if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK]:
+                    return buff[already_sent:]
+                else:
+                    raise e
+
+        return None
 
 class ServerIntegrationMixin(object):
 
     def set_id(self, value):
         self._connection_id = value
 
-
-
-class SocketClient(WriterSocketMixin, ServerIntegrationMixin):
-    '''
-    A client for the Connections
-    '''
-
-    def __init__(self):#, sock, address):
-        self.address = None
-        self.headerbuffer = bytearray()
-        self.sendq = deque()
-        self.connected = False
-        self.closed = False
-        self.state = STATE.HEADERB1
-        self.frag_start = False
-        self.frag_type = OPTION_CODE.BINARY
-        self.frag_buffer = None
-        self.frag_decoder = codecs.getincrementaldecoder('utf-8')(errors='strict')
-
     def accept(self, socket):
-
+        '''
+        Server has given a socket parent to accept this client on.
+        Return an identifier; the socket fileno.
+        '''
         sock, addr = socket.accept()
         self.socket = sock
         self.address = addr
@@ -136,8 +154,13 @@ class SocketClient(WriterSocketMixin, ServerIntegrationMixin):
         # client = SocketClient(sock, addr)
         return fileno
 
+    def getsockname(self):
+        '''
+        Shim replacement to return the socketname of the internal socket.
+        '''
+        return self.socket.getpeername()
+
     def close(self, status, reason):
-        print 'client close', status, reason
         """
            Send Close frame to the client. The underlying socket is only closed
            when the client acknowledges the Close frame.
@@ -147,15 +170,14 @@ class SocketClient(WriterSocketMixin, ServerIntegrationMixin):
         """
         try:
             if self.closed is False:
+                print 'client close', status, reason
                 close_msg = bytearray()
                 close_msg.extend(struct.pack("!H", status))
                 if _check_unicode(reason):
                     close_msg.extend(reason.encode('utf-8'))
                 else:
                     close_msg.extend(reason)
-
                 self._sendMessage(False, OPTION_CODE.CLOSE, close_msg)
-
         finally:
             self.closed = True
 
@@ -183,10 +205,8 @@ class SocketClient(WriterSocketMixin, ServerIntegrationMixin):
         if (b'\r\n\r\n' in self.headerbuffer) is False:
             # Data is not complete. Wait until the buffer is complete
             return
-
         # Build a HTTP request with the finished data.
         request = HTTPRequest(self.headerbuffer)
-
         print '  building handshake'
         # handshake rfc 6455
         key = request.headers['Sec-WebSocket-Key']
@@ -194,29 +214,41 @@ class SocketClient(WriterSocketMixin, ServerIntegrationMixin):
         k_s = base64.b64encode(hashlib.sha1(k).digest()).decode('ascii')
         hStr = HANDSHAKE_STR % {'acceptstr': k_s}
         v = (OPTION_CODE.BINARY, hStr.encode('ascii'))
-        self.sendq.append(v)
-        print '  added to sendq',
-        print '  size', len(self.sendq)
+        self.buffer_queue.append(v)
+        print '  size', len(self.buffer_queue)
 
         self.connected = True
+        return self.connected
+
+
+class SocketClient(BufferMixin, ServerIntegrationMixin):
+    '''
+    A client for the Connections
+    '''
+
+    def __init__(self):#, sock, address):
+        self.address = None
+        self.headerbuffer = bytearray()
+        self.buffer_queue = deque()
+        self.connected = False
+        self.closed = False
+        self.state = STATE.HEADERB1
+        self.frag_start = False
+        self.frag_type = OPTION_CODE.BINARY
+        self.frag_buffer = None
+        self.frag_decoder = codecs.getincrementaldecoder('utf-8')(errors='strict')
+
 
     def _handleData(self):
-        # do the HTTP header and handshake
         if self.connected is False:
-
             self.handshake()
-        # else do normal data
         else:
-            data = self.socket.recv(8192)
+            data = self.socket.recv(CHUNK)
             if not data:
                 self.handleError("remote socket closed")
 
-            if VER >= 3:
-                for d in data:
-                    self._parseMessage(d)
-            else:
-                for d in data:
-                    self._parseMessage(ord(d))
+            for d in data:
+                self._parseMessage(d if VER >= 3 else ord(d))
 
     def handleError(self, msg, exc=None, client=None):
         print 'Error:', msg, exc, client
@@ -486,32 +518,6 @@ class SocketClient(WriterSocketMixin, ServerIntegrationMixin):
                     except Exception as exp:
                         self.handleError('invalid utf-8 payload', exp)
 
-    def _sendBuffer(self, buff):
-        size = len(buff)
-        tosend = size
-        already_sent = 0
-
-        print self, 'send', size
-        while tosend > 0:
-            try:
-                # i should be able to send a bytearray
-                sent = self.socket.send(buff[already_sent:])
-                if sent == 0:
-                    self.handleError("socket connection broken")
-
-                already_sent += sent
-                tosend -= sent
-
-            except socket.error as e:
-                # if we have full buffers then wait for them to drain and try
-                # again
-                if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK]:
-                    return buff[already_sent:]
-                else:
-                    raise e
-
-        return None
-
     def sendMessage(self, data):
         """
             Send websocket data frame to the client.
@@ -559,12 +565,12 @@ class SocketClient(WriterSocketMixin, ServerIntegrationMixin):
         if length > 0:
             payload.extend(data)
 
-        self.sendq.append((opcode, payload))
+        self.buffer_queue.append((opcode, payload))
 
     def __unicode__(self):
         return 'Client: %s' % self.address
 
     def __repr__(self):
-        s = u'<SocketClient "%s" Queue: %s>' % (self.address, len(self.sendq))
+        s = u'<SocketClient "%s" Queue: %s>' % (self.address, len(self.buffer_queue))
         return s
 
