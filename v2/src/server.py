@@ -33,7 +33,6 @@ class Listener(socket.socket):
         return r'<Listener(socket.socket): %s %s>' % (name, pn, )
 
 
-
 class SocketCreateMixin(object):
 
     ''' Class used to maintain a socket.
@@ -63,9 +62,9 @@ class SocketCreateMixin(object):
         '''
         Create and return a ready bound socket using the given host and port.
         '''
-        return self.socket_bind(host, port, socket_class=Listener)
+        return self.socket_bind(host, port, socket_class=self.socket_class)
 
-    def socket_bind(host='127.0.0.1', port=None, socket_class=None):
+    def socket_bind(self, host='127.0.0.1', port=None, socket_class=None):
         '''A server socket readied with a host and port.
         provide a socket class or socket.socket is used.'''
         SocketClass = socket_class or socket.socket
