@@ -596,6 +596,6 @@ class SocketClient(BufferMixin, ServerIntegrationMixin):
         return 'Client: %s' % self.address
 
     def __repr__(self):
-        s = u'<SocketClient "%s">' % (self.address)
+        s = u'<SocketClient "%s">' % (self.address, )
         return s
 
