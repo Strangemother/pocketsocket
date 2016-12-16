@@ -148,6 +148,7 @@ class BufferMixin(object):
                     raise e
         return None
 
+
 class ServerIntegrationMixin(object):
 
     def set_id(self, value):
@@ -239,7 +240,85 @@ class ServerIntegrationMixin(object):
         return hStr.encode('ascii')
 
 
-class SocketClient(BufferMixin, ServerIntegrationMixin):
+class WebsocketBinaryPayloadMixin(object):
+
+    def create_websocket_payload(self, data, opcode=None, fin=False):
+        '''
+        https://tools.ietf.org/html/rfc6455#page-28
+        '''
+        payload = bytearray()
+
+        b1 = 0
+        b2 = 0
+        if fin is False:
+            b1 |= 0x80
+        b1 |= opcode
+
+        if _check_unicode(data):
+            data = data.encode('utf-8')
+
+        length = len(data)
+        payload.append(b1)
+
+        if length <= 125:
+            b2 |= length
+            payload.append(b2)
+
+        elif length >= 126 and length <= 65535:
+            b2 |= 126
+            payload.append(b2)
+            # unasigned short
+            payload.extend(struct.pack("!H", length))
+
+        else:
+            b2 |= 127
+            payload.append(b2)
+            # unassigned long long
+            payload.extend(struct.pack("!Q", length))
+
+        if length > 0:
+            payload.extend(data)
+
+        return payload
+
+
+class StateHandler(object):
+
+    states = None
+
+    def get_current_state(self):
+        return self._current_state
+
+    def set_current_state(self, v):
+        if v != self._current_state:
+            self.change_state(v)
+        self._current_state = v
+
+    def change_state(self, value):
+        ''''''
+        print 'state', value
+        if getattr(self.states, value) is not None:
+            print 'found', value
+
+    def call_state(self, *args, **kw):
+        '''
+        Call the state driven current method with the
+        args and kwargs supplied
+        '''
+        c = self.current_state
+        a = getattr(self.states, c)
+        f = getattr(self, a)
+        if callable(f):
+            r = f(*args, **kw)
+        return r
+
+    current_state = property(get_current_state, set_current_state)
+
+
+class SocketClient(BufferMixin,
+                   WebsocketBinaryPayloadMixin,
+                   ServerIntegrationMixin,
+                   StateHandler):
     '''
     A client for the Connections
     '''
@@ -255,7 +334,6 @@ class SocketClient(BufferMixin, ServerIntegrationMixin):
         self.frag_type = OPTION_CODE.BINARY
         self.frag_buffer = None
         self.frag_decoder = codecs.getincrementaldecoder('utf-8')(errors='strict')
-
 
     def _handleData(self):
         if self.connected is False:
@@ -416,7 +494,7 @@ class SocketClient(BufferMixin, ServerIntegrationMixin):
 
             # if length exceeds allowable size then we except and remove the
             # connection
-            if len(self.data) >=MAXPAYLOAD:
+            if len(self.data) >= MAXPAYLOAD:
                 self.handleError('payload exceeded allowable size')
 
             # check if we have processed length bytes; if so we are done
@@ -553,42 +631,12 @@ class SocketClient(BufferMixin, ServerIntegrationMixin):
         '''
         https://tools.ietf.org/html/rfc6455#page-28
         '''
-        payload = bytearray()
+        payload = self.create_websocket_payload(data, opcode, fin)
 
         if opcode is None:
             opcode = OPTION_CODE.BINARY
             if _check_unicode(data):
                 opcode = OPTION_CODE.TEXT
-        b1 = 0
-        b2 = 0
-        if fin is False:
-            b1 |= 0x80
-        b1 |= opcode
-
-        if _check_unicode(data):
-            data = data.encode('utf-8')
-
-        length = len(data)
-        payload.append(b1)
-
-        if length <= 125:
-            b2 |= length
-            payload.append(b2)
-
-        elif length >= 126 and length <= 65535:
-            b2 |= 126
-            payload.append(b2)
-            # unasigned short
-            payload.extend(struct.pack("!H", length))
-
-        else:
-            b2 |= 127
-            payload.append(b2)
-            # unassigned long long
-            payload.extend(struct.pack("!Q", length))
-
-        if length > 0:
-            payload.extend(data)
 
         return opcode, payload
 
@@ -598,4 +646,3 @@ class SocketClient(BufferMixin, ServerIntegrationMixin):
     def __repr__(self):
         s = u'<SocketClient "%s">' % (self.address, )
         return s
-
