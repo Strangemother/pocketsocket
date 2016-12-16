@@ -26,7 +26,10 @@ class Listener(socket.socket):
             # ms740668(v=vs.85).aspx
             if e.errno in [errno.WSAENOTCONN]:
                 name = 'sock'
-                pn = self.getsockname()
+                try:
+                    pn = self.getsockname()
+                except socket.error as e:
+                    pn = 'unknown'
             else:
                 raise e
         # import pdb; pdb.set_trace()  # breakpoint 5f2f3c04 //
@@ -76,6 +79,8 @@ class SocketCreateMixin(object):
 
 
 class ConnectionIteratorMixin(object):
+
+    client_class = SocketClient
 
     def served(self):
         '''Return boolean if the the socket should be served.
@@ -206,7 +211,7 @@ class ConnectionIteratorMixin(object):
             sock = connections[sock]
 
         # TODO: fix this, it's terrible
-        if isinstance(sock, SocketClient):
+        if isinstance(sock, self.get_client_class()):
             connected = sock.start(self, listeners, connections)
             print 'connected %s: %s' % (sock, connected)
             return sock
@@ -226,13 +231,20 @@ class ConnectionIteratorMixin(object):
         Create and return a new Websocket class and client.
         The client is appended to a list of receivers, handling in/out data.
         '''
-        client = SocketClient()
+        Client = self.get_client_class()
+        client = Client()
         fileno = client.accept(socket)
         return fileno, client
 
+    def get_client_class(self):
+        return self.client_class
 
-class SocketServer(SocketCreateMixin, ConnectionIteratorMixin):
-    # Open a server socket, bind and listen for connection
+
+class Server(SocketCreateMixin, ConnectionIteratorMixin):
+    '''
+    Open a server socket, bind and listen for connection
+    The server handles the Service, Client and Config
+    '''
 
     def setup(self, host, port):
         self.hosts = (host,)
@@ -243,13 +255,12 @@ class SocketServer(SocketCreateMixin, ConnectionIteratorMixin):
     def loop(self):
         self.loop_forever(self.listeners)
 
-
-class Server(SocketServer):
-    '''
-    The server handles the Service, Client and Config
-    '''
-
-
+    def start(self, *args, **kw):
+        '''
+        Perform setup and start
+        '''
+        self.setup(*args)
+        self.loop()
 
 if __name__ == '__main__':
     main()
