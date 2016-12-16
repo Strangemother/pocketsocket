@@ -4,4 +4,5 @@
 * [Configure](configure/README.md)
 * [Running](running/README.md)
 * [Architecture](architecture/README.md)
+* [Server](server/README.md)
 
