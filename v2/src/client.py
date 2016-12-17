@@ -414,79 +414,42 @@ class StateManager(object):
 
     state_class = None
     caller = None
+    caller_format = "{0}_state"
 
-    def __init__(self, state=None, *args, **kwargs):
+    def __init__(self, state=None, caller_format=None, *args, **kwargs):
         self.init_args = args
         self.init_kw = kwargs
+        self.caller_format = caller_format or self.caller_format
         self.state_class = kwargs.get('state_class', self.state_class)
         self.caller = kwargs.get('caller', self.caller)
+        self._caller = partial(self.caller, self)
         self.set_state(state)
         # super(cls, self).__init__(*args, **kwargs)
 
     def call(self, *args, **kw):
-        print "Call StateManager", args
-        self.caller(self._state, *args, **kw)
-
+        # print "Call StateManager", args
+        self._caller(*args, **kw)
 
     def set_state(self, state):
         '''
         Given a state value set the state for the next call to the
         StateManger.call
         '''
+
+
+        # v = States.key_value(self.state_class, state)
         v = self.state_class.key_value(state)
-        print 'StateManager.set_state', state, v
+        print 'set_state', v
         self._state = v
 
-class SocketClient(BufferMixin, WebsocketBinaryPayloadMixin, ServerIntegrationMixin, StateHandler, CloseStateMixin):
-    '''
-    A client for the Connections
-    '''
 
-    states = {x: '{0}_state'.format(x.lower()) for x in OPTION_CODE.keys()}
-
-    def __init__(self):#, sock, address):
-        self.address = None
-        self.headerbuffer = bytearray()
-        self.buffer_queue = deque()
-        self.connected = False
-        self.closed = False
-        self.state = STATE.HEADERB1
-        self.frag_start = False
-        self.frag_type = OPTION_CODE.BINARY
-        self.frag_buffer = None
-        self.frag_decoder = codecs.getincrementaldecoder('utf-8')(errors='strict')
-
-        self._state_manager = StateManager(STATE.HEADERB1, state_class=STATE, caller=self._site_manager_call)
-
-    def _site_manager_call(self, state, *args, **kw):
-
-        name = '{0}_state'.format(state.lower())
-        # headerb2_state
-        f = getattr(self, name, None)
-
-        v = None
-        if f is not None:
-            v = f(*args, **kw)
-        return v
-
-    def _handleData(self):
-        if self.connected is False:
-            self.handshake()
-        else:
-            data = self.socket.recv(CHUNK)
-            if not data:
-                self.handleError("remote socket closed")
-
-            for d in data:
-                self._parseMessage(d if VER >= 3 else ord(d))
-
-    def handleError(self, msg, exc=None, client=None):
-        print 'Error:', msg, exc, client
+class SocketStates(StateHandler):
 
     def headerb1_state(self, byte):
 
         self.fin = byte & 0x80
         self.opcode = byte & 0x0F
+        self._opcode_manager.set_state(byte & 0x0F)
         self.state = STATE.HEADERB2
         self._state_manager.set_state(STATE.HEADERB2)
         self.index = 0
@@ -657,181 +620,89 @@ class SocketClient(BufferMixin, WebsocketBinaryPayloadMixin, ServerIntegrationMi
         else:
             self.index += 1
 
-    def _parseMessage(self, byte):
 
-        self._state_manager.call(byte)
+class OpcodeStates(StateHandler):
 
-        return
-        # read in the header
-        if self.state == STATE.HEADERB1:
+    def text_opcode(self, data):
+        print 'TEXT:', data
 
-            self.fin = byte & 0x80
-            self.opcode = byte & 0x0F
-            self.state = STATE.HEADERB2
-            self._state_manager.set_state(STATE.HEADERB2)
-            self.index = 0
-            self.length = 0
-            self.lengtharray = bytearray()
-            self.data = bytearray()
 
-            rsv = byte & 0x70
-            if rsv != 0:
-                self.handleError('RSV bit must be 0')
+from functools import partial
 
-        elif self.state == STATE.HEADERB2:
 
-            mask = byte & 0x80
-            length = byte & 0x7F
+class SocketClient(BufferMixin, WebsocketBinaryPayloadMixin, ServerIntegrationMixin, SocketStates, OpcodeStates, CloseStateMixin):
+    '''
+    A client for the Connections
+    '''
 
-            if self.opcode == OPTION_CODE.PING and length > 125:
-                self.handleError('ping packet is too large')
+    states = {x: '{0}_state'.format(x.lower()) for x in OPTION_CODE.keys()}
 
-            if mask == 128:
-                self.hasmask = True
-            else:
-                self.hasmask = False
+    def __init__(self):#, sock, address):
+        self.address = None
+        self.headerbuffer = bytearray()
+        self.buffer_queue = deque()
+        self.connected = False
+        self.closed = False
+        self.state = STATE.HEADERB1
+        self.frag_start = False
+        self.frag_type = OPTION_CODE.BINARY
+        self.frag_buffer = None
+        self.frag_decoder = codecs.getincrementaldecoder('utf-8')(errors='strict')
 
-            if length <= 125:
-                self.length = length
+        _state_caller = self.default_caller
+        _opcode_caller = self.default_caller
 
-                # if we have a mask we must read it
-                if self.hasmask is True:
-                    self.maskarray = bytearray()
-                    self.state = STATE.MASK
-                else:
-                    # if there is no mask and no payload we are done
-                    if self.length <= 0:
-                        try:
-                            self._handlePacket()
-                        finally:
-                            self.state = self.STATE.HEADERB1
-                            self.data = bytearray()
+        self._state_manager = StateManager(STATE.HEADERB1,
+                                           state_class=STATE,
+                                           caller=_state_caller,
+                                           caller_format='{0}_state'
+                                           )
 
-                    # we have no mask and some payload
-                    else:
-                        #self.index = 0
-                        self.data = bytearray()
-                        self.state = STATE.PAYLOAD
+        self._opcode_manager = StateManager(state_class=OPTION_CODE,
+                                           caller=_opcode_caller,
+                                           caller_format='{0}_opcode'
+                                           )
 
-            elif length == 126:
-                self.lengtharray = bytearray()
-                self.state = STATE.LENGTHSHORT
+    def default_caller(self, manager, *args, **kw):
+        name = manager.caller_format.format(manager._state.lower())
+        # headerb2_state
+        print 'caller', manager,name
+        f = getattr(self, name, None)
 
-            elif length == 127:
-                self.lengtharray = bytearray()
-                self.state = STATE.LENGTHLONG
+        v = None
+        if f is not None:
+            v = f(*args, **kw)
+        return v
 
-        elif self.state == STATE.LENGTHSHORT:
-            self.lengtharray.append(byte)
+    def _handleData(self):
+        if self.connected is False:
+            self.handshake()
+        else:
+            data = self.socket.recv(CHUNK)
+            if not data:
+                self.handleError("remote socket closed")
 
-            if len(self.lengtharray) > 2:
-                self.handleError('short length exceeded allowable size')
+            for d in data:
+                self._handle_byte(d if VER >= 3 else ord(d))
 
-            if len(self.lengtharray) == 2:
-                self.length = struct.unpack_from('!H', self.lengtharray)[0]
+    def handleError(self, msg, exc=None, client=None):
+        print 'Error:', msg, exc, client
 
-                if self.hasmask is True:
-                    self.maskarray = bytearray()
-                    self.state = STATE.MASK
-                else:
-                    # if there is no mask and no payload we are done
-                    if self.length <= 0:
-                        try:
-                            self._handlePacket()
-                        finally:
-                            self.state = STATE.HEADERB1
-                            self.data = bytearray()
-
-                    # we have no mask and some payload
-                    else:
-                        #self.index = 0
-                        self.data = bytearray()
-                        self.state = STATE.PAYLOAD
-
-        elif self.state == STATE.LENGTHLONG:
-
-            self.lengtharray.append(byte)
-
-            if len(self.lengtharray) > 8:
-                self.handleError('long length exceeded allowable size')
-
-            if len(self.lengtharray) == 8:
-                self.length = struct.unpack_from('!Q', self.lengtharray)[0]
-
-                if self.hasmask is True:
-                    self.maskarray = bytearray()
-                    self.state = STATE.MASK
-                else:
-                    # if there is no mask and no payload we are done
-                    if self.length <= 0:
-                        try:
-                            self._handlePacket()
-                        finally:
-                            self.state = STATE.HEADERB1
-                            self.data = bytearray()
-
-                    # we have no mask and some payload
-                    else:
-                        #self.index = 0
-                        self.data = bytearray()
-                        self.state = STATE.PAYLOAD
-
-        # STATE.MASK STATE
-        elif self.state == STATE.MASK:
-            self.maskarray.append(byte)
-
-            if len(self.maskarray) > 4:
-                self.handleError('mask exceeded allowable size')
-
-            if len(self.maskarray) == 4:
-                # if there is no mask and no payload we are done
-                if self.length <= 0:
-                    try:
-                        self._handlePacket()
-                    finally:
-                        self.state = STATE.HEADERB1
-                        self.data = bytearray()
-
-                # we have no mask and some payload
-                else:
-                    #self.index = 0
-                    self.data = bytearray()
-                    self.state = STATE.PAYLOAD
-
-        # STATE.PAYLOAD STATE
-        elif self.state == STATE.PAYLOAD:
-            if self.hasmask is True:
-                self.data.append(byte ^ self.maskarray[self.index % 4])
-            else:
-                self.data.append(byte)
-
-            # if length exceeds allowable size then we except and remove the
-            # connection
-            if len(self.data) >= MAXPAYLOAD:
-                self.handleError('payload exceeded allowable size')
-
-            # check if we have processed length bytes; if so we are done
-            if (self.index+1) == self.length:
-                try:
-                    self._handlePacket()
-                finally:
-                    #self.index = 0
-                    self.state = STATE.HEADERB1
-                    self.data = bytearray()
-            else:
-                self.index += 1
+    def _handle_byte(self, byte):
+        return self._state_manager.call(byte)
 
     def _handlePacket(self):
 
         name = OPTION_CODE.key_value(self.opcode)
-        print 'Packet state', name
+        print 'opcode state', name
+        self._opcode_manager.call(self.data)
 
         if self.opcode == OPTION_CODE.CLOSE:
             pass
         elif self.opcode == OPTION_CODE.STREAM:
             pass
         elif self.opcode == OPTION_CODE.TEXT:
-            print 'DATA:', self.data
+            print 'OLD:', self.data
         elif self.opcode == OPTION_CODE.BINARY:
             pass
         elif self.opcode == OPTION_CODE.PONG or self.opcode == OPTION_CODE.PING:
