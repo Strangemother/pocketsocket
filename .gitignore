@@ -168,3 +168,4 @@ docs/_book/gitbook/
 pocketsocket.sublime-workspace
 *.sublime-project
 docs/_book/
+.pythoscope/
