@@ -1,5 +1,11 @@
-import struct
+'''
+    https://developer.mozilla.org
+    /en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
+    #Decoding_Payload_Length
 
+'''
+
+import struct
 
 from client import SocketClient
 from server import Server
@@ -59,21 +65,44 @@ class WebsocketBinaryPayloadMixin(object):
 
 class SocketStates(StateHandler):
 
-    def headerb1_state(self, byte):
-
-        self.fin = byte & 0x80
-        self.opcode = byte & 0x0F
-        self._opcode_manager.set_state(byte & 0x0F)
-        # self.state = STATE.HEADERB2
-        self._state_manager.set_state(STATE.HEADERB2)
+    def reset_data_pointers(self, state=None):
+        ''' re-initialize all the init variables, dropping data
+        packets and fragements'''
         self.index = 0
         self.length = 0
         self.lengtharray = bytearray()
+        self.reset_data_state(state)
+
+    def reset_data_state(self, state=None):
         self.data = bytearray()
+        self._state_manager.set_state(state or STATE.HEADERB1)
+
+    def set_mask_state(self):
+        '''Reset the maskarray and set as MASK'''
+        self.maskarray = bytearray()
+        self._state_manager.set_state(STATE.MASK)
+
+    def headerb1_state(self, byte):
+        self.reset_data_pointers(STATE.HEADERB2)
+        self.fin = byte & 0x80
+        self.opcode = byte & 0x0F
+        self._opcode_manager.set_state(byte & 0x0F)
 
         rsv = byte & 0x70
         if rsv != 0:
             self.handleError('RSV bit must be 0')
+
+    def process_or_step(self):
+        ''' Process the data if the packet is complete, else
+        change the header state to PAYLOAD and containue (wait for the
+        next incoming packet '''
+        # if there is no mask and no payload we are done
+        if self.length <= 0:
+            r = self.process_payload_packet()
+        # we have no mask and some payload
+        else:
+            r = self.reset_data_state(STATE.PAYLOAD)
+        return r
 
     def headerb2_state(self, byte):
         mask = byte & 0x80
@@ -86,42 +115,14 @@ class SocketStates(StateHandler):
 
         if length <= 125:
             self.length = length
-
-            # if we have a mask we must read it
-            if self.hasmask is True:
-                self.maskarray = bytearray()
-                # self.state = STATE.MASK
-                self._state_manager.set_state(STATE.MASK)
-            else:
-                # if there is no mask and no payload we are done
-                if self.length <= 0:
-                    try:
-                        self._handlePacket()
-                    finally:
-                        # self.state = STATE.HEADERB1
-                        # self._state_manager.set_state(STATE.HEADERB1)
-                        # self.data = bytearray()
-                        self.reset_data_state()
-                # we have no mask and some payload
-                else:
-                    #self.index = 0
-                    self.data = bytearray()
-                    # self.state = STATE.PAYLOAD
-                    self._state_manager.set_state(STATE.PAYLOAD)
-
-        elif length == 126:
+            self.mask_process_step()
+        else:
+            hm = {
+                126: STATE.LENGTHSHORT,
+                127: STATE.LENGTHLONG,
+                }
             self.lengtharray = bytearray()
-            # self.state = STATE.LENGTHSHORT
-            self._state_manager.set_state(STATE.LENGTHSHORT)
-
-        elif length == 127:
-            self.lengtharray = bytearray()
-            # self.state = STATE.LENGTHLONG
-            self._state_manager.set_state(STATE.LENGTHLONG)
-
-    def reset_data_state(self):
-        self._state_manager.set_state(STATE.HEADERB1)
-        self.data = bytearray()
+            self._state_manager.set_state(hm[length])
 
     def lengthshort_state(self, byte):
         self.lengtharray.append(byte)
@@ -131,28 +132,16 @@ class SocketStates(StateHandler):
 
         if len(self.lengtharray) == 2:
             self.length = struct.unpack_from('!H', self.lengtharray)[0]
+            self.mask_process_step()
 
-            if self.hasmask is True:
-                self.maskarray = bytearray()
-                # self.state = STATE.MASK
-                self._state_manager.set_state(STATE.MASK)
-            else:
-                # if there is no mask and no payload we are done
-                if self.length <= 0:
-                    try:
-                        self._handlePacket()
-                    finally:
-                        # self.state = STATE.HEADERB1
-                        # self._state_manager.set_state(STATE.HEADERB1)
-                        # self.data = bytearray()
-                        self.reset_data_state()
-
-                # we have no mask and some payload
-                else:
-                    #self.index = 0
-                    self.data = bytearray()
-                    # self.state = STATE.PAYLOAD
-                    self._state_manager.set_state(STATE.PAYLOAD)
+    def mask_process_step(self):
+        '''Perform set_mask_state if a mask exists, exist call process_or_step
+        '''
+        if self.hasmask is True:
+            r = self.set_mask_state()
+        else:
+            r = self.process_or_step()
+        return r
 
     def lengthlong_state(self, byte):
         self.lengtharray.append(byte)
@@ -162,27 +151,7 @@ class SocketStates(StateHandler):
 
         if len(self.lengtharray) == 8:
             self.length = struct.unpack_from('!Q', self.lengtharray)[0]
-
-            if self.hasmask is True:
-                self.maskarray = bytearray()
-                # self.state = STATE.MASK
-                self._state_manager.set_state(STATE.MASK)
-            else:
-                # if there is no mask and no payload we are done
-                if self.length <= 0:
-                    try:
-                        self._handlePacket()
-                    finally:
-                        # self.state = STATE.HEADERB1
-                        # self._state_manager.set_state(STATE.HEADERB1)
-                        # self.data = bytearray()
-                        self.reset_data_state()
-                # we have no mask and some payload
-                else:
-                    #self.index = 0
-                    self.data = bytearray()
-                    # self.state = STATE.PAYLOAD
-                    self._state_manager.set_state(STATE.PAYLOAD)
+            self.mask_process_step()
 
     def mask_state(self, byte):
         self.maskarray.append(byte)
@@ -191,46 +160,28 @@ class SocketStates(StateHandler):
             self.handleError('mask exceeded allowable size')
 
         if len(self.maskarray) == 4:
-            # if there is no mask and no payload we are done
-            if self.length <= 0:
-                try:
-                    self._handlePacket()
-                finally:
-                    # self.state = STATE.HEADERB1
-                    # self._state_manager.set_state(STATE.HEADERB1)
-                    # self.data = bytearray()
-                    self.reset_data_state()
-            # we have no mask and some payload
-            else:
-                #self.index = 0
-                self.data = bytearray()
-                # self.state = STATE.PAYLOAD
-                self._state_manager.set_state(STATE.PAYLOAD)
+            self.process_or_step()
 
     def processed_length(self):
         # check if we have processed length bytes; if so we are done
         return (self.index+1) == self.length
 
     def payload_state(self, byte):
-
+        '''
+            https://developer.mozilla.org
+            /en-US/docs/Web/API/WebSockets_API/Writing_WebSocket_servers
+            #Reading_and_Unmasking_the_Data
+        '''
         d = byte
         if self.hasmask is True:
             d = byte ^ self.maskarray[self.index % 4]
         self.data.append(d)
 
-        # if length exceeds allowable size then we except and remove the
-        # connection
         if len(self.data) >= MAXPAYLOAD:
             self.handleError('payload exceeded allowable size')
+
         if self.processed_length():
-            try:
-                self._handlePacket()
-            finally:
-                #self.index = 0
-                # self.state = STATE.HEADERB1
-                # self._state_manager.set_state(STATE.HEADERB1)
-                # self.data = bytearray()
-                self.reset_data_state()
+            self.process_payload_packet()
         else:
             self.index += 1
 
@@ -238,7 +189,7 @@ class SocketStates(StateHandler):
 class OpcodeStates(StateHandler):
 
     def text_opcode(self, data):
-        print 'TEXT:', data
+        pass
 
     def close_opcode(self, data):
         status = 1000
@@ -281,14 +232,17 @@ class OpcodeStates(StateHandler):
 
 
 class WebsocketClient(SocketClient,
-    SocketStates,
-    OpcodeStates,
-    WebsocketBinaryPayloadMixin):
-    pass
+                      SocketStates,
+                      OpcodeStates,
+                      WebsocketBinaryPayloadMixin):
+
+    def text_opcode(self, data):
+        print 'TEXT:', data
 
 
 class WebsocketServer(Server):
     client_class = WebsocketClient
+
 
 if __name__ == '__main__':
     main()
