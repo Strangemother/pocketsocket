@@ -1,0 +1,3 @@
+nosetests
+websocket-client
+smpq
