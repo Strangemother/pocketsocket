@@ -64,7 +64,7 @@ class SocketStates(StateHandler):
         self.fin = byte & 0x80
         self.opcode = byte & 0x0F
         self._opcode_manager.set_state(byte & 0x0F)
-        self.state = STATE.HEADERB2
+        # self.state = STATE.HEADERB2
         self._state_manager.set_state(STATE.HEADERB2)
         self.index = 0
         self.length = 0
@@ -82,10 +82,7 @@ class SocketStates(StateHandler):
         if self.opcode == OPTION_CODE.PING and length > 125:
             self.handleError('ping packet is too large')
 
-        if mask == 128:
-            self.hasmask = True
-        else:
-            self.hasmask = False
+        self.hasmask = True if mask == 128 else False
 
         if length <= 125:
             self.length = length
@@ -93,7 +90,7 @@ class SocketStates(StateHandler):
             # if we have a mask we must read it
             if self.hasmask is True:
                 self.maskarray = bytearray()
-                self.state = STATE.MASK
+                # self.state = STATE.MASK
                 self._state_manager.set_state(STATE.MASK)
             else:
                 # if there is no mask and no payload we are done
@@ -101,27 +98,30 @@ class SocketStates(StateHandler):
                     try:
                         self._handlePacket()
                     finally:
-                        self.state = STATE.HEADERB1
-                        self._state_manager.set_state(STATE.HEADERB1)
-
-                        self.data = bytearray()
-
+                        # self.state = STATE.HEADERB1
+                        # self._state_manager.set_state(STATE.HEADERB1)
+                        # self.data = bytearray()
+                        self.reset_data_state()
                 # we have no mask and some payload
                 else:
                     #self.index = 0
                     self.data = bytearray()
-                    self.state = STATE.PAYLOAD
+                    # self.state = STATE.PAYLOAD
                     self._state_manager.set_state(STATE.PAYLOAD)
 
         elif length == 126:
             self.lengtharray = bytearray()
-            self.state = STATE.LENGTHSHORT
+            # self.state = STATE.LENGTHSHORT
             self._state_manager.set_state(STATE.LENGTHSHORT)
 
         elif length == 127:
             self.lengtharray = bytearray()
-            self.state = STATE.LENGTHLONG
+            # self.state = STATE.LENGTHLONG
             self._state_manager.set_state(STATE.LENGTHLONG)
+
+    def reset_data_state(self):
+        self._state_manager.set_state(STATE.HEADERB1)
+        self.data = bytearray()
 
     def lengthshort_state(self, byte):
         self.lengtharray.append(byte)
@@ -134,7 +134,7 @@ class SocketStates(StateHandler):
 
             if self.hasmask is True:
                 self.maskarray = bytearray()
-                self.state = STATE.MASK
+                # self.state = STATE.MASK
                 self._state_manager.set_state(STATE.MASK)
             else:
                 # if there is no mask and no payload we are done
@@ -142,15 +142,16 @@ class SocketStates(StateHandler):
                     try:
                         self._handlePacket()
                     finally:
-                        self.state = STATE.HEADERB1
-                        self._state_manager.set_state(STATE.HEADERB1)
-                        self.data = bytearray()
+                        # self.state = STATE.HEADERB1
+                        # self._state_manager.set_state(STATE.HEADERB1)
+                        # self.data = bytearray()
+                        self.reset_data_state()
 
                 # we have no mask and some payload
                 else:
                     #self.index = 0
                     self.data = bytearray()
-                    self.state = STATE.PAYLOAD
+                    # self.state = STATE.PAYLOAD
                     self._state_manager.set_state(STATE.PAYLOAD)
 
     def lengthlong_state(self, byte):
@@ -164,7 +165,7 @@ class SocketStates(StateHandler):
 
             if self.hasmask is True:
                 self.maskarray = bytearray()
-                self.state = STATE.MASK
+                # self.state = STATE.MASK
                 self._state_manager.set_state(STATE.MASK)
             else:
                 # if there is no mask and no payload we are done
@@ -172,15 +173,15 @@ class SocketStates(StateHandler):
                     try:
                         self._handlePacket()
                     finally:
-                        self.state = STATE.HEADERB1
-                        self._state_manager.set_state(STATE.HEADERB1)
-                        self.data = bytearray()
-
+                        # self.state = STATE.HEADERB1
+                        # self._state_manager.set_state(STATE.HEADERB1)
+                        # self.data = bytearray()
+                        self.reset_data_state()
                 # we have no mask and some payload
                 else:
                     #self.index = 0
                     self.data = bytearray()
-                    self.state = STATE.PAYLOAD
+                    # self.state = STATE.PAYLOAD
                     self._state_manager.set_state(STATE.PAYLOAD)
 
     def mask_state(self, byte):
@@ -195,15 +196,15 @@ class SocketStates(StateHandler):
                 try:
                     self._handlePacket()
                 finally:
-                    self.state = STATE.HEADERB1
-                    self._state_manager.set_state(STATE.HEADERB1)
-                    self.data = bytearray()
-
+                    # self.state = STATE.HEADERB1
+                    # self._state_manager.set_state(STATE.HEADERB1)
+                    # self.data = bytearray()
+                    self.reset_data_state()
             # we have no mask and some payload
             else:
                 #self.index = 0
                 self.data = bytearray()
-                self.state = STATE.PAYLOAD
+                # self.state = STATE.PAYLOAD
                 self._state_manager.set_state(STATE.PAYLOAD)
 
     def payload_state(self, byte):
@@ -223,9 +224,10 @@ class SocketStates(StateHandler):
                 self._handlePacket()
             finally:
                 #self.index = 0
-                self.state = STATE.HEADERB1
-                self._state_manager.set_state(STATE.HEADERB1)
-                self.data = bytearray()
+                # self.state = STATE.HEADERB1
+                # self._state_manager.set_state(STATE.HEADERB1)
+                # self.data = bytearray()
+                self.reset_data_state()
         else:
             self.index += 1
 
@@ -267,9 +269,7 @@ class OpcodeStates(StateHandler):
             self.handleError('control frame length can not be > 125')
 
     def ping_opcode(self, data):
-        '''
-        Ping send pong
-        '''
+        ''' Ping send pong '''
         self.pong_opcode(data)
         self._sendMessage(False, OPTION_CODE.PONG, data)
 
