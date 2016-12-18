@@ -22,7 +22,6 @@ CHUNK = 8192
 GUID_STR = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11'
 
 
-
 class ServerIntegrationMixin(object):
 
     connected = None
@@ -98,6 +97,7 @@ class BufferMixin(object):
             opcode, remaining = self._loop_send_buffer()
             if opcode == OPTION_CODE.CLOSE:
                 print 'BufferMixin.loop_buffer.CLOSE'
+                self.close(opcode, 'Client closed early')
                 return opcode, remaining
         return True, 0
 
@@ -192,17 +192,17 @@ class BufferMixin(object):
             self.handle_byte_chunk(data, size=CHUNK, socket=self.socket)
 
     def handle_byte_chunk(self, data, size=None, socket=None):
-        for d in data:
-            v = (d if VER >= 3 else ord(d))
+        pass
+        # for d in data:
+        #     v = (d if VER >= 3 else ord(d))
 
     def process_payload_packet(self):
         try:
             self._handlePacket()
+        except Exception as e:
+            print '\nHandle packet Error', e
+            raise e
         finally:
-            # self.index = 0
-            # self.state = STATE.HEADERB1
-            # self._state_manager.set_state(STATE.HEADERB1)
-            # self.data = bytearray()
             self.reset_data_state()
 
 
@@ -331,11 +331,21 @@ class ConnectionIteratorMixin(object):
         raise Exception('Socket close %s' % sock)
 
     def client_close(self, client, listeners, connections):
-        print 'close a client', client
+
+        _id = None
+
         if hasattr(client, 'socket'):
             self.close(client.socket)
+        elif isinstance(client, long):
+            v = connections.get(client, None)
+            print '!! Long instance ', v
+            if v is None:
+                _id = client
+            else:
+                client = v
 
-        _id = client._connection_id
+        if _id is None:
+            _id = client._connection_id
 
         if _id in listeners:
             listeners.remove(_id)
@@ -350,15 +360,30 @@ class ConnectionIteratorMixin(object):
     def close(self, sock):
         sock.close()
 
-    def raw_socket_match(self, client, listeners, connections):
+    def resolve_client(self, client, listeners, connections):
         '''
-        Determine if the given client is a server socket for clients.
+        Given an object or long return a client.
         '''
 
         # TODO: Get this removed by ensuring the client is resolved
         # before hand.
+
         if isinstance(client, long):
-            client = connections[client]
+            try:
+                client = connections[client]
+            except KeyError:
+                # Client is missing
+                print 'Client death'
+                deleted = self.client_close(client, listeners, connections)
+                if deleted:
+                    return None
+        return client
+
+    def raw_socket_match(self, client, listeners, connections):
+        '''
+        Determine if the given client is a server socket for clients.
+        '''
+        client = self.resolve_client(client, listeners, connections)
 
         ip, port = client.getsockname()
 
@@ -374,11 +399,7 @@ class ConnectionIteratorMixin(object):
         for iteration.
         Returned is the client from `self.create_client`
         '''
-
-        # TODO: remove this from the internal logic; resolve
-        # before this method.
-        if isinstance(sock, long):
-            sock = connections[sock]
+        sock = self.resolve_client(sock, listeners, connections)
 
         # TODO: fix this, it's terrible
         if isinstance(sock, self.get_client_class()):
