@@ -85,7 +85,7 @@ class SocketStates(StateHandler):
     def headerb1_state(self, byte):
         self.reset_data_pointers(STATE.HEADERB2)
         self.fin = byte & 0x80
-        self.opcode = byte & 0x0F
+        # self.opcode = byte & 0x0F
         self._opcode_manager.set_state(byte & 0x0F)
 
         rsv = byte & 0x70
@@ -107,8 +107,9 @@ class SocketStates(StateHandler):
     def headerb2_state(self, byte):
         mask = byte & 0x80
         length = byte & 0x7F
+        opcode = self._opcode_manager.get_state()
 
-        if self.opcode == OPTION_CODE.PING and length > 125:
+        if length > 125 and opcode == OPTION_CODE.PING:
             self.handleError('ping packet is too large')
 
         self.hasmask = True if mask == 128 else False
