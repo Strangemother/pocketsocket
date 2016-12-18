@@ -195,6 +195,16 @@ class BufferMixin(object):
         for d in data:
             v = (d if VER >= 3 else ord(d))
 
+    def process_payload_packet(self):
+        try:
+            self._handlePacket()
+        finally:
+            # self.index = 0
+            # self.state = STATE.HEADERB1
+            # self._state_manager.set_state(STATE.HEADERB1)
+            # self.data = bytearray()
+            self.reset_data_state()
+
 
 class SocketCreateMixin(object):
 

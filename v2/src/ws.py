@@ -207,19 +207,22 @@ class SocketStates(StateHandler):
                 # self.state = STATE.PAYLOAD
                 self._state_manager.set_state(STATE.PAYLOAD)
 
+    def processed_length(self):
+        # check if we have processed length bytes; if so we are done
+        return (self.index+1) == self.length
+
     def payload_state(self, byte):
+
+        d = byte
         if self.hasmask is True:
-            self.data.append(byte ^ self.maskarray[self.index % 4])
-        else:
-            self.data.append(byte)
+            d = byte ^ self.maskarray[self.index % 4]
+        self.data.append(d)
 
         # if length exceeds allowable size then we except and remove the
         # connection
         if len(self.data) >= MAXPAYLOAD:
             self.handleError('payload exceeded allowable size')
-
-        # check if we have processed length bytes; if so we are done
-        if (self.index+1) == self.length:
+        if self.processed_length():
             try:
                 self._handlePacket()
             finally:
