@@ -84,19 +84,17 @@ class SocketClient(BufferMixin, ServerIntegrationMixin):
 
     def _handlePacket(self):
 
-        name = OPTION_CODE.key_value(self.opcode)
-        print 'opcode state', name
         called = self._opcode_manager.call(self.data)
-
+        opcode = self._opcode_manager.get_state()
         if called is False:
             self.handleError('unknown opcode')
 
         if self.fin == 0:
-            if self.opcode != OPTION_CODE.STREAM:
-                if self.opcode in [OPTION_CODE.PING, OPTION_CODE.PONG]:
+            if opcode != OPTION_CODE.STREAM:
+                if opcode in [OPTION_CODE.PING, OPTION_CODE.PONG]:
                     self.handleError('control messages can not be fragmented')
 
-                self.frag_type = self.opcode
+                self.frag_type = opcode
                 self.frag_start = True
                 self.frag_decoder.reset()
 
@@ -121,7 +119,7 @@ class SocketClient(BufferMixin, ServerIntegrationMixin):
                     self.frag_buffer.extend(self.data)
 
         else:
-            if self.opcode == OPTION_CODE.STREAM:
+            if opcode == OPTION_CODE.STREAM:
                 if self.frag_start is False:
                     self.handleError('fragmentation protocol error')
 
@@ -144,7 +142,7 @@ class SocketClient(BufferMixin, ServerIntegrationMixin):
                 if self.frag_start is True:
                     self.handleError('fragmentation protocol error')
 
-                if self.opcode == OPTION_CODE.TEXT:
+                if opcode == OPTION_CODE.TEXT:
                     try:
                         self.data = self.data.decode('utf8', errors='strict')
                     except Exception as exp:
