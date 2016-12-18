@@ -157,3 +157,6 @@ class StateManager(object):
         # v = States.key_value(self.state_class, state)
         v = self.state_class.key_value(state)
         self._state = v
+
+    def get_state(self):
+        return getattr(self.state_class, self._state)
