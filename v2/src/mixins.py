@@ -197,13 +197,8 @@ class BufferMixin(object):
         #     v = (d if VER >= 3 else ord(d))
 
     def process_payload_packet(self):
-        try:
-            self._handlePacket()
-        except Exception as e:
-            print '\nHandle packet Error', e
-            raise e
-        finally:
-            self.reset_data_state()
+        self._handlePacket()
+        self.reset_data_state()
 
 
 class SocketCreateMixin(object):
@@ -314,10 +309,11 @@ class ConnectionIteratorMixin(object):
         # list of clients to read from.
         for sock in rlist:
             if self.raw_socket_match(sock, listeners, connections):
-                client = self.accept_socket(sock, listeners, connections)
+                self.accept_socket(sock, listeners, connections)
             else:
-                client = connections[sock]
-                client.read()
+                c = self.resolve_client(sock, listeners, connections)
+                if c is not None:
+                    c.read()
 
     def fail_list(self, xlist, listeners, connections):
         for failed in xlist:
@@ -385,6 +381,8 @@ class ConnectionIteratorMixin(object):
         '''
         client = self.resolve_client(client, listeners, connections)
 
+        if client is None:
+            return False
         ip, port = client.getsockname()
 
         # Check against any open IPS and ports for a true
