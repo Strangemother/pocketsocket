@@ -2,6 +2,8 @@ import os
 import json
 from optparse import OptionParser
 
+DEFAULT_HOSTS = ("127.0.0.1",)
+DEFAULT_PORTS = (8009, )
 
 parser = OptionParser()
 parser.add_option("-q", "--quiet",
@@ -24,7 +26,7 @@ parsed = parser.parse_args()
 
 
 def verbosity():
-  return parsed[0].verbose
+    return parsed[0].verbose
 
 
 def auto_discover(**kw):
@@ -35,8 +37,6 @@ def auto_discover(**kw):
     settings = dict(
             hosts=tuple(),
             ports=tuple(),
-            host='127.0.0.1',
-            port=8009,
         )
 
     # JSON
@@ -66,6 +66,15 @@ def auto_discover(**kw):
         settings['hosts'] += (kwh, )
     if kwp is not None:
         settings['ports'] += (kwp, )
+
+    if getattr(settings, 'host', None) is None and \
+       len(settings.get('hosts', tuple())) == 0:
+        settings['hosts'] = DEFAULT_HOSTS
+
+    if getattr(settings, 'port', None) is None and \
+       len(settings.get('ports', tuple())) == 0:
+        settings['ports'] = DEFAULT_PORTS
+
     return settings
 
 
@@ -78,17 +87,11 @@ def json_data(json_path):
 
 
 class SettingsMixin(object):
-    '''
-    Provide settings from config points.
-    '''
+    ''' Provide settings from config points.'''
+
     def configure(self, *args, **kw):
-        '''
-        Configure the server
-
-        Inline ip and port are most important.
-
-            configure('127.0.0.1', port=8001, host='', port=-1)
-        '''
+        ''' Configure the server. Inline ip and port are most important.
+            configure('127.0.0.1', port=8001, host='', port=-1) '''
 
         host = kw.get('host', None)
         port = kw.get('port', None)
