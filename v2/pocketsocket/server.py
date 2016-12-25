@@ -1,43 +1,13 @@
 
 from mixins import SocketCreateMixin, ConnectionIteratorMixin
 from client import OPTION_CODE, SocketClient, Listener
-from settings import auto_discover
+from settings import auto_discover, SettingsMixin
 
 
 def main():
     server = Server()
     server.setup('127.0.0.1', 8009)
     server.loop()
-
-
-class SettingsMixin(object):
-    '''
-    Provide settings from config points.
-    '''
-    def configure(self, *args, **kw):
-        '''
-        Configure the server
-
-        Inline ip and port are most important.
-
-            configure('127.0.0.1', port=8001, host='', port=-1)
-        '''
-
-        host = kw.get('host', None)
-        port = kw.get('port', None)
-
-        if len(args) == 2:
-            host, port = args
-        elif len(args) == 1:
-            port = args[0]
-
-        v = auto_discover(host=host, port=port, **kw)
-        return v
-
-    def inherit_attributes(self, keys):
-        hp = {x: self.settings.get(x, None) for x in keys}
-        for x in hp:
-            setattr(self, x, hp[x])
 
 
 class Server(SocketCreateMixin, SettingsMixin, ConnectionIteratorMixin):
