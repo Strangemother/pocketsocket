@@ -19,7 +19,7 @@ MAXPAYLOAD = 33554432
 
 
 def main():
-    settings = {}# auto_discover(**{})
+    settings = {}
     server = WebsocketServer(settings=settings)
     server.start()
 
@@ -293,13 +293,12 @@ class OpcodeStates(StateHandler):
 
 
 class Client(WebsocketBinaryPayloadMixin,
-                      SocketStates,
-                      OpcodeStates,
-                      SocketClient
-                      ):
+             SocketStates,
+             OpcodeStates,
+             SocketClient
+             ):
 
     def binary_opcode(self, data):
-        log('Binary:', data)
         self.recv_binary(data)
         self.recv(data, type=OPTION_CODE.BINARY)
 
@@ -331,8 +330,7 @@ class Client(WebsocketBinaryPayloadMixin,
 
 class WebsocketServer(Server):
     ''' Basic instance of a server, instansiating ws.Client for
-    socket clients
-    '''
+    socket clients '''
     client_class = Client
 
 

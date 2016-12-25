@@ -144,8 +144,7 @@ class SocketClient(BufferMixin, PayloadMixin, ServerIntegrationMixin):
         return self.frag_decoder.decode(data, final=final)
 
     def sendMessage(self, data, opcode=None):
-        """
-            Send websocket data frame to the client.
+        """Send websocket data frame to the client.
 
             If data is a unicode object then the frame is sent as Text.
             If the data is a bytearray object then the frame is sent as Binary.
