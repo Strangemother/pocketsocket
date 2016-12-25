@@ -54,14 +54,18 @@ class ServerIntegrationMixin(object):
            reason is the reason for the close.
         """
         try:
-            if self.closed is False:
-                logw('Client close', status, reason)
-                close_msg = bytearray()
-                close_msg.extend(struct.pack("!H", status))
-                if _check_unicode(reason):
-                    close_msg.extend(reason.encode('utf-8'))
-                else:
-                    close_msg.extend(reason)
+            if self.closed is True:
+                return
+
+            logw('Client close', status, reason)
+            close_msg = bytearray()
+            close_msg.extend(struct.pack("!H", status))
+
+            is_uni = _check_unicode(reason)
+            s = reason.encode('utf-8') if is_uni else reason
+
+            close_msg.extend(s)
+            if is_uni is False:
                 self._sendMessage(False, OPTION_CODE.CLOSE, close_msg)
         finally:
             self.closed = True
@@ -430,10 +434,10 @@ class ConnectionIteratorMixin(object):
         The client is appended to a list of receivers, handling in/out data.
         '''
         Client = self.get_client_class()
-        log('Create Client', Client)
         client = Client()
         client.connected = False
         fileno = client.accept(socket)
+        log('Create Client', client)
         return fileno, client
 
     def get_client_class(self):
