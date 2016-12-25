@@ -13,12 +13,23 @@ config = dict(port='9002')
 server = Server(**config)
 ```
 
+You can make this neater by providing a `settings` object. It's a great way to load auto discovered settings:
+
+```py
+from pocketsocket.ws import WebsocketServer
+from pocketsocket.settings import auto_discover
+
+settings = auto_discover(**{})
+server = WebsocketServer(settings=settings)
+server.start()
+```
+
 ## JSON
 
 Provide your settings with the use of a JSON config.
 
 ```bash
-$> python -m pocketsocket.server --config=./settings.json
+$> python -m pocketsocket.ws --settings=./settings.json
 ```
 
 ## CLI
@@ -26,15 +37,7 @@ $> python -m pocketsocket.server --config=./settings.json
 All parameters are available as command line arguments
 
 ```bash
-$> python -m pocketsocket.server --port=9002
-``` 
-
-This will work with your own script
-
-```py
-from pocketsocket import Server, get_config
-
-server = Server(get_config())
+$> python -m pocketsocket.ws --port=9002
 ```
 
-This will detect and resolve the config using any of the above examples.
+

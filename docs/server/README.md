@@ -13,7 +13,7 @@ Created listeners [<Listener(socket.socket): sock ('127.0.0.1', 8009)>]
 
 Are you're ready! Configurations are done through a config file or CLI arguments.
 
-Unlike standard server solutions, a new client connection is handled by the `SocketClient` or your chose Client class. This offsets all the protocol management to your Client class.
+A new client connection is handled by the `SocketClient` or your chose Client class. This offsets all the protocol management to your Client class.
 
 ### Writing your own
 
