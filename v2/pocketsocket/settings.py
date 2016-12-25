@@ -101,6 +101,7 @@ class SettingsMixin(object):
         elif len(args) == 1:
             port = args[0]
 
+
         v = auto_discover(host=host, port=port, **kw)
         return v
 

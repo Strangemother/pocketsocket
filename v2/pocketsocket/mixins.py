@@ -201,8 +201,7 @@ class BufferMixin(object):
 
 class SocketCreateMixin(object):
     ''' Class used to maintain a socket.
-    Wrapper to socket.socket
-    '''
+    Wrapper to socket.socket '''
     socket_class = None
 
     def setup_listeners(self, hosts=None, ports=None, **kw):
@@ -450,7 +449,7 @@ class Fragment(object):
     _type = None
 
     def __init__(self, _type, **kwargs):
-        self.frag_decoder = codecs.getincrementaldecoder('utf-8')(errors='strict')
+        # self.frag_decoder = codecs.getincrementaldecoder('utf-8')(errors='strict')
         self.frag_buffer = []
         self.type = _type
 

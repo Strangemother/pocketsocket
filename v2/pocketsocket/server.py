@@ -19,7 +19,7 @@ class Server(SocketCreateMixin, SettingsMixin, ConnectionIteratorMixin):
     socket_class = Listener
 
     def __init__(self, *args, **kw):
-        self._init_settings = kw
+        self._init_settings = kw.get('settings', {})
         self.listeners = []
         self.settings = None
         # super(cls, self).__init__(*args, **kwargs)
@@ -37,8 +37,10 @@ class Server(SocketCreateMixin, SettingsMixin, ConnectionIteratorMixin):
 
     def start(self, *args, **kw):
         ''' Perform setup and start '''
+        self._init_settings.update(kw)
         if self.settings is None:
-            self.setup(**kw)
+            self.setup(**self._init_settings)
+
         self.loop()
 
 

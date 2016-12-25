@@ -24,6 +24,11 @@ def main():
     server.start()
 
 
+def main_2():
+    server = Server(client_class=Client, settings={'settings': './settings.json'})
+    server.start()
+
+
 class WebsocketBinaryPayloadMixin(object):
 
     def handle_payload(self):
@@ -335,4 +340,4 @@ class WebsocketServer(Server):
 
 
 if __name__ == '__main__':
-    main()
+    main_2()

@@ -6,6 +6,8 @@ This project was designed in extension of `SimpleWebsocketServer` (_A supplied V
 
 ## Getting started
 
+Pocket Socket is built for ease. 
+
 > Documentation is Alpha and written prior to the release.
 
 Install Pocket Socket using `pip`
