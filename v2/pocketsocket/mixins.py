@@ -8,7 +8,7 @@ import struct
 from http import HTTPRequest
 from utils import VER,  _check_unicode
 from states import OPTION_CODE, STATE
-
+from logger import log, loge, logw
 
 HANDSHAKE_STR = (
     "HTTP/1.1 101 Switching Protocols\r\n"
@@ -55,7 +55,7 @@ class ServerIntegrationMixin(object):
         """
         try:
             if self.closed is False:
-                print 'client close', status, reason
+                logw('Client close', status, reason)
                 close_msg = bytearray()
                 close_msg.extend(struct.pack("!H", status))
                 if _check_unicode(reason):
@@ -96,7 +96,7 @@ class BufferMixin(object):
         while self.has_data():
             opcode, remaining = self._loop_send_buffer()
             if opcode == OPTION_CODE.CLOSE:
-                print 'BufferMixin.loop_buffer.CLOSE'
+                log('BufferMixin.loop_buffer.CLOSE')
                 self.close(opcode, 'Client closed early')
                 return opcode, remaining
         return True, 0
@@ -138,25 +138,23 @@ class BufferMixin(object):
         return None
 
     def start(self, server=None, listeners=None, connections=None):
-
         print '\nSocketClient.handshake', self
         return self.handshake()
 
     def handshake(self):
-        # self.socket.accept()
         # Start handshake
         if self.connected is False:
             data = self.socket.recv(2048)
 
             if not data:
-                print '  Received no data. SocketClosed'
+                loge('Received no data. SocketClosed')
                 return False
 
         # accumulate
         self.headerbuffer.extend(data)
 
         if len(self.headerbuffer) >= MAXHEADER:
-            print '  header exceeded allowable size'
+            loge('Header exceeded allowable size')
             return False
 
         # indicates end of HTTP header
@@ -174,7 +172,6 @@ class BufferMixin(object):
 
     def handshake_response(self, headers):
         # handshake rfc 6455
-        # print '  Headers: ', headers.keys()
         key = headers['Sec-WebSocket-Key']
         ascii_guid = GUID_STR.encode('ascii')
         ascii_key = key.encode('ascii')
@@ -208,15 +205,15 @@ class SocketCreateMixin(object):
     '''
     socket_class = None
 
-    def setup_listeners(self, host=None, port=None):
+    def setup_listeners(self, hosts=None, ports=None, **kw):
         '''Setup the internal listeners of the server.'''
-        hosts = (host,) if host is not None else self.hosts
-        ports = (port,) if port is not None else self.ports
+        hosts = hosts or tuple()
+        ports = ports or tuple()
 
-        listeners = self.bind_pairs(hosts, ports)
+        listeners = self.bind_pairs(hosts, ports, **kw)
         return listeners
 
-    def bind_pairs(self, hosts, ports):
+    def bind_pairs(self, hosts, ports, **kw):
         ''' Given a list of hosts and ports of equal length, return a list of
         readysocketseach with a uniqe host and port. Will call
         `self.create_socket`'''
@@ -226,13 +223,13 @@ class SocketCreateMixin(object):
             r.append(sock)
         return r
 
-    def create_socket(self, host=None, port=None):
+    def create_socket(self, host=None, port=None, **kw):
         '''
         Create and return a ready bound socket using the given host and port.
         '''
-        return self.socket_bind(host, port, socket_class=self.socket_class)
+        return self.socket_bind(host, port, socket_class=self.socket_class, **kw)
 
-    def socket_bind(self, host='127.0.0.1', port=None, socket_class=None):
+    def socket_bind(self, host='127.0.0.1', port=None, socket_class=None, **kw):
         '''A server socket readied with a host and port.
         provide a socket class or socket.socket is used.'''
         SocketClass = socket_class or socket.socket
@@ -240,12 +237,17 @@ class SocketCreateMixin(object):
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind((host, port))
         s.listen(5)
+        from logger import log
+
+        # l = logging.getLogger('SocketLog')
+        log('Listen on', host, port)
         return s, host, port
 
 
 class ConnectionIteratorMixin(object):
 
     client_class = None
+    methods = ('write_list', 'read_list', 'fail_list', )
 
     def served(self):
         '''Return boolean if the the socket should be served.
@@ -265,13 +267,22 @@ class ConnectionIteratorMixin(object):
         # Clients in service
         connections = {}
 
-        methods = ('write_list', 'read_list', 'fail_list', )
-        while self.served():
-            writers = self.writers(listeners, connections)
-            # read, write, exception list
-            rl, wl, xl = self.select(listeners, writers)
-            for name, sl in zip(methods, (wl, rl, xl)):
-                getattr(self, name)(sl, listeners, connections)
+        self._loop_with_interrupt(listeners, connections)
+
+    def _loop_with_interrupt(self, listeners, connections):
+
+        try:
+            while self.served():
+                self._loop_methods(self.methods, listeners, connections)
+        except KeyboardInterrupt:
+            log('--- Keyboard shutdown')
+
+    def _loop_methods(self, methods, listeners, connections):
+        writers = self.writers(listeners, connections)
+        # read, write, exception list
+        rl, wl, xl = self.select(listeners, writers)
+        for name, sl in zip(methods, (wl, rl, xl)):
+            getattr(self, name)(sl, listeners, connections)
 
     def writers(self, listeners, connections):
         '''
@@ -334,7 +345,6 @@ class ConnectionIteratorMixin(object):
             self.close(client.socket)
         elif isinstance(client, long):
             v = connections.get(client, None)
-            print '!! Long instance ', v
             if v is None:
                 _id = client
             else:
@@ -369,7 +379,7 @@ class ConnectionIteratorMixin(object):
                 client = connections[client]
             except KeyError:
                 # Client is missing
-                print 'Client death'
+                logw('resolve_client: Client death')
                 deleted = self.client_close(client, listeners, connections)
                 if deleted:
                     return None
@@ -402,7 +412,6 @@ class ConnectionIteratorMixin(object):
         # TODO: fix this, it's terrible
         if isinstance(sock, self.get_client_class()):
             connected = sock.start(self, listeners, connections)
-            print 'connected %s: %s' % (sock, connected)
             return sock
         else:
             return self.add_socket(sock, listeners, connections)
@@ -421,7 +430,7 @@ class ConnectionIteratorMixin(object):
         The client is appended to a list of receivers, handling in/out data.
         '''
         Client = self.get_client_class()
-        print 'create', Client
+        log('Create Client', Client)
         client = Client()
         client.connected = False
         fileno = client.accept(socket)
@@ -429,3 +438,40 @@ class ConnectionIteratorMixin(object):
 
     def get_client_class(self):
         return self.client_class
+
+
+class Fragment(object):
+    '''
+    Byte array builder
+    '''
+    _type = None
+
+    def __init__(self, _type, **kwargs):
+        self.frag_decoder = codecs.getincrementaldecoder('utf-8')(errors='strict')
+        self.frag_buffer = []
+        self.type = _type
+
+    def add(self, data):
+        '''
+        Push data to the working fragment
+        '''
+
+        if self.type == OPTION_CODE.TEXT:
+            self.frag_buffer = []
+            utf_str = self.frag_decoder.decode(self.data, final=False)
+            if utf_str:
+                self.frag_buffer.append(utf_str)
+        else:
+            self.frag_buffer = bytearray()
+            self.frag_buffer.extend(self.data)
+
+    def get_type(self):
+        return self._type
+
+    def set_type(self, v):
+        self._type = v
+
+    type = property(get_type, set_type)
+
+class FragmentMixin(object):
+    pass

@@ -1,3 +1,4 @@
 nosetests
 websocket-client
 smpq
+twine

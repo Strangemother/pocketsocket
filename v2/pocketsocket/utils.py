@@ -8,3 +8,6 @@ def _check_unicode(val):
         return isinstance(val, str)
     else:
         return isinstance(val, unicode)
+
+def _is_text(t):
+    return isinstance(t, (unicode, str, ) )

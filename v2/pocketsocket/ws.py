@@ -11,24 +11,84 @@ from client import SocketClient
 from server import Server
 from states import States, StateHandler, StateManager, OPTION_CODE, STATE, _VALID_STATUS_CODES
 from utils import _check_unicode
+from settings import auto_discover
+from logger import log
 
 
 MAXPAYLOAD = 33554432
 
 
 def main():
-    server = WebsocketServer()
-    server.start('127.0.0.1', 8009)
+    settings = {}# auto_discover(**{})
+    server = WebsocketServer(settings=settings)
+    server.start()
 
 
 class WebsocketBinaryPayloadMixin(object):
 
-    def create_websocket_payload(self, data, opcode=None, fin=False):
+    def handle_payload(self):
+
+        opcode = self._opcode_manager.get_state()
+        # Fin state is set by HEADERB1 state change.
+        if self.fin == 0:
+            if opcode != OPTION_CODE.STREAM:
+                # Not currently receiving a constant stream
+                if opcode in [OPTION_CODE.PING, OPTION_CODE.PONG]:
+                    self.handleError('control messages can not be fragmented')
+
+                # Data type TEXT, BINARY
+                self.frag_type = opcode
+                self.frag_start = True
+                self.frag_decoder.reset()
+
+                if self.frag_type == OPTION_CODE.TEXT:
+                    self.frag_buffer = []
+                    self.append_decode_text(self.data)
+                else:
+                    self.frag_buffer = bytearray()
+                    self.frag_buffer.extend(self.data)
+
+            else:
+                self.frag_error_if(False)
+
+                if self.frag_type == OPTION_CODE.TEXT:
+                    self.append_decode_text(self.data)
+                else:
+                    self.frag_buffer.extend(self.data)
+
+        else:
+            if opcode == OPTION_CODE.STREAM:
+                self.frag_error_if(False)
+
+                if self.frag_type == OPTION_CODE.TEXT:
+                    self.append_decode_text(self.data)
+                    self.data = u''.join(self.frag_buffer)
+                else:
+                    self.frag_buffer.extend(self.data)
+                    self.data = self.frag_buffer
+
+                self.handleMessage()
+
+                self.frag_decoder.reset()
+                self.frag_type = OPTION_CODE.BINARY
+                self.frag_start = False
+                self.frag_buffer = None
+
+            else:
+                self.frag_error_if(True)
+
+                if opcode == OPTION_CODE.TEXT:
+                    try:
+                        self.data = self.data.decode('utf8', errors='strict')
+                    except Exception as exp:
+                        self.handleError('invalid utf-8 payload', exp)
+
+    def encode_payload_data(self, data, opcode=None, fin=False):
         '''
         https://tools.ietf.org/html/rfc6455#page-28
         '''
-        payload = bytearray()
 
+        payload = bytearray()
         b1 = 0
         b2 = 0
         if fin is False:
@@ -229,16 +289,22 @@ class OpcodeStates(StateHandler):
         self._sendMessage(False, OPTION_CODE.PONG, data)
 
     def binary_opcode(self, data):
-        print 'binary_opcode'
+        pass
 
 
-class WebsocketClient(SocketClient,
+class WebsocketClient(WebsocketBinaryPayloadMixin,
                       SocketStates,
                       OpcodeStates,
-                      WebsocketBinaryPayloadMixin):
+                      SocketClient
+                      ):
 
     def text_opcode(self, data):
-        print 'TEXT:', data
+        log('TEXT:', data)
+
+        self.sendMessage('Thank you.')
+
+    def binary_opcode(self, data):
+        log('Binary:', data)
 
 
 class WebsocketServer(Server):

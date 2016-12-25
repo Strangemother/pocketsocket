@@ -7,7 +7,8 @@ import errno
 
 from states import States, StateHandler, StateManager, OPTION_CODE, STATE, _VALID_STATUS_CODES
 from mixins import ServerIntegrationMixin, BufferMixin
-from utils import _check_unicode, VER
+from utils import _check_unicode, VER, _is_text
+from logger import log, loge
 
 
 class Listener(socket.socket):
@@ -36,7 +37,33 @@ class Listener(socket.socket):
         return r'<Listener(socket.socket): %s %s>' % (name, pn, )
 
 
-class SocketClient(BufferMixin, ServerIntegrationMixin):
+class PayloadMixin(object):
+    '''Data manager handling tools
+    '''
+    def handle_payload(self):
+        if len(self.data) > 0:
+            log('Data', self.data)
+
+    def create_payload(self, data, opcode=None, fin=False):
+        '''https://tools.ietf.org/html/rfc6455#page-28'''
+        log('PayloadMixin.createPayload')
+
+        if opcode is None:
+            opcode = OPTION_CODE.BINARY
+            if _is_text(data):
+                opcode = OPTION_CODE.TEXT
+
+        payload = self.encode_payload_data(data, opcode, fin)
+        return opcode, payload
+
+    def encode_payload_data(self, data, opcode, fin):
+        log('encode_payload_data')
+        return data
+
+
+
+
+class SocketClient(BufferMixin, PayloadMixin, ServerIntegrationMixin):
     '''
     A client for the Connections
     '''
@@ -73,106 +100,65 @@ class SocketClient(BufferMixin, ServerIntegrationMixin):
         return v
 
     def handleError(self, msg, exc=None, client=None):
-        print 'Error:', msg, exc, client
+        loge('Error:', msg, exc, client)
 
     def handle_byte_chunk(self, data, size=None, socket=None):
+        '''
+        Handle a data chunk from the socket.recv(CHUNK).
+        Returns nothing
+
+        The function is called by the server during client loop iteration
+        The `handle_byte_chunk` is given the received packet from
+        the client using BufferMixin.read(CHUNK) and iterates each byte into
+        _handle_byte.
+        '''
         for d in data:
             self._handle_byte(d if VER >= 3 else ord(d))
 
     def _handle_byte(self, byte):
+        '''Call the internal _state_manager with the given byte'''
         return self._state_manager.call(byte)
 
     def _handlePacket(self):
-
+        '''
+        Called during server iteration BufferMixin.process_payload_packet()
+        if a packet has been received
+        Returns nothing.
+        '''
         called = self._opcode_manager.call(self.data)
-        opcode = self._opcode_manager.get_state()
         if called is False:
             self.handleError('unknown opcode')
 
-        if self.fin == 0:
-            if opcode != OPTION_CODE.STREAM:
-                if opcode in [OPTION_CODE.PING, OPTION_CODE.PONG]:
-                    self.handleError('control messages can not be fragmented')
+        self.handle_payload()
 
-                self.frag_type = opcode
-                self.frag_start = True
-                self.frag_decoder.reset()
+    def frag_error_if(self, b):
+        if self.frag_start is b:
+            self.handleError('fragmentation protocol error')
 
-                if self.frag_type == OPTION_CODE.TEXT:
-                    self.frag_buffer = []
-                    utf_str = self.frag_decoder.decode(self.data, final=False)
-                    if utf_str:
-                        self.frag_buffer.append(utf_str)
-                else:
-                    self.frag_buffer = bytearray()
-                    self.frag_buffer.extend(self.data)
+    def append_decode_text(self, data, final=True):
+        # utf_str = self.frag_decoder.decode(data, final=final)
+        utf_str = self.decode_text_fragment(data, final=final)
+        if utf_str:
+            self.frag_buffer.append(utf_str)
+        return utf_str
 
-            else:
-                if self.frag_start is False:
-                    self.handleError('fragmentation protocol error')
+    def decode_text_fragment(self, data, final=True):
+        return self.frag_decoder.decode(data, final=final)
 
-                if self.frag_type == OPTION_CODE.TEXT:
-                    utf_str = self.frag_decoder.decode(self.data, final=False)
-                    if utf_str:
-                        self.frag_buffer.append(utf_str)
-                else:
-                    self.frag_buffer.extend(self.data)
-
-        else:
-            if opcode == OPTION_CODE.STREAM:
-                if self.frag_start is False:
-                    self.handleError('fragmentation protocol error')
-
-                if self.frag_type == OPTION_CODE.TEXT:
-                    utf_str = self.frag_decoder.decode(self.data, final=True)
-                    self.frag_buffer.append(utf_str)
-                    self.data = u''.join(self.frag_buffer)
-                else:
-                    self.frag_buffer.extend(self.data)
-                    self.data = self.frag_buffer
-
-                self.handleMessage()
-
-                self.frag_decoder.reset()
-                self.frag_type = OPTION_CODE.BINARY
-                self.frag_start = False
-                self.frag_buffer = None
-
-            else:
-                if self.frag_start is True:
-                    self.handleError('fragmentation protocol error')
-
-                if opcode == OPTION_CODE.TEXT:
-                    try:
-                        self.data = self.data.decode('utf8', errors='strict')
-                    except Exception as exp:
-                        self.handleError('invalid utf-8 payload', exp)
-
-    def sendMessage(self, data):
+    def sendMessage(self, data, opcode=None):
         """
             Send websocket data frame to the client.
 
             If data is a unicode object then the frame is sent as Text.
             If the data is a bytearray object then the frame is sent as Binary.
         """
-        self._sendMessage(False, None, data)
+        op, data = self.create_payload(data, opcode)
+        self._sendMessage(False, op, data)
 
     def _sendMessage(self, fin, opcode, data):
         op_payload = (opcode, data, )
+        log('Adding to buffer queue', opcode)
         self.buffer_queue.append(op_payload)
-
-    def _create_payload(self, data, opcode=None, fin=False):
-        '''
-        https://tools.ietf.org/html/rfc6455#page-28
-        '''
-        payload = self.create_websocket_payload(data, opcode, fin)
-
-        if opcode is None:
-            opcode = OPTION_CODE.BINARY
-            if _check_unicode(data):
-                opcode = OPTION_CODE.TEXT
-
-        return opcode, payload
 
     def __unicode__(self):
         return 'Client: %s' % self.address
