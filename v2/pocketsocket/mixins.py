@@ -5,6 +5,7 @@ import hashlib
 import base64
 import struct
 
+from itertools import product
 from http import HTTPRequest
 from utils import VER,  _check_unicode
 from states import OPTION_CODE, STATE
@@ -57,16 +58,12 @@ class ServerIntegrationMixin(object):
             if self.closed is True:
                 return
 
-            logw('Client close', status, reason)
+            log('Client close', status, reason)
             close_msg = bytearray()
             close_msg.extend(struct.pack("!H", status))
-
             is_uni = _check_unicode(reason)
-            s = reason.encode('utf-8') if is_uni else reason
-
-            close_msg.extend(s)
-            if is_uni is False:
-                self._sendMessage(False, OPTION_CODE.CLOSE, close_msg)
+            close_msg.extend(reason.encode('utf-8') if is_uni else reason)
+            self._sendMessage(False, OPTION_CODE.CLOSE, close_msg)
         finally:
             self.closed = True
 
@@ -203,7 +200,6 @@ class BufferMixin(object):
 
 
 class SocketCreateMixin(object):
-
     ''' Class used to maintain a socket.
     Wrapper to socket.socket
     '''
@@ -222,7 +218,10 @@ class SocketCreateMixin(object):
         readysocketseach with a uniqe host and port. Will call
         `self.create_socket`'''
         r = []
-        for host, port in zip(hosts, ports):
+        match_len = len(ports) == len(hosts)
+        items = zip(ports, hosts) if match_len else product(ports, hosts)
+
+        for port, host in items:
             sock, h, p = self.create_socket(host, port)
             r.append(sock)
         return r
