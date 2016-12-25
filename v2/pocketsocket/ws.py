@@ -292,7 +292,7 @@ class OpcodeStates(StateHandler):
         pass
 
 
-class WebsocketClient(WebsocketBinaryPayloadMixin,
+class Client(WebsocketBinaryPayloadMixin,
                       SocketStates,
                       OpcodeStates,
                       SocketClient
@@ -308,11 +308,11 @@ class WebsocketClient(WebsocketBinaryPayloadMixin,
         self.recv(data, opcode=OPTION_CODE.TEXT)
 
     def send(self, data):
-        log('>', data)
+        log('<', data)
         return self.sendMessage(data)
 
     def recv(self, data, opcode):
-        log('<', opcode, data)
+        log('>', opcode, data)
         self.send('Thank you.')
 
     def recv_text(self, data):
@@ -322,19 +322,18 @@ class WebsocketClient(WebsocketBinaryPayloadMixin,
         pass
 
     def __repr__(self):
-        v = 'Unconnected'
         if self.connected:
             v = self.address
         else:
             v = self.getsockname()
-        return "<WebsocketClient: {}>".format(v)
+        return "<ws.Client: {}>".format(v)
 
 
 class WebsocketServer(Server):
-    ''' Basic instance of a server, instansiating WebsocketClient for
+    ''' Basic instance of a server, instansiating ws.Client for
     socket clients
     '''
-    client_class = WebsocketClient
+    client_class = Client
 
 
 if __name__ == '__main__':
