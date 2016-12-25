@@ -46,7 +46,7 @@ class PayloadMixin(object):
 
     def create_payload(self, data, opcode=None, fin=False):
         '''https://tools.ietf.org/html/rfc6455#page-28'''
-        log('PayloadMixin.createPayload')
+        # log('PayloadMixin.createPayload')
 
         if opcode is None:
             opcode = OPTION_CODE.BINARY
@@ -59,8 +59,6 @@ class PayloadMixin(object):
     def encode_payload_data(self, data, opcode, fin):
         log('encode_payload_data')
         return data
-
-
 
 
 class SocketClient(BufferMixin, PayloadMixin, ServerIntegrationMixin):
@@ -157,7 +155,7 @@ class SocketClient(BufferMixin, PayloadMixin, ServerIntegrationMixin):
 
     def _sendMessage(self, fin, opcode, data):
         op_payload = (opcode, data, )
-        log('Adding to buffer queue', opcode)
+        # log('Adding to buffer queue', opcode)
         self.buffer_queue.append(op_payload)
 
     def __unicode__(self):

@@ -298,16 +298,42 @@ class WebsocketClient(WebsocketBinaryPayloadMixin,
                       SocketClient
                       ):
 
-    def text_opcode(self, data):
-        log('TEXT:', data)
-
-        self.sendMessage('Thank you.')
-
     def binary_opcode(self, data):
         log('Binary:', data)
+        self.recv_binary(data)
+        self.recv(data, type=OPTION_CODE.BINARY)
+
+    def text_opcode(self, data):
+        self.recv_text(data)
+        self.recv(data, opcode=OPTION_CODE.TEXT)
+
+    def send(self, data):
+        log('>', data)
+        return self.sendMessage(data)
+
+    def recv(self, data, opcode):
+        log('<', opcode, data)
+        self.send('Thank you.')
+
+    def recv_text(self, data):
+        pass
+
+    def recv_binary(self, data):
+        pass
+
+    def __repr__(self):
+        v = 'Unconnected'
+        if self.connected:
+            v = self.address
+        else:
+            v = self.getsockname()
+        return "<WebsocketClient: {}>".format(v)
 
 
 class WebsocketServer(Server):
+    ''' Basic instance of a server, instansiating WebsocketClient for
+    socket clients
+    '''
     client_class = WebsocketClient
 
 
