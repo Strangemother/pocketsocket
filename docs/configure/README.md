@@ -9,11 +9,11 @@ If you're running Pocket Socket using in your code, you can configure a Server i
 ```py
 from pocketsocket import Server
 
-config = dict(port='9002')
+config = dict(port=9002)
 server = Server(**config)
 ```
 
-You can make this neater by providing a `settings` object. It's a great way to load auto discovered settings:
+You can make this neater by providing a `settings` object. It's a great way to load auto-discovered settings:
 
 ```py
 from pocketsocket.ws import WebsocketServer
@@ -23,6 +23,8 @@ settings = auto_discover(**{})
 server = WebsocketServer(settings=settings)
 server.start()
 ```
+
+The `auto_discover` function aggreates settings from the CLI, JSON, Class, argument settings and puts them all together.
 
 ## JSON
 
@@ -40,4 +42,14 @@ All parameters are available as command line arguments
 $> python -m pocketsocket.ws --port=9002
 ```
 
+## Class
+
+The same settings can be applied to a class
+
+```py
+class WebsocketServer(Server):
+    port = 9002
+    client_class = Client
+
+```
 

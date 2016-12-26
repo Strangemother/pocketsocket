@@ -64,6 +64,6 @@ class CustomServer(Server):
         return _id, client
 
 if __name__ == '__main__':
-    server = Server()
+    server = CustomServer()
     server.start('127.0.0.1', 8009)
 ```
