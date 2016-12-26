@@ -317,7 +317,7 @@ class Client(WebsocketBinaryPayloadMixin,
         self.recv(data, opcode=OPTION_CODE.TEXT)
 
     def send(self, data, opcode=None):
-        log('<', type(data), opcode, data)
+        log('<', opcode, data)
         return self.sendMessage(data, opcode)
 
     def recv(self, data, opcode):

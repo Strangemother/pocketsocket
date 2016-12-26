@@ -163,3 +163,43 @@ class SocketClient(BufferMixin, PayloadMixin, ServerIntegrationMixin):
     def __repr__(self):
         s = u'<SocketClient "%s">' % (self.address, )
         return s
+
+
+class ClientListMixin(object):
+    '''Maintain a dictionary of connected clients for cross communication.
+    applies the `send_all` method.
+    '''
+    def setup(self, *args, **kw):
+        print 'SETUP'
+        self.clients = {'hosts': {}, 'ports': {}}
+        super(ClientListMixin, self).setup(*args, **kw)
+
+    def client_close(self, client, listeners, connections):
+        h_h, h_p = client.socket.getsockname()
+        v = super(ClientListMixin, self).client_close(client, listeners, connections)
+        if v is True:
+            self.clients['hosts'][h_h].remove(client)
+            self.clients['ports'][h_p].remove(client)
+        return v
+
+    def accept_socket(self, sock, listeners, connections):
+        v = super(ClientListMixin, self).accept_socket(sock, listeners, connections)
+        host, port = sock.getsockname()
+
+        self.clients['ports'][port].append(v)
+        self.clients['hosts'][host].append(v)
+        return v
+
+    def socket_bind(self, host='127.0.0.1', port=None, socket_class=None, **kw):
+        if self.clients['ports'].get(port, None) is None:
+            self.clients['ports'][port] = []
+
+        if self.clients['hosts'].get(host, None) is None:
+            self.clients['hosts'][host] = []
+
+        return super(ClientListMixin, self).socket_bind(host, port, socket_class, **kw)
+
+    def send_all(self, data, opcode=None):
+        for host in self.clients['hosts']:
+            for client in self.clients['hosts'][host]:
+                client.send(data, opcode)
