@@ -199,7 +199,11 @@ class ClientListMixin(object):
 
         return super(ClientListMixin, self).socket_bind(host, port, socket_class, **kw)
 
-    def send_all(self, data, opcode=None):
+    def send_all(self, data, opcode=None, ignore=None):
+        if ignore is None:
+            ignore = []
         for host in self.clients['hosts']:
             for client in self.clients['hosts'][host]:
+                if client in ignore:
+                    continue
                 client.send(data, opcode)

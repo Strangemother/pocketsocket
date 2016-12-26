@@ -305,8 +305,8 @@ class Client(WebsocketBinaryPayloadMixin,
         self.server = server
         return super(Client, self).accept(socket, server)
 
-    def send_all(self, data, opcode=None):
-        return self.server.send_all(data, opcode)
+    def send_all(self, *args, **kw):
+        return self.server.send_all(*args, **kw)
 
     def binary_opcode(self, data):
         self.recv_binary(data)
