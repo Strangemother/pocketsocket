@@ -17,7 +17,7 @@ MAXPAYLOAD = 33554432
 
 
 def main():
-    settings = {}
+    settings = None
     server = WebsocketServer(settings=settings)
     server.start()
 
@@ -317,11 +317,11 @@ class Client(WebsocketBinaryPayloadMixin,
         self.recv(data, opcode=OPTION_CODE.TEXT)
 
     def send(self, data, opcode=None):
-        log('<', opcode, data)
+        log('<', data)
         return self.sendMessage(data, opcode)
 
     def recv(self, data, opcode):
-        log('>', opcode, data)
+        log('>', data)
         self.send('Thank you.', opcode)
 
     def recv_text(self, data):
@@ -338,12 +338,16 @@ class Client(WebsocketBinaryPayloadMixin,
                 v = self.getsockname()
             else:
                 v = self.getpeername()
-        return "<ws.Client: {}>".format(v)
+        n = self.__class__.__name__
+        return "<ws.{}: {}>".format(n, v)
 
 
 class WebsocketServer(Server):
     ''' Basic instance of a server, instansiating ws.Client for
     socket clients '''
+
+    # hosts = (9002,)
+    port = 9002
     client_class = Client
 
 
