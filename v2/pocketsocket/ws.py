@@ -334,10 +334,13 @@ class Client(WebsocketBinaryPayloadMixin,
         if self.connected:
             v = self.address
         else:
-            if self.socket:
+            if hasattr(self, 'socket') and self.socket is not None:
                 v = self.getsockname()
             else:
-                v = self.getpeername()
+                if self.closed:
+                    v = 'CLOSED'
+                else:
+                    v = 'UNCONNECTED'
         n = self.__class__.__name__
         return "<ws.{}: {}>".format(n, v)
 

@@ -6,20 +6,11 @@ This project was designed in extension of `SimpleWebsocketServer` (_A supplied V
 
 ## Getting started
 
-> Documentation is Alpha and written prior to the release.
-
 Install Pocket Socket using `pip`
 
 ```py
 pip install pocketsocket
 ```
-
-It's lighweight on dependencies and should run on any python ready platform. Current implementations are:
-
-+ Rasberry Pi
-+ Window
-+ Linux (Debian, Ubuntu, BusyBox, AB.IO ...)
-
 
 Pocket Socket is built for ease with no dependencies and no setup.
 
@@ -31,5 +22,10 @@ $>python -m pocketsocket.echo --port 9001
 
 An echo server repeats a message to all connected clients. If you're building a simple chat server, this is a great start.
 
-If you need more, you can write your own client for the server
+## Requirements
 
+It's lighweight on dependencies and should run on any python ready platform. Current implementations are:
+
++ Rasberry Pi
++ Window
++ Linux (Debian, Ubuntu, BusyBox, AB.IO ...)

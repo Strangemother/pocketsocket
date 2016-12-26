@@ -170,7 +170,6 @@ class ClientListMixin(object):
     applies the `send_all` method.
     '''
     def setup(self, *args, **kw):
-        print 'SETUP'
         self.clients = {'hosts': {}, 'ports': {}}
         super(ClientListMixin, self).setup(*args, **kw)
 

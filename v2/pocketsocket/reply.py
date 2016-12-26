@@ -12,5 +12,6 @@ class ReplyClient(Client):
     def recv(self, data, opcode):
         self.send('Thank you.')
 
+
 if __name__ == '__main__':
     main()
