@@ -1,6 +1,6 @@
 # Configure
 
-Pocket Socket can be configured through thr following:
+Pocket Socket can be configured through the following:
 
 ## Dict
 
