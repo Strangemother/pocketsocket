@@ -169,7 +169,9 @@ class BufferMixin(object):
         v = (OPTION_CODE.BINARY, response)
         self.buffer_queue.append(v)
         self.connected = True
+        self.path = request.path
         return self.connected
+
 
     def handshake_response(self, headers):
         # handshake rfc 6455
@@ -410,6 +412,7 @@ class ConnectionIteratorMixin(object):
         Returned is the client from `self.create_client`
         '''
         sock = self.resolve_client(sock, listeners, connections)
+
 
         # TODO: fix this, it's terrible
         if isinstance(sock, self.get_client_class()):
