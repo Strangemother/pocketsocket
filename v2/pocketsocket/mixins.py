@@ -405,7 +405,7 @@ class ConnectionIteratorMixin(object):
 
     def accept_socket(self, sock, listeners, connections):
         '''
-        Accet the given sock and append to the connections and listeners
+        Accept the given sock and append to the connections and listeners
         for iteration.
         Returned is the client from `self.create_client`
         '''
