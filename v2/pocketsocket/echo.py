@@ -11,11 +11,11 @@ def main_echo():
 
 class EchoClient(Client):
     def recv(self, data, opcode):
-        log('>', self, opcode, data)
+        # log('>', self, opcode, data)
         self.send_all(data, opcode, ignore=[self])
 
     def send(self, data, opcode=None):
-        log('<', self, opcode, data)
+        # log('<', self, opcode, data)
         return self.sendMessage(data, opcode)
 
 class EchoServer(ClientListMixin, Server):
