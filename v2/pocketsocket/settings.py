@@ -39,6 +39,8 @@ def auto_discover(**kw):
             ports=tuple(),
         )
 
+    settings.update(kw)
+
     # JSON
     json_path = kw.get('settings', None)
     if json_path is None:
@@ -93,8 +95,8 @@ class SettingsMixin(object):
         ''' Configure the server. Inline ip and port are most important.
             configure('127.0.0.1', port=8001, host='', port=-1) '''
 
-        host = kw.get('host', None)
-        port = kw.get('port', None)
+        host = kw.get('host', getattr(self, 'host', None))
+        port = kw.get('port', getattr(self, 'port', None))
 
         if len(args) == 2:
             host, port = args
@@ -108,4 +110,5 @@ class SettingsMixin(object):
     def inherit_attributes(self, keys):
         hp = {x: self.settings.get(x, None) for x in keys}
         for x in hp:
-            setattr(self, x, hp[x])
+            if hp[x] is not None:
+                setattr(self, x, hp[x])
