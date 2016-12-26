@@ -4,7 +4,6 @@
     #Decoding_Payload_Length
 
 '''
-
 import struct
 
 from client import SocketClient
@@ -13,7 +12,6 @@ from states import States, StateHandler, StateManager, OPTION_CODE, STATE, _VALI
 from utils import _check_unicode
 from settings import auto_discover
 from logger import log
-
 
 MAXPAYLOAD = 33554432
 
@@ -306,6 +304,10 @@ class Client(WebsocketBinaryPayloadMixin,
     def accept(self, socket, server):
         self.server = server
         return super(Client, self).accept(socket, server)
+
+    def send_all(self, data, opcode=None):
+        return self.server.send_all(data, opcode)
+
     def binary_opcode(self, data):
         self.recv_binary(data)
         self.recv(data, type=OPTION_CODE.BINARY)
@@ -314,13 +316,13 @@ class Client(WebsocketBinaryPayloadMixin,
         self.recv_text(data)
         self.recv(data, opcode=OPTION_CODE.TEXT)
 
-    def send(self, data):
-        log('<', data)
-        return self.sendMessage(data)
+    def send(self, data, opcode=None):
+        log('<', type(data), opcode, data)
+        return self.sendMessage(data, opcode)
 
     def recv(self, data, opcode):
         log('>', opcode, data)
-        self.send('Thank you.')
+        self.send('Thank you.', opcode)
 
     def recv_text(self, data):
         pass
@@ -332,7 +334,10 @@ class Client(WebsocketBinaryPayloadMixin,
         if self.connected:
             v = self.address
         else:
-            v = self.getsockname()
+            if self.socket:
+                v = self.getsockname()
+            else:
+                v = self.getpeername()
         return "<ws.Client: {}>".format(v)
 
 
@@ -343,4 +348,4 @@ class WebsocketServer(Server):
 
 
 if __name__ == '__main__':
-    main_2()
+    main()

@@ -30,7 +30,6 @@ class ServerIntegrationMixin(object):
     def set_id(self, value):
         self._connection_id = value
 
-    def accept(self, socket):
     def accept(self, socket, server):
         ''' Server has given a socket parent to accept this client on.
         Return an identifier; the socket fileno. '''
@@ -414,7 +413,7 @@ class ConnectionIteratorMixin(object):
 
         # TODO: fix this, it's terrible
         if isinstance(sock, self.get_client_class()):
-            connected = sock.start(self, listeners, connections)
+            sock.start(self, listeners, connections)
             return sock
         else:
             return self.add_socket(sock, listeners, connections)
@@ -435,7 +434,7 @@ class ConnectionIteratorMixin(object):
         Client = self.get_client_class()
         client = Client()
         client.connected = False
-        fileno = client.accept(socket)
+        fileno = client.accept(socket, self)
         log('Create Client', client)
         return fileno, client
 
