@@ -73,7 +73,7 @@ class SocketClient(BufferMixin, PayloadMixin, ServerIntegrationMixin):
         self.state = STATE.HEADERB1
         self.frag_start = False
         self.frag_type = OPTION_CODE.BINARY
-        self.frag_buffer = None
+        self.frag_buffer = []
         self.frag_decoder = codecs.getincrementaldecoder('utf-8')(errors='strict')
 
         self._state_manager = StateManager(STATE.HEADERB1,
@@ -88,17 +88,17 @@ class SocketClient(BufferMixin, PayloadMixin, ServerIntegrationMixin):
                                            )
 
     def default_manager_caller(self, manager, *args, **kw):
+        '''Call the manager current state function on `self` if the method exists
+        If the state method does not exist on `self` None is returned, else the
+        value from the function call is returned.
+        '''
+        # Format the manager string to produce a method for self
         name = manager.caller_format.format(manager._state.lower())
-        # headerb2_state
         f = getattr(self, name, None)
-
         v = None
         if f is not None:
             v = f(*args, **kw)
         return v
-
-    def handleError(self, msg, exc=None, client=None):
-        loge('Error:', msg, exc, client)
 
     def handle_byte_chunk(self, data, size=None, socket=None):
         '''
@@ -132,6 +132,9 @@ class SocketClient(BufferMixin, PayloadMixin, ServerIntegrationMixin):
     def frag_error_if(self, b):
         if self.frag_start is b:
             self.handleError('fragmentation protocol error')
+
+    def handleError(self, msg, exc=None, client=None):
+        loge('Error:', msg, exc, client)
 
     def append_decode_text(self, data, final=True):
         # utf_str = self.frag_decoder.decode(data, final=final)
