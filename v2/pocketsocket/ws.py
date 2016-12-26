@@ -303,6 +303,9 @@ class Client(WebsocketBinaryPayloadMixin,
              SocketClient
              ):
 
+    def accept(self, socket, server):
+        self.server = server
+        return super(Client, self).accept(socket, server)
     def binary_opcode(self, data):
         self.recv_binary(data)
         self.recv(data, type=OPTION_CODE.BINARY)

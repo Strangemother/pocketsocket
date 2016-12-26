@@ -31,6 +31,7 @@ class ServerIntegrationMixin(object):
         self._connection_id = value
 
     def accept(self, socket):
+    def accept(self, socket, server):
         ''' Server has given a socket parent to accept this client on.
         Return an identifier; the socket fileno. '''
         sock, addr = socket.accept()
