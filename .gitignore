@@ -163,3 +163,10 @@ pip-log.txt
 .DS_Store
 sftp-config.json
 env/
+v1/
+docs/_book/gitbook/
+pocketsocket.sublime-workspace
+*.sublime-project
+*/docs/_book/
+.pythoscope/
+v2_2/
