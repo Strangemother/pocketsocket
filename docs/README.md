@@ -24,7 +24,7 @@ An echo server repeats a message to all connected clients. If you're building a 
 
 ## Requirements
 
-It's lighweight on dependencies and should run on any python ready platform. Current implementations are:
+It's lighweight with no dependencies and should run on any python ready platform. Current implementations are:
 
 + Rasberry Pi
 + Window

@@ -64,7 +64,6 @@ class LogClient(Client):
         super(LogClient, self).setup(*args, **kw)
 
     def accept(self, socket, server):
-        self.server = server
         v = super(Client, self).accept(socket, server)
         s = 'New Client: {} for {}'.format(self, server)
         log(s)
