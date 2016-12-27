@@ -167,6 +167,6 @@ v1/
 docs/_book/gitbook/
 pocketsocket.sublime-workspace
 *.sublime-project
-docs/_book/
+*/docs/_book/
 .pythoscope/
 v2_2/
