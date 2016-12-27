@@ -1,28 +1,10 @@
 import os
 import json
-from optparse import OptionParser
+from options import parsed
+
 
 DEFAULT_HOSTS = ("127.0.0.1",)
 DEFAULT_PORTS = (8009, )
-
-parser = OptionParser()
-parser.add_option("-q", "--quiet",
-                  action="store_false",
-                  dest="verbose",
-                  default=True,
-                  help="don't print status messages to stdout")
-parser.add_option("-s", "--settings",
-                  dest="settings",
-                  help="Provide a settings path")
-parser.add_option("-p", "--port",
-                  type='int',
-                  dest="port",
-                  help="Provide a port")
-parser.add_option("-a", "--host",
-                  dest="host",
-                  help="Provide a host")
-
-parsed = parser.parse_args()
 
 
 def verbosity():
@@ -35,8 +17,8 @@ def auto_discover(**kw):
 
     # DICT
     settings = dict(
-            hosts=tuple(),
-            ports=tuple(),
+            hosts=[],
+            ports=[],
         )
 
     settings.update(kw)
@@ -63,6 +45,14 @@ def auto_discover(**kw):
 
     if kwp is None:
         kwp = settings['port']
+
+    s_ports = parsed[0].ports
+    if s_ports is not None:
+        settings['ports'].extend([int(x.strip()) for x in s_ports.split(',')])
+
+    s_hosts = parsed[0].hosts
+    if s_hosts is not None:
+        settings['hosts'].extend([int(x.strip()) for x in s_hosts.split(',')])
 
     if kwh is not None:
         settings['hosts'] += (kwh, )
@@ -103,8 +93,10 @@ class SettingsMixin(object):
         elif len(args) == 1:
             port = args[0]
 
+        kw['host'] = kw.get('host', host)
+        kw['port'] = kw.get('port', port)
 
-        v = auto_discover(host=host, port=port, **kw)
+        v = auto_discover(**kw)
         return v
 
     def inherit_attributes(self, keys):
