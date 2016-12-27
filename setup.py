@@ -5,16 +5,16 @@ from os import path
 root = path.abspath(path.dirname(__file__))
 
 # Get the long description from the README file
-with open(path.join(root, 'README.md'), encoding='utf-8') as f:
+with open(path.join(root, 'docs/README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='sample',
+    name='pocketsocket',
 
     # Versions should comply with PEP440.  For a discussion on single-sourcing
     # the version across setup.py and the project code, see
     # https://packaging.python.org/en/latest/single_source_version.html
-    version='0.4.0',
+    version='0.4.1',
     description='Websocket server',
     long_description=long_description,
     url='https://github.com/Strangemother/pocketsocket',
@@ -45,7 +45,8 @@ setup(
 
     # You can just specify the packages manually here if your project is
     # simple. Or you can use find_packages().
-    packages=find_packages(exclude=['pocketsocket']),
+    packages=['pocketsocket'],
+    # find_packages(exclude=['pocketsocket']),
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
     #   py_modules=["my_module"],
