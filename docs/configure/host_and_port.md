@@ -1,4 +1,4 @@
-# Host and Port
+# Hosts and Ports
 
 You may wish to serve many host names (IP Addresses) and ports for a single server. With more than one host or port, you can bridge network connections, using the same client class.
 

@@ -1,3 +1,4 @@
+
 # Server
 
 The `server` module applies a generic layer for serving your client sockets. Unlike other frameworks with a defined focus, `pocketsocket` allows a fluid adaption of your client.
