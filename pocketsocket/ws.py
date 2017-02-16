@@ -301,6 +301,17 @@ class Client(WebsocketBinaryPayloadMixin,
              SocketClient
              ):
 
+    def __init__(self, *a, **kw):
+        self.init(*a, **kw)
+        super(Client, self).__init__(*a, **kw)
+        self.ready(*a, **kw)
+
+    def init(self, *args, **kw):
+        pass
+
+    def ready(self, *args, **kw):
+        print 'Ready Client'
+
     def accept(self, socket, server):
         self.server = server
         return super(Client, self).accept(socket, server)
