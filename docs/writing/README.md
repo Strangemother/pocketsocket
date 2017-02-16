@@ -14,8 +14,8 @@ An echo server repeats a message to all connected clients except for the origina
 Rolling your own app requires a new `Client`. Let's change the echo to a "Thank you." reply server:
 
 ```py
-from ws import Client
-from server import Server
+from pocketsocket.ws import Client
+from pocketsocket.server import Server
 
 
 def main():
