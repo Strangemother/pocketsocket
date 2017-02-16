@@ -204,8 +204,17 @@ class ClientListMixin(object):
     def send_all(self, data, opcode=None, ignore=None):
         if ignore is None:
             ignore = []
+
+        for client in self.clients_iter(ignore):
+                client.send(data, opcode)
+
+    def get_clients(self, ignore=None):
+        return list(self.clients_iter(ignore))
+
+    def clients_iter(self, ignore=None):
+        ignore = ignore or []
         for host in self.clients['hosts']:
             for client in self.clients['hosts'][host]:
                 if client in ignore:
                     continue
-                client.send(data, opcode)
+                yield client
