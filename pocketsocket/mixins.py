@@ -327,8 +327,18 @@ class ConnectionIteratorMixin(object):
                 self.accept_socket(sock, listeners, connections)
             else:
                 c = self.resolve_client(sock, listeners, connections)
-                if c is not None:
+                if c is None:
+                    continue
+
+                try:
                     c.read()
+                except socket.error as e:
+                    print 'ERROR', e.errno
+                    self.client_close(c, listeners, connections)
+                    #if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK]:
+                    #    return slice
+                    #else:
+                    #    raise e
 
     def fail_list(self, xlist, listeners, connections):
         for failed in xlist:
