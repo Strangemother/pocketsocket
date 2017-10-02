@@ -11,6 +11,18 @@ from utils import _check_unicode, VER, _is_text
 from logger import log, loge
 
 
+def client(address=None, **kw):
+    '''
+    Simple client generation using websocket-client
+    '''
+    import websocket
+
+    ws = websocket.WebSocket()
+    if address is not None:
+        ws.connect(address, **kw)
+    return ws
+
+
 class Listener(socket.socket):
     '''
     A Listener is a socket, defined as a parental socket managing the
@@ -177,11 +189,57 @@ class ClientListMixin(object):
         super(ClientListMixin, self).setup(*args, **kw)
 
     def client_close(self, client, listeners, connections):
-        h_h, h_p = client.socket.getsockname()
+
+        if isinstance(client, long):
+            v = connections.get(client, None)
+            if v is None:
+                log('DETECT FAIL', client)
+                # Ignore and return at this point,
+                # the closing client is not in the connections
+                return True
+            else:
+                client = v
+
+        if hasattr(client, 'socket'):
+            self.close(client.socket)
+
+        h_h = None
+        h_p = None
+
+        try:
+            h_h, h_p = client.socket.getsockname()
+        except socket.error as e:
+            if e.errno in [errno.EBADF]:
+                if hasattr(client, 'closed'):
+                    if client.closed is True:
+                        h_h, _ = client.address
+                    else:
+                        client.close(OPTION_CODE.CLOSE, str(e.errno))
+                        h_h, _ = client.address
+                else:
+                    import pdb; pdb.set_trace()  # breakpoint 878bd391 //
+                    raise e
+            else:
+                raise e
         v = super(ClientListMixin, self).client_close(client, listeners, connections)
+
         if v is True:
-            self.clients['hosts'][h_h].remove(client)
-            self.clients['ports'][h_p].remove(client)
+            if h_h is not None:
+                self.clients['hosts'][h_h].remove(client)
+            else:
+                for name, clients in self.clients['hosts'].items():
+                    if client in clients:
+                        self.clients['hosts'][name].remove(client)
+
+            if h_p is not None:
+                self.clients['ports'][h_p].remove(client)
+            else:
+                # backup routine as we've lost reference
+                # to the original port
+                for name, clients in self.clients['ports'].items():
+                    if client in clients:
+                        self.clients['ports'][name].remove(client)
+
         return v
 
     def accept_socket(self, sock, listeners, connections):
