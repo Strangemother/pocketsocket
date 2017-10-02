@@ -10,6 +10,7 @@ def main_echo():
 
 
 class EchoClient(Client):
+
     def recv(self, data, opcode):
         # log('>', self, opcode, data)
         self.send_all(data, opcode, ignore=[self])
