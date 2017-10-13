@@ -6,10 +6,10 @@ import base64
 import struct
 
 from itertools import product
-from http import HTTPRequest
-from utils import VER,  _check_unicode
-from states import OPTION_CODE, STATE
-from logger import log, loge, logw
+from pocketsocket.http import HTTPRequest
+from pocketsocket.utils import VER,  _check_unicode
+from pocketsocket.states import OPTION_CODE, STATE
+from pocketsocket.logger import log, loge, logw
 
 HANDSHAKE_STR = (
     "HTTP/1.1 101 Switching Protocols\r\n"
@@ -139,7 +139,7 @@ class BufferMixin(object):
         return None
 
     def start(self, server=None, listeners=None, connections=None):
-        print '\nSocketClient.handshake', self
+        print( '\nSocketClient.handshake', self)
         return self.handshake()
 
     def handshake(self):
@@ -241,7 +241,7 @@ class SocketCreateMixin(object):
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind((host, port))
         s.listen(5)
-        from logger import log
+
 
         # l = logging.getLogger('SocketLog')
         log('Listen on', host, port)
@@ -333,7 +333,7 @@ class ConnectionIteratorMixin(object):
                 try:
                     c.read()
                 except socket.error as e:
-                    print 'ERROR', e.errno
+                    print( 'ERROR', e.errno)
                     self.client_close(c, listeners, connections)
                     #if e.errno in [errno.EAGAIN, errno.EWOULDBLOCK]:
                     #    return slice

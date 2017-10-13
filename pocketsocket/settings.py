@@ -1,6 +1,6 @@
 import os
 import json
-from options import parsed
+from pocketsocket.options import parsed
 
 
 DEFAULT_HOSTS = ("127.0.0.1",)

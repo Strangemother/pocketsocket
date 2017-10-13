@@ -1,5 +1,5 @@
 import sys
-import options
+import pocketsocket.options
 
 def main(args=None):
     """The main routine."""

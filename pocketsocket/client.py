@@ -5,10 +5,10 @@ import socket
 from functools import partial
 import errno
 
-from states import States, StateHandler, StateManager, OPTION_CODE, STATE, _VALID_STATUS_CODES
-from mixins import ServerIntegrationMixin, BufferMixin
-from utils import _check_unicode, VER, _is_text
-from logger import log, loge
+from pocketsocket.states import States, StateHandler, StateManager, OPTION_CODE, STATE, _VALID_STATUS_CODES
+from pocketsocket.mixins import ServerIntegrationMixin, BufferMixin
+from pocketsocket.utils import _check_unicode, VER, _is_text
+from pocketsocket.logger import log, loge
 
 
 def client(address=None, **kw):

@@ -1,7 +1,7 @@
-from ws import Client
-from client import ClientListMixin
-from server import Server
-from logger import log
+from pocketsocket.ws import Client
+from pocketsocket.client import ClientListMixin
+from pocketsocket.server import Server
+from pocketsocket.logger import log
 
 
 def main_echo():

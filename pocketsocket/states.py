@@ -72,7 +72,7 @@ class StateHandler(object):
 
     def state_changed(self, value):
         ''''''
-        print 'state changed to', value
+        print( 'state changed to', value)
         return value
 
     def call_state(self, *args, **kw):
@@ -88,7 +88,7 @@ class StateHandler(object):
         if callable(f):
             r = f(*args, **kw)
         else:
-            print 'No call state function'
+            print( 'No call state function')
         return r
 
     def resolve_call_state_method(self, state=None):
@@ -109,7 +109,7 @@ class StateHandler(object):
         c = state or self.current_state
         name = self.state_method_name(c)
 
-        print 'checking state', name
+        print( 'checking state', name)
 
         a = getattr(self, name, None)
         return name if a is not None else None
@@ -142,7 +142,7 @@ class StateManager(object):
         # super(cls, self).__init__(*args, **kwargs)
 
     def call(self, *args, **kw):
-        # print "Call StateManager", args
+        # print( "Call StateManager", args)
         if self.caller is None:
             return False
         self._caller(*args, **kw)

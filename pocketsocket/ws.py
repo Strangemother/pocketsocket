@@ -6,12 +6,12 @@
 '''
 import struct
 
-from client import SocketClient
-from server import Server
-from states import States, StateHandler, StateManager, OPTION_CODE, STATE, _VALID_STATUS_CODES
-from utils import _check_unicode
-from settings import auto_discover
-from logger import log
+from pocketsocket.client import SocketClient
+from pocketsocket.server import Server
+from pocketsocket.states import States, StateHandler, StateManager, OPTION_CODE, STATE, _VALID_STATUS_CODES
+from pocketsocket.utils import _check_unicode
+from pocketsocket.settings import auto_discover
+from pocketsocket.logger import log
 
 MAXPAYLOAD = 33554432
 
@@ -310,7 +310,7 @@ class Client(WebsocketBinaryPayloadMixin,
         pass
 
     def ready(self, *args, **kw):
-        print 'Ready Client'
+        print( 'Ready Client')
 
     def accept(self, socket, server):
         self.server = server

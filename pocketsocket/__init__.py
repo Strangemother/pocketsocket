@@ -1,1 +1,1 @@
-import ws
+from pocketsocket import ws

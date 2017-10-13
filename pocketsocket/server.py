@@ -1,7 +1,7 @@
 
-from mixins import SocketCreateMixin, ConnectionIteratorMixin
-from client import OPTION_CODE, SocketClient, Listener
-from settings import auto_discover, SettingsMixin
+from pocketsocket.mixins import SocketCreateMixin, ConnectionIteratorMixin
+from pocketsocket.client import OPTION_CODE, SocketClient, Listener
+from pocketsocket.settings import auto_discover, SettingsMixin
 
 
 def main():
