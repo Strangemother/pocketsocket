@@ -488,5 +488,6 @@ class Fragment(object):
 
     type = property(get_type, set_type)
 
+
 class FragmentMixin(object):
     pass

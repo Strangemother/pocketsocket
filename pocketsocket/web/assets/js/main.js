@@ -4,7 +4,7 @@ var cleanData = []
 var jsonFetchApp = new Vue({
     el: '#main'
     , data: {
-        address: 'ws://192.168.0.10:9001'
+        address: 'ws://localhost:8009'
         , basePath: ''
         , requests: []
         , selected: {}

@@ -16,6 +16,8 @@ local.properties
 .settings/
 .loadpath
 
+pocketsocket-scratch/
+
 # External tool builders
 .externalToolBuilders/
 
