@@ -141,4 +141,6 @@ def broadcast(data, client, clients, is_binary=False, ignore=None, cid=None):
     for name in clients:
         if clients[name] in ignore:
             continue
-        clients[name].send("{} {}".format(cid or client.id, data), is_binary)
+        data = client.session.encode(data, client, clients, is_binary)
+
+        clients[name].send(data, is_binary)

@@ -166,7 +166,7 @@ class Switch(PluginBase):
 
         success, text = self.extract_default(message, client)
         if success:
-            if text[0] == SWITCH:
+            if len(text) > 1 and text[0] == SWITCH:
                 data = perform_command(text, client, self.get_clients())
                 return (True, False)
 
@@ -254,12 +254,16 @@ class JSONEncoderDecoder(PluginBase):
 
     def encode_message(self, message, client):
 
-        try:
-            print('Encoding')
-            return True, json.dumps(message)
-        except json.decoder.JSONEncodeError:
-            print('  Encoding JSON Failed')
-            return False, message
+        if isinstance(message, dict):
+            try:
+                print('Encoding', type(message))
+                message['from'] = client.id
+                v = json.dumps(message)
+                return True, v
+            except json.decoder.JSONEncodeError:
+                print('  Encoding JSON Failed')
+        return False, message
+
 
 
 class SystemSession(Session, PluginMixin):
@@ -314,12 +318,28 @@ class SystemSession(Session, PluginMixin):
             success, res = decoder.decode_message(res, client)
         return res
 
+    def encode_message(self, message, client, clients):
+        '''Using the translators list, decode the data relative to the client'''
+        res = message
+        print('encode_message')
+        for name, encoder in self.translators:
+            success, res = encoder.encode_message(res, client)
+        return res
+
     def decode(self, message, client, clients):
         """Decode a given message, converting it through session formatters
         """
         # print('session decode')
         self.call_plugins('decode_message', message, client)
         return message
+
+    def encode(self, message, client, clients, is_binary=False):
+        """Decode a given message, converting it through session formatters
+        """
+        print('session encode')
+        self.call_plugins('encode_message', message, client)
+        text = self.encode_message(message, client, clients)
+        return text
 
 
 def setup_session(address, server):
@@ -339,7 +359,7 @@ def get_clients():
     return clients
 
 
-class EchoClient(EchoWebSocket):
+class SessionClient(EchoWebSocket):
 
     def received_message(self, message):
         """
@@ -373,7 +393,7 @@ class EchoClient(EchoWebSocket):
 def main(address=None):
     address = address or ('localhost', 8009,)
     log('Run', address)
-    server = WSGIServer(address, WebSocketWSGIApplication(handler_cls=EchoClient))
+    server = WSGIServer(address, WebSocketWSGIApplication(handler_cls=SessionClient))
     #_man.start()
     #_man.run()
     setup_session(address, server)
