@@ -6,11 +6,18 @@ def autoload_methods(METHODS):
         kick=kick,
         name=name,
         list=names,
-        channels=set_channels,
-        channel=set_channel,
         help=list_methods,
         )
 
+def add_switch(name, method):
+    global METHODS
+
+    METHODS[name] = method
+
+def add_switches(*a, **kw):
+    global METHODS
+
+    METHODS.update(*a, **kw)
 
 def list_methods(value, options, client, clients):
     return METHODS.keys()
@@ -54,11 +61,6 @@ def name(value, options, client, clients):
     return ( (old_id, new_id), True, )
 
 # def extend(value, options, client, clients):
-
-def set_channel(value, options, client, clients):
-    pass
-def set_channels(value, options, client, clients):
-    pass
 
 def names(value, options, client, clients):
     '''
