@@ -1,6 +1,6 @@
 from translate import JSONEncoderDecoder
 from pydoc import locate
-from message import postmaster, perform_message, perform_command, broadcast
+from message import postmaster, broadcast
 from plugin import PluginMixin
 
 
@@ -45,7 +45,7 @@ class SystemSession(Session, PluginMixin):
     plugins = (
             'host.digest.Announce',
             'host.digest.Mount',
-            'host.digest.Switch',
+            'host.switch.Switch',
             'host.digest.DirectMessage',
             'host.channels.Channels',
             'host.digest.Broadcast',
@@ -60,7 +60,7 @@ class SystemSession(Session, PluginMixin):
         self._plugins = {}
 
         self.translators = (
-            ('json', JSONEncoderDecoder(),),
+            # ('json', JSONEncoderDecoder(),),
         )
 
         self.add_plugins(self.plugins)

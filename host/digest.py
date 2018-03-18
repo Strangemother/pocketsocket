@@ -1,5 +1,5 @@
 import re
-from message import postmaster, perform_message, perform_command, broadcast
+from host.message import postmaster, broadcast
 
 
 SWITCH = '/'
@@ -42,24 +42,27 @@ class PluginBase(object):
 
 
 class Announce(PluginBase):
+    '''Send string messages to all siblings of the client on events 'add',
+    'remove', 'text' and 'binary',
+    '''
     def add_client(self, client, cid):
-        perform_message('New client: {}'.format(cid), client, self.get_clients(client), cid=cid)
+        broadcast('New client: {}'.format(cid), client, self.get_clients(client), cid=cid)
 
     def remove_client(self, client, cid):
-        perform_message('Remove client: {}'.format(cid), client, self.get_clients(client), cid=cid)
+        broadcast('Remove client: {}'.format(cid), client, self.get_clients(client), cid=cid)
 
     def text_message(self, message, client):
-        perform_message('Text: {}'.format(client.id), client, self.get_clients(client), cid=client.id)
+        broadcast('Text: {}'.format(client.id), client, self.get_clients(client), cid=client.id)
 
     def binary_message(self, message, client):
-        perform_message('Binary: {}'.format(client.id), client, self.get_clients(client), cid=client.id)
+        broadcast('Binary: {}'.format(client.id), client, self.get_clients(client), cid=client.id)
 
     def decode_message(self, message, client):
         pass #perform_message('Text {}'.format(client.id), client, self.get_clients(client), cid=client.id)
 
 
 class Broadcast(PluginBase):
-    '''Given a text or binary message, send to all self.client exluding the
+    '''Given a text or binary message, send to all sibiling clients exluding the
     originating client.
     This should be placed at the bottom of a Session plugin call list to ensure
     authorized methods are tested first.'''
@@ -72,7 +75,12 @@ class Broadcast(PluginBase):
 
 
 class Mount(PluginBase):
+    '''Add and instansiate new digest plugins to the SessionServer through
+    a ":mount" command and a python import string.
 
+    This is not production safe, as the given ":mount import.path"
+    import path is imported and applied to the plugin list without distinction.
+    '''
     def mounted(self, session):
         self.session = session
 
@@ -129,15 +137,3 @@ class DirectMessage(PluginBase):
             #     self.session.add_plugin(item, item)
         return (acted, proceed)
 
-
-class Switch(PluginBase):
-
-    def text_message(self, message, client):
-
-        success, text = self.extract_default(message, client)
-        if success:
-            if len(text) > 1 and text[0] == SWITCH:
-                data = perform_command(text, client, self.get_clients(client))
-                return (True, False)
-
-        return (False, True)

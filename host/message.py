@@ -1,10 +1,6 @@
 """Message management and parsing
 """
-from urllib.parse import parse_qs
-from switch import call_hook
 
-
-SWITCH = '/'
 
 # Incoming chunked byte data is held in chunks for each client
 # until a message is complete.
@@ -60,59 +56,6 @@ def handle_text(message, client, clients):
 
     return text
 
-
-def perform_command(text, client, clients):
-    client_msgs = ()
-    broadcast_msgs = ()
-
-    data = manage_switched(text, client, clients)
-
-    # Convert the switch command content to user feedback,
-    # splitting client and broadcast data
-    #
-    # This is ugly.
-    for key, result in data:
-        if result is False:
-            print('Key "{}" returned unparsable data'.format(key))
-            client.send('Fail: {}'.format(key))
-            continue
-
-        _to, *hook_data = result
-        if 'CLIENT' in _to:
-            client_msgs += ((key, hook_data,), )
-
-        if 'BROADCAST' in _to:
-            broadcast_msgs += ((key, hook_data,), )
-
-    for hook_data in client_msgs:
-        client.send(str(hook_data))
-
-    for hook_data in broadcast_msgs:
-        broadcast(hook_data, client, clients, message.is_binary, ignore=[client])
-
-    return data
-
-
-def manage_switched(message, client, clients):
-    '''A text message starting with a switch value.
-    Parse the key property and value, action the switch and return the
-    data to broadcast.
-    '''
-    ignored = []
-    res = ()
-    # parse using urllib
-    ds = parse_qs(message[1:], keep_blank_values=True)
-    print('Switched', ds)
-
-    for key in ds:
-        if key in ignored:
-            continue
-
-        if key.startswith('_'):
-            continue
-
-        res += ( (key, call_hook(key, ds, client, clients), ), )
-    return res
 
 
 def perform_message(text, client, clients, cid=None):

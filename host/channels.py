@@ -32,6 +32,7 @@ class Channels(PluginBase):
                 'channel': set_channel,
                 'channels': set_channels,
             })
+
         self.session = session
 
     def add_client(self, client, cid):
