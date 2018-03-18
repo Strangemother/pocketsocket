@@ -8,7 +8,7 @@ var jsonFetchApp = new Vue({
         , basePath: ''
         , requests: []
         , selected: {}
-        , message: undefined
+        , message: localStorage.lastMessage
         , socketMessages: []
         , connected: false
         , indexItem: -1
@@ -35,6 +35,7 @@ var jsonFetchApp = new Vue({
                 type: 'in'
                 , data: d.data
             })
+
         }
 
         , socketOpen(d){
@@ -48,6 +49,7 @@ var jsonFetchApp = new Vue({
                 type: 'out'
                 , data: this.message
             })
+            localStorage.lastMessage = this.message
             this.message = ''
         }
 

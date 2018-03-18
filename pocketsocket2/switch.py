@@ -6,7 +6,9 @@ def autoload_methods(METHODS):
         kick=kick,
         name=name,
         list=names,
-        help=list_methods
+        channels=set_channels,
+        channel=set_channel,
+        help=list_methods,
         )
 
 
@@ -35,6 +37,14 @@ def name(value, options, client, clients):
     old_id = client.id
     new_id = value[0]
 
+    if len(new_id) < 2:
+        return ( (old_id, new_id,), False, )
+
+    if new_id in clients:
+        # override
+        client.send('!Cannot change to "{}"'.format(new_id))
+        return ( (old_id, new_id,), False, )
+
     if old_id in clients:
         del clients[old_id]
 
@@ -45,6 +55,10 @@ def name(value, options, client, clients):
 
 # def extend(value, options, client, clients):
 
+def set_channel(value, options, client, clients):
+    pass
+def set_channels(value, options, client, clients):
+    pass
 
 def names(value, options, client, clients):
     '''

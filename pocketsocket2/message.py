@@ -32,6 +32,7 @@ def handle_text(message, client, clients):
     # encat or continue
     data = message.data
     text = None
+
     if message.completed:
 
         if client.id in handling_stacks:
@@ -58,7 +59,6 @@ def handle_text(message, client, clients):
         return
 
     return text
-
 
 
 def perform_command(text, client, clients):
@@ -127,7 +127,7 @@ def perform_message(text, client, clients, cid=None):
     # react to client plugins
     data = client.session.decode(text, client, clients)
     print('Message', text, data)
-    broadcast(data, client, clients, False, ignore=[client], cid=cid)
+    # broadcast(data, client, clients, False, ignore=[client], cid=cid)
 
 
 def handle_binary(message, client, clients):

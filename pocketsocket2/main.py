@@ -1,3 +1,7 @@
+from pydoc import locate
+import re
+import json
+
 from gevent import monkey; monkey.patch_all()
 from ws4py.websocket import EchoWebSocket
 from ws4py.server.geventserver import WSGIServer
@@ -7,8 +11,9 @@ from ws4py.client import WebSocketBaseClient
 from ws4py.manager import WebSocketManager
 from ws4py import format_addresses, configure_logger
 
-from message import postmaster, perform_message
-from pydoc import locate
+from message import postmaster, perform_message, perform_command, broadcast
+
+SWITCH = '/'
 
 logger = configure_logger()
 
@@ -29,7 +34,7 @@ class Session(object):
     It can act as transient key value storage
     '''
 
-class Broadcast(object):
+class PluginBase(object):
 
     def created(self):
         pass
@@ -39,38 +44,133 @@ class Broadcast(object):
         self.session = session
 
     def add_client(self, client, cid):
-        perform_message('New client {}'.format(cid), client, self.clients, cid=cid)
+        pass
 
     def remove_client(self, client, cid):
-        perform_message('Remove client {}'.format(cid), client, self.clients, cid=cid)
+        pass
 
     def text_message(self, message, client):
-        perform_message('Text {}'.format(client.id), client, self.clients, cid=client.id)
+        pass
 
     def binary_message(self, message, client):
-        perform_message('Binary {}'.format(client.id), client, self.clients, cid=client.id)
+        pass
 
     def decode_message(self, message, client):
-        pass #perform_message('Text {}'.format(client.id), client, self.clients, cid=client.id)
+        pass
+
+    def encode_message(self, message, client):
+        pass
+
+    def extract_default(self, message, client):
+        '''return the value of a dict or string
+        '''
+        if isinstance(message, dict):
+            v = message.get('value', None)
+            return 'value' in message, v
+
+        return True, message
 
 
-class Mount(Broadcast):
+class Announce(PluginBase):
+    def add_client(self, client, cid):
+        perform_message('New client: {}'.format(cid), client, self.get_clients(), cid=cid)
+
+    def remove_client(self, client, cid):
+        perform_message('Remove client: {}'.format(cid), client, self.get_clients(), cid=cid)
+
+    def text_message(self, message, client):
+        perform_message('Text: {}'.format(client.id), client, self.get_clients(), cid=client.id)
+
+    def binary_message(self, message, client):
+        perform_message('Binary: {}'.format(client.id), client, self.get_clients(), cid=client.id)
+
+    def decode_message(self, message, client):
+        pass #perform_message('Text {}'.format(client.id), client, self.get_clients(), cid=client.id)
+
+
+class Broadcast(PluginBase):
+    '''Given a text or binary message, send to all self.client exluding the
+    originating client.
+    This should be placed at the bottom of a Session plugin call list to ensure
+    authorized methods are tested first.'''
+
+    def text_message(self, message, client):
+        broadcast(message, client, self.get_clients(), cid=client.id)
+
+    def binary_message(self, message, client):
+        broadcast(message, client, self.get_clients(), True, cid=client.id)
+
+
+class Mount(PluginBase):
 
     def mounted(self, session):
         self.session = session
 
-
     def text_message(self, message, client):
 
-        if message.startswith(':mount'):
-            items=list(map(str.strip, message.split(':mount')))[1:]
+        proceed = True
+        acted = False
+        success, text = self.extract_default(message, client)
+
+        if success and text.startswith(':mount'):
+            acted = True
+            items=list(map(str.strip, text.split(':mount')))[1:]
 
             for item in items:
                 item = item.strip()
+                print(item)
                 self.session.add_plugin(item, item)
 
-        # perform_message('Text {}'.format(client.id), client, self.clients, cid=client.id)
+        return (acted, proceed)
 
+
+class DirectMessage(PluginBase):
+    '''
+    Send a message to one or more named clients, using an @ symbol with
+    an attached string name.
+
+        @eric @mike this is a message
+    '''
+
+    reobj = re.compile("@(.[^ ]+)", re.IGNORECASE)
+    def mounted(self, session):
+        print('mounted')
+        self.session = session
+
+    def text_message(self, message, client):
+        res = ()
+        acted = False
+        proceed = True
+        success, text = self.extract_default(message, client)
+
+        if success and text.startswith('@'):
+            acted = True
+            proceed = False
+            result = self.reobj.findall(text)
+            _clients = {}
+            for name in result:
+                cl = self.get_clients().get(name, None)
+                if cl is not None:
+                    _clients[cl.id] = cl
+                res += ( (name, cl is not None) )
+            broadcast(text, client, _clients, ignore=[client])
+            # for item in items:
+            #     item = item.strip()
+            #     self.session.add_plugin(item, item)
+        return (acted, proceed)
+
+
+class Switch(PluginBase):
+
+    def text_message(self, message, client):
+
+        success, text = self.extract_default(message, client)
+        if success:
+            if text[0] == SWITCH:
+                data = perform_command(text, client, self.get_clients())
+                return (True, False)
+
+        return (False, True)
 
 
 class PluginMixin(object):
@@ -85,20 +185,29 @@ class PluginMixin(object):
 
     def add_plugin(self, name, plugin_path):
         plugin = locate(plugin_path)
+
+        if plugin is None:
+            print('Plugin "{}" does not exist'.format(plugin_path))
+            return None
         print('Adding plugin {}'.format(plugin_path))
 
         if callable(plugin):
             plugin = plugin()
 
-        self._plugins[name] = plugin
-        plugin.clients = clients
+        plugin.get_clients = self.get_clients
+
         if hasattr(plugin, 'created'):
             plugin.created()
+
+        self._plugins[name] = plugin
 
         if hasattr(plugin, 'mounted'):
             plugin.mounted(self)
 
         return plugin
+
+    def get_clients(self):
+        return clients
 
     def remove_plugin(self, name):
         if name in self._plugins:
@@ -106,17 +215,52 @@ class PluginMixin(object):
             return True
         return False
 
+    def get_plugins(self):
+        return [x for x in self._plugins.values()]
+
     def call_plugins(self, name, *a, **kw):
         res = {}
-
-        for p in self._plugins.values():
+        values = self.get_plugins()
+        for p in values:
             func = getattr(p, name)
             if callable(func):
-                res[name] = func(*a, **kw)
+                can_continue = func(*a, **kw)
+                used = False
+                _continue = True
+
+                if isinstance(can_continue, tuple):
+                    used, _continue = can_continue
+                elif isinstance(can_continue, bool):
+                    used = True
+                    _continue = can_continue
+
+                if _continue is False:
+                    print('Break Plugin iteration because', name)
+                    return False
+
         return res
 
 
-SWITCH = '/'
+class JSONEncoderDecoder(PluginBase):
+
+    def decode_message(self, message, client):
+
+        try:
+            print('Decoding')
+            return True, json.loads(message)
+        except json.decoder.JSONDecodeError:
+            print('  Decoding JSON Failed')
+            return False, message
+
+    def encode_message(self, message, client):
+
+        try:
+            print('Encoding')
+            return True, json.dumps(message)
+        except json.decoder.JSONEncodeError:
+            print('  Encoding JSON Failed')
+            return False, message
+
 
 class SystemSession(Session, PluginMixin):
     '''A global session for all other sessions and clients to interact with
@@ -124,19 +268,29 @@ class SystemSession(Session, PluginMixin):
     can use the global session
     '''
     plugins = (
-            'main.Broadcast',
+            'main.Announce',
             'main.Mount',
+            'main.Switch',
+            'main.DirectMessage',
+            'main.Broadcast',
         )
+
 
     def __init__(self, address, server):
         self.address = address
         self.server = server
         self._plugins = {}
+
+        self.translators = (
+            ('json', JSONEncoderDecoder(),),
+        )
+
         self.add_plugins(self.plugins)
 
     def add(self, client):
         cid = id(client)
         clients[cid] = client
+        print('Adding client {} {}'.format(cid, client))
         self.call_plugins('add_client', client, cid)
         return cid
 
@@ -148,20 +302,17 @@ class SystemSession(Session, PluginMixin):
         return False
 
     def message(self, message, client):
-
         if message.is_binary is False:
             text = postmaster(message, client, clients)
-
-            if text[0] == SWITCH:
-                data = perform_command(text, client, clients)
-            else:
-                # A standard message for normal protocols.
-                data = perform_message(text, client, clients)
-
+            text = self.decode_message(text, client, clients)
             self.call_plugins('text_message', text, client)
 
-
-
+    def decode_message(self, message, client, clients):
+        '''Using the translators list, decode the data relative to the client'''
+        res = message
+        for name, decoder in self.translators:
+            success, res = decoder.decode_message(res, client)
+        return res
 
     def decode(self, message, client, clients):
         """Decode a given message, converting it through session formatters
