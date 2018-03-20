@@ -31,6 +31,10 @@ class PluginBase(object):
     def encode_message(self, message, client):
         pass
 
+    def broadcast(self, message, client, clients, is_binary, ignore, cid):
+        pass
+
+
     def extract_default(self, message, client):
         '''return the value of a dict or string
         '''
@@ -46,16 +50,36 @@ class Announce(PluginBase):
     'remove', 'text' and 'binary',
     '''
     def add_client(self, client, cid):
-        broadcast('New client: {}'.format(cid), client, self.get_clients(client), cid=cid)
+
+        ss = 'New client: {}'.format(cid)
+        client.session.broadcast(ss,
+                                 client,
+                                 self.get_clients(client),
+                                 cid=cid)
 
     def remove_client(self, client, cid):
-        broadcast('Remove client: {}'.format(cid), client, self.get_clients(client), cid=cid)
+
+        ss = 'Remove client: {}'.format(cid)
+        client.session.broadcast(ss,
+                                 client,
+                                 self.get_clients(client),
+                                 cid=cid)
 
     def text_message(self, message, client):
-        broadcast('Text: {}'.format(client.id), client, self.get_clients(client), cid=client.id)
+
+        ss = 'Text: {}'.format(client.id)
+        client.session.broadcast(ss,
+                                 client,
+                                 self.get_clients(client),
+                                 cid=client.id)
 
     def binary_message(self, message, client):
-        broadcast('Binary: {}'.format(client.id), client, self.get_clients(client), cid=client.id)
+
+        ss = 'Binary: {}'.format(client.id)
+        client.session.broadcast(ss,
+                                 client,
+                                 self.get_clients(client),
+                                 cid=client.id)
 
     def decode_message(self, message, client):
         pass #perform_message('Text {}'.format(client.id), client, self.get_clients(client), cid=client.id)
@@ -68,10 +92,17 @@ class Broadcast(PluginBase):
     authorized methods are tested first.'''
 
     def text_message(self, message, client):
-        broadcast(message, client, self.get_clients(client), cid=client.id)
+        client.session.broadcast(message,
+            client,
+            self.get_clients(client),
+            cid=client.id)
 
     def binary_message(self, message, client):
-        broadcast(message, client, self.get_clients(client), True, cid=client.id)
+        client.session.broadcast(message,
+            client,
+            self.get_clients(client),
+            True,
+            cid=client.id)
 
 
 class Mount(PluginBase):

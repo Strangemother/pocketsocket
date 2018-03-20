@@ -1,17 +1,5 @@
-from digest import PluginBase
-from switch import add_switches
-
-
-def _injected_get_clients(orig_func):
-
-    def get_clients_wrapper(session, client=None):
-        if client is None:
-            return orig_func(client)
-
-        # collect from session channels
-        session.channels.get()
-
-    return get_clients_wrapper
+from host.digest import PluginBase
+from host.switch import add_switches
 
 
 class Channels(PluginBase):
@@ -21,16 +9,19 @@ class Channels(PluginBase):
     authorized methods are tested first.'''
 
     def mounted(self, session):
-        print('mounted broadcast')
+        print('mounted channels')
 
         # duck mount the session, injecting clients alternation.
-        session.get_clients = _injected_get_clients(session.get_clients)
         if hasattr(session, 'channels') is False:
-            session.channels = {}
+            print('Creating new channels')
+            session.channels = {
+                'apples': set(),
+                'foo': set(),
+            }
 
+        print('add_switches')
         add_switches({
                 'channel': set_channel,
-                'channels': set_channels,
             })
 
         self.session = session
@@ -38,37 +29,86 @@ class Channels(PluginBase):
     def add_client(self, client, cid):
 
         # Write allowed channels to the client
-        client.channels = set([cid])
-
+        client.channels = set([])
+        print(' -- build channels')
         # Ensure the channel exists for others to subscribe
         in_channels = cid in self.session.channels
         if in_channels is False:
-            self.session.channels[cid] = set()
+            print('Adding new channel placeholder to client', cid)
+            self.session.channels[cid] = set([])
 
+    def remove_client(self, client, cid):
+        print('Channels. Client was removed. Remove from channels.')
+        # Remove the main channel
+        for name in client.channels:
+            if name in client.session.channels:
+                del self.session.channels[name]
+
+        if cid in client.session.channels:
+            del self.session.channels[name]
 
     def text_message(self, message, client):
         print('Channels text_message')
-
-        #broadcast(message, client, self.get_clients(client), cid=client.id)
+        # Only send to subscribed channels.
+        pass
+        # broadcast(message, client, self.get_clients(client), cid=client.id)
 
     def binary_message(self, message, client):
         print('Channels binary_message')
         #broadcast(message, client, self.get_clients(client), True, cid=client.id)
 
+    def broadcast(self, message, client, clients, is_binary, ignore, cid):
+        _continue = False
+        _used = False
+        #clients = client.session.get_clients(client)
 
-def set_channel(value, options, client, clients):
+        _clients = set()
 
-    print('setting channel value')
-    if hasattr(clients, 'channels') is False:
-        return (value, False, )
+        if hasattr(client,'channels'):
+            for cname in client.channels:
+                channel_clients = client.session.channels.get(cname, set())
+                _clients = _clients.union(channel_clients)
+                #client.channels.intersection(client.session.channels)
 
-    clients.channels.add(value)
+            _clients = {x: clients[x] for x in _clients}
 
-def set_channels(value, options, client, clients):
+        import pdb; pdb.set_trace()  # breakpoint c9b5c8b9 //
 
-    print('setting channel value')
-    if hasattr(clients, 'channels') is False:
-        return (value, False, )
+        if _clients is None or len(_clients) == 0:
+            _continue = True
+            _clients = clients
 
-    clients.channels.extend(value)
+        if _clients is None:
+            print('Dropped all clients')
+        else:
+            for name in _clients:
+                if _clients[name] in ignore:
+                    continue
 
+                data = client.session.encode(message, client, _clients, is_binary)
+                _clients[name].send(data, is_binary)
+                _used = True
+
+        return _used, _continue
+
+
+
+
+def set_channel(values, options, client, clients):
+
+    print('setting channel', values)
+
+    for value in values:
+        if hasattr(client, 'channels') is False:
+            return (value, False, 'Client has no channels')
+
+        if value not in client.session.channels:
+            # client.session.channels[value] = set()
+            return (value, False, 'Channel "{}" does not exist'.format(value))
+
+        # Add channel name to client
+        client.channels.add(value)
+        # add client to system session channels
+        client.session.channels[value].add(client.id)
+
+        return (value, True, client.session.channels[value])

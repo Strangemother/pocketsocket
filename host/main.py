@@ -1,5 +1,5 @@
 from gevent import monkey; monkey.patch_all()
-from ws4py.websocket import EchoWebSocket
+from ws4py.websocket import WebSocket
 from ws4py.server.geventserver import WSGIServer
 from ws4py.server.wsgiutils import WebSocketWSGIApplication
 from ws4py.client import WebSocketBaseClient
@@ -14,7 +14,7 @@ def log(*a):
     logger.info(' '.join(map(str, a)))
 
 
-class SessionClient(EchoWebSocket):
+class SessionClient(WebSocket):
 
     def received_message(self, message):
         """
@@ -22,7 +22,7 @@ class SessionClient(EchoWebSocket):
         its originating endpoint.
         """
         # log('Recv > {}'.format(message))
-        self.session.message(message, self)
+        self.session.process_message(message, self)
         # self.broadcast(message.data, message.is_binary, ignore=[self])
 
     def opened(self):

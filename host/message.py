@@ -21,7 +21,6 @@ def postmaster(message, client, clients):
 def handle_text(message, client, clients):
     '''
     Given a message {data}, store or action upon the expect _text_ content.
-
     '''
 
     # Detect switch,

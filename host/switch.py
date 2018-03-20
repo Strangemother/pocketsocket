@@ -85,14 +85,16 @@ def autoload_methods(METHODS):
 
 def add_switch(name, method):
     global METHODS
+    print('  add_switch', name)
 
     METHODS[name] = method
 
 
-def add_switches(*a, **kw):
+def add_switches(dic):
     global METHODS
+    print('  add_switches', dic)
 
-    METHODS.update(*a, **kw)
+    METHODS.update(dic)
 
 
 def list_methods(value, options, client, clients):

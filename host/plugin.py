@@ -52,7 +52,12 @@ class PluginMixin(object):
         for p in values:
             func = getattr(p, name)
             if callable(func):
-                can_continue = func(*a, **kw)
+                try:
+                    can_continue = func(*a, **kw)
+                except TypeError as e:
+                    print('error with plugin function:', name, 'of', p)
+                    raise e
+
                 used = False
                 _continue = True
 
