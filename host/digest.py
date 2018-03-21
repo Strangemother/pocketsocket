@@ -1,48 +1,13 @@
+'''A group of session plugins to maange IO from sockets.
+A 'digest' module is non-blocking for the incoming information. An event
+method can return None or a tuple of (used, continue) pr _acted upon_ and _proceed_
+with the next digest plugin.
+
+If `continue` is false, the next consecutive plugins are not called.
+'''
 import re
 from host.message import postmaster, broadcast
-
-
-SWITCH = '/'
-
-class PluginBase(object):
-
-    def created(self):
-        pass
-
-    def mounted(self, session):
-        print('mounted broadcast')
-        self.session = session
-
-    def add_client(self, client, cid):
-        pass
-
-    def remove_client(self, client, cid):
-        pass
-
-    def text_message(self, message, client):
-        pass
-
-    def binary_message(self, message, client):
-        pass
-
-    def decode_message(self, message, client):
-        pass
-
-    def encode_message(self, message, client):
-        pass
-
-    def broadcast(self, message, client, clients, is_binary, ignore, cid):
-        pass
-
-
-    def extract_default(self, message, client):
-        '''return the value of a dict or string
-        '''
-        if isinstance(message, dict):
-            v = message.get('value', None)
-            return 'value' in message, v
-
-        return True, message
+from host.plugin import PluginBase
 
 
 class Announce(PluginBase):
@@ -50,7 +15,9 @@ class Announce(PluginBase):
     'remove', 'text' and 'binary',
     '''
     def add_client(self, client, cid):
-
+        '''A new client has connected to the server. Broadcast the 'new client'
+        statement to all connected clients.
+        '''
         ss = 'New client: {}'.format(cid)
         client.session.broadcast(ss,
                                  client,

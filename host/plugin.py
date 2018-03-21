@@ -1,6 +1,47 @@
 from pydoc import locate
 
 
+class PluginBase(object):
+
+    def created(self):
+        pass
+
+    def mounted(self, session):
+        print('mounted broadcast')
+        self.session = session
+
+    def add_client(self, client, cid):
+        pass
+
+    def remove_client(self, client, cid):
+        pass
+
+    def text_message(self, message, client):
+        pass
+
+    def binary_message(self, message, client):
+        pass
+
+    def decode_message(self, message, client):
+        pass
+
+    def encode_message(self, message, client):
+        pass
+
+    def broadcast(self, message, client, clients, is_binary, ignore, cid):
+        pass
+
+
+    def extract_default(self, message, client):
+        '''return the value of a dict or string
+        '''
+        if isinstance(message, dict):
+            v = message.get('value', None)
+            return 'value' in message, v
+
+        return True, message
+
+
 class PluginMixin(object):
 
     def add_plugins(self, plugins):
