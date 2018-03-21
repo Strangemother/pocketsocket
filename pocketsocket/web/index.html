@@ -15,10 +15,10 @@
 <body>
 
     <section id="main">
-        <h2>WebSockets.</h2>
+        <h2>WebSockets</h2>
         <form class="col s12">
             <div class="row">
-                <div class="input-field col s12">
+                <div class="input-field col s10">
                     <input
                         v-model='address'
                         @keyup.enter='fetch'
@@ -27,6 +27,14 @@
                         ref='address'
                         class="validate">
                     <label for="address">Path</label>
+                </div>
+                <div class="col s2">
+                    <a v-show='!connected'
+                        @click='connect'
+                        class="waves-effect waves-light btn">Connect</a>
+                    <a v-show='connected'
+                        @click='disconnect'
+                        class="waves-effect waves-light btn">Disconnect</a>
                 </div>
             </div>
 
@@ -42,8 +50,8 @@
                     <label for="message">Message</label>
                 </div>
                 <div class="col s2">
-                    <a class="waves-effect waves-light btn">Send</a>
-
+                    <a @click='sendMessage'
+                    class="waves-effect waves-light btn">Send</a>
                 </div>
             </div>
 
@@ -73,11 +81,15 @@
                 </div>
             </div> -->
             <ul class="row">
-                <a class="waves-effect waves-light btn">Send</a>
+                <a @click='clearMessages'
+                class="waves-effect waves-light btn">clear</a>
             </ul>
 
             <ul class="collection">
-                <li :class="['collection-item row', message.type]" v-for='message in socketMessages'>
+                <li :class="['collection-item row', message.type]" v-for='(message, key) in socketMessages.slice().reverse()' :key='message.data'>
+                    <span class="message-key">
+                        {{ message.index }}
+                    </span>
                     <span :class="['message', message.type]">
                     {{ message.data }}
                     </span>

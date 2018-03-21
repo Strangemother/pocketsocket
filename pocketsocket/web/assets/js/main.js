@@ -12,10 +12,14 @@ var jsonFetchApp = new Vue({
         , socketMessages: []
         , connected: false
         , indexItem: -1
+        , index: 0
+        , autoConnect: true
     }
 
     , mounted() {
-        this.connect()
+        if(this.autoConnect){
+            this.connect()
+        }
     }
 
     , methods: {
@@ -28,12 +32,17 @@ var jsonFetchApp = new Vue({
             this.webSocket = ws;
         }
 
+        , disconnect(){
+            this.webSocket.close()
+            this.connected = false
+        }
         , socketMessage(d){
             this.$emit('websocketData', d)
             //console.log(d);
             this.socketMessages.push({
                 type: 'in'
                 , data: d.data
+                , index: this.index++
             })
 
         }
@@ -43,11 +52,16 @@ var jsonFetchApp = new Vue({
             this.connected = true
         }
 
+        , clearMessages(){
+            this.socketMessages = []
+        }
+
         , sendMessage(){
             this.webSocket.send(this.message)
             this.socketMessages.push({
                 type: 'out'
                 , data: this.message
+                , index: this.index++
             })
             localStorage.lastMessage = this.message
             this.message = ''
