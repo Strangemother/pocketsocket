@@ -45,7 +45,7 @@ class Channels(PluginBase):
                 del self.session.channels[name]
 
         if cid in client.session.channels:
-            del self.session.channels[name]
+            del self.session.channels[cid]
 
     def text_message(self, message, client):
         print('Channels text_message')
@@ -71,8 +71,6 @@ class Channels(PluginBase):
                 #client.channels.intersection(client.session.channels)
 
             _clients = {x: clients[x] for x in _clients}
-
-        import pdb; pdb.set_trace()  # breakpoint c9b5c8b9 //
 
         if _clients is None or len(_clients) == 0:
             _continue = True
