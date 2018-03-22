@@ -8,6 +8,8 @@ from ws4py.manager import WebSocketManager
 from ws4py import format_addresses, configure_logger
 
 from session import get_session, setup_session
+from host.message import MetaMessage
+
 
 logger = configure_logger()
 def log(*a):
@@ -22,7 +24,7 @@ class SessionClient(WebSocket):
         its originating endpoint.
         """
         # log('Recv > {}'.format(message))
-        self.session.process_message(message, self)
+        self.session.process_message(MetaMessage(message, self), self)
         # self.broadcast(message.data, message.is_binary, ignore=[self])
 
     def opened(self):
