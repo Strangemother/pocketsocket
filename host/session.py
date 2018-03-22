@@ -50,7 +50,7 @@ class RawEncoder(object):
         if hasattr(message, 'data'):
             output = message.data
 
-        if isinstance(message, MetaMessage):
+        if hasattr(message, 'render'):
             output = message.render() or output
             ss =  '|'.join(["{}={}".format(x,y) for x,y in output])
             return True, ss
@@ -98,8 +98,8 @@ class SystemSession(Session, PluginMixin):
 
         self.translators = (
             ('timestamp', TimestampEncoder(),),
-            ('raw', RawEncoder(),),
-            # ('json', JSONEncoderDecoder(),),
+            #('raw', RawEncoder(),),
+            ('json', JSONEncoderDecoder(),),
             
         )
 
