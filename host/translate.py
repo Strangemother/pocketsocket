@@ -24,7 +24,8 @@ class JSONEncoderDecoder(PluginBase):
             except json.decoder.JSONEncodeError:
                 print('  Encoding JSON Failed')
         elif self.ensure_json_out:
-            d = { "from": client.id, "value": message }
+            _id = client.id if hasattr(client, 'id') else id(client)
+            d = { "from": _id, "value": message }
             v = json.dumps(d)
             return False, v
 
