@@ -38,6 +38,11 @@ class Session(object):
     '''
 
 class RawEncoder(object):
+    
+    terminator = '|'
+
+    def __init__(self, terminator='|'):
+        self.terminator = terminator
 
     def decode_message(self, message, client):
         return True, message
@@ -52,7 +57,7 @@ class RawEncoder(object):
 
         if hasattr(message, 'render'):
             output = message.render() or output
-            ss =  '|'.join(["{}={}".format(x,y) for x,y in output])
+            ss =  self.terminator.join(["{}={}".format(x,y) for x,y in output])
             return True, ss
         return True, output
 
@@ -98,8 +103,8 @@ class SystemSession(Session, PluginMixin):
 
         self.translators = (
             ('timestamp', TimestampEncoder(),),
-            #('raw', RawEncoder(),),
             ('json', JSONEncoderDecoder(),),
+            ('raw', RawEncoder(terminator='\r\n'),),
             
         )
 

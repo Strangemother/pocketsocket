@@ -1,13 +1,16 @@
 span.message.out:before {
-    content: ">";
+    /*content: ">";*/
     font-size: 1.5em;
 }
 
 span.message.in:before {
-    content: "<";
+    /*content: "<";*/
     font-size: 1.5em;
 }
 
+span.message {
+    white-space: pre-line;
+}
 
 #sphere {
     position: absolute;

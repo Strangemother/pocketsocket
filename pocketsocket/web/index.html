@@ -87,12 +87,8 @@
 
             <ul class="collection">
                 <li :class="['collection-item row', message.type]" v-for='(message, key) in socketMessages.slice().reverse()' :key='message.data'>
-                    <span class="message-key">
-                        {{ message.index }}
-                    </span>
-                    <span :class="['message', message.type]">
-                    {{ message.data }}
-                    </span>
+                    <span class="message-key">{{ message.index }}</span>
+                    <span :class="['message', message.type]">{{ message.data }}</span>
                 </li>
             </ul>
         </div>

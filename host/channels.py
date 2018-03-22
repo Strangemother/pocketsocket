@@ -2,6 +2,33 @@ from host.digest import PluginBase
 from host.switch import add_switches
 
 
+# Persistent record of a channel, to cast as Channel for the ststem
+CHANNELS = (
+        ('test', dict(public=True), ),
+        ('foo', dict(public=True), ),
+        ('eric', dict(public=True, owner='eric'), ),
+    )
+
+
+def master_channels():
+    '''
+    Return the definition of the available master channels.
+    These are public or persistent records of channels.
+    '''
+    return {x: y for x, y in CHANNELS}
+
+
+class Channel(object):
+
+    def __init__(self, definition):
+        self.data = definition
+        if 'clients' not  in self.data:
+            self.data['clients'] = set()
+
+    def add(self, client_id):
+        self.data['clients'].add(client_id)
+
+
 class Channels(PluginBase):
     '''Given a text or binary message, send to all self.client exluding the
     originating client.
@@ -14,10 +41,7 @@ class Channels(PluginBase):
         # duck mount the session, injecting clients alternation.
         if hasattr(session, 'channels') is False:
             print('Creating new channels')
-            session.channels = {
-                'apples': set(),
-                'foo': set(),
-            }
+            session.channels = {}
 
         print('add_switches')
         add_switches({
@@ -101,7 +125,7 @@ class Channels(PluginBase):
 
 
 def list_channels(values, options, client, clients):
-    return (values, True, client.channels, )
+    return ('channels', client.channels, master_channels(), )
 
 
 def set_channel(values, options, client, clients):
@@ -112,13 +136,20 @@ def set_channel(values, options, client, clients):
         if hasattr(client, 'channels') is False:
             return (value, False, 'Client has no channels')
 
-        if value not in client.session.channels:
+        records = master_channels()
+        if value not in records:
             # client.session.channels[value] = set()
             return (value, False, 'Channel "{}" does not exist'.format(value))
 
+        channel_d = records[value]
+
         # Add channel name to client
         client.channels.add(value)
+
         # add client to system session channels
+        if value not in client.session.channels:
+            client.session.channels[value] = set()
+
         client.session.channels[value].add(client.id)
 
         return (value, True, client.session.channels[value])
