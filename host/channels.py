@@ -22,6 +22,7 @@ class Channels(PluginBase):
         print('add_switches')
         add_switches({
                 'channel': set_channel,
+                'channels': list_channels,
             })
 
         self.session = session
@@ -83,13 +84,24 @@ class Channels(PluginBase):
                 if _clients[name] in ignore:
                     continue
 
-                data = client.session.encode(message, client, _clients, is_binary)
+                # Copy message ensures each client receives a unique list
+                # of content through the message mutation during plugin
+                # iteration
+
+                msg = message.copy() if hasattr(message, 'copy') else message
+                # Full translate. Going though the session to ensure the system
+                # performs mandatory translations - within, the `message.render()`
+                # (if it exists) returns the final output.
+                data = client.session.encode(msg, client, _clients, is_binary)
                 _clients[name].send(data, is_binary)
                 _used = True
+
 
         return _used, _continue
 
 
+def list_channels(values, options, client, clients):
+    return (values, True, client.channels, )
 
 
 def set_channel(values, options, client, clients):
