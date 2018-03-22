@@ -1,6 +1,6 @@
 from translate import JSONEncoderDecoder
 from pydoc import locate
-from message import postmaster, broadcast, handle_text
+from host.message import postmaster, broadcast, handle_text, MetaMessage
 from plugin import PluginMixin
 
 
@@ -37,6 +37,45 @@ class Session(object):
     It can act as transient key value storage
     '''
 
+class RawEncoder(object):
+
+    def decode_message(self, message, client):
+        return True, message
+
+    def encode_message(self, message, client):
+        print('Translate raw')
+
+        output = message
+
+        if hasattr(message, 'data'):
+            output = message.data
+
+        if isinstance(message, MetaMessage):
+            output = message.render() or output
+            ss =  '|'.join(["{}={}".format(x,y) for x,y in output])
+            return True, ss
+        return True, output
+
+
+from datetime import datetime 
+
+class TimestampEncoder(object):
+
+
+    def encode_message(self, message, client):
+        if hasattr(message, 'content'):
+            print('Translate encoder', id(client))
+            message.content_keys.add('time_out')
+            message.content += ( ('time_out', datetime.now()), )
+        return True, message
+
+    def decode_message(self, message, client):
+        if hasattr(message, 'content'):
+            print('Translate decoder')
+            message.content_keys.add('time_in')
+            message.content += ( ('time_in', datetime.now()), )
+        return True, message
+
 
 class SystemSession(Session, PluginMixin):
     '''A global session for all other sessions and clients to interact with
@@ -58,7 +97,10 @@ class SystemSession(Session, PluginMixin):
         self._plugins = {}
 
         self.translators = (
+            ('timestamp', TimestampEncoder(),),
+            ('raw', RawEncoder(),),
             # ('json', JSONEncoderDecoder(),),
+            
         )
 
         self.add_plugins(self.plugins)
@@ -80,6 +122,10 @@ class SystemSession(Session, PluginMixin):
         '''Remove a client from the session, calling the 'remove_client' plugin
         chain
         '''
+        if hasattr(client, 'id') is False:
+            print('Could not cleanly remove a client', client)
+            return None
+
         if client.id in clients:
             del clients[client.id]
             self.call_plugins('remove_client', client, client.id)
@@ -88,43 +134,43 @@ class SystemSession(Session, PluginMixin):
 
     def process_message(self, message, recv_client):
         '''Pump a message through the session from an originating client.'''
+
         if message.is_binary is False:
-            text = handle_text(message, recv_client, clients)
-            text = self.decode_message(text, recv_client, clients)
-            self.call_plugins('text_message', text, recv_client)
+            res = self.decode(message, recv_client) 
+            self.call_plugins('text_message', message, recv_client)
             return
 
         print('Binary message not implemented')
 
-    def decode_message(self, message, client, clients):
+    def decode(self, message, client):
+        """Decode a given message, converting it through session formattersa"""
+        # print('session decode')
+        res = self.decode_message(message, client)
+        self.call_plugins('decode_message', res, client)
+        return message
+
+    def decode_message(self, message, client):
         '''Using the translators list, decode the data relative to the client'''
+        print('Calling session decode_message')
         res = message
         for name, decoder in self.translators:
             success, res = decoder.decode_message(res, client)
-        self.call_plugins('decode_message', message, client)
         return res
 
-    def encode_message(self, message, client, clients):
-        '''Using the translators list, decode the data relative to the client'''
+    def encode(self, message, client, clients, is_binary=False):
+        """Encode a given message, converting it through session formatters
+        """
+        print('session encode:', message)
+        self.call_plugins('encode_message', message, client)
+        output = self.translate_encode(message, client, clients)        
+        return output
+
+    def translate_encode(self, message, client, clients):
+        '''Using the translators list, encode (out) the data relative to the client'''
         res = message
         for name, encoder in self.translators:
             success, res = encoder.encode_message(res, client)
-
         return res
-
-    def decode(self, message, client, clients):
-        """Decode a given message, converting it through session formattersa"""
-        # print('session decode')
-        self.call_plugins('decode_message', message, client)
-        return message
-
-    def encode(self, message, client, clients, is_binary=False):
-        """Decode a given message, converting it through session formatters
-        """
-        print('session encode')
-        self.call_plugins('encode_message', message, client)
-        text = self.encode_message(message, client, clients)
-        return text
 
     def broadcast(self, data, client, _clients=None, is_binary=False, ignore=None, cid=None):
         #_man.broadcast(message.data, message.is_binary)
