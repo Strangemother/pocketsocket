@@ -31,13 +31,15 @@ class PluginBase(object):
     def broadcast(self, message, client, clients, is_binary, ignore, cid):
         pass
 
-
     def extract_default(self, message, client):
         '''return the value of a dict or string
         '''
         if isinstance(message, dict):
             v = message.get('value', None)
             return 'value' in message, v
+
+        if hasattr(message, 'decode_complete'):
+            return True, message.decode_complete()
 
         return True, message
 
