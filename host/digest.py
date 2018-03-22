@@ -6,7 +6,7 @@ with the next digest plugin.
 If `continue` is false, the next consecutive plugins are not called.
 '''
 import re
-from host.message import postmaster, broadcast
+from host.message import postmaster, broadcast, MetaMessage
 from host.plugin import PluginBase
 
 
@@ -86,7 +86,13 @@ class Mount(PluginBase):
 
         proceed = True
         acted = False
-        success, text = self.extract_default(message, client)
+        success, _text = self.extract_default(message, client)
+
+        text = message
+
+
+        if hasattr(message, 'decode_complete'):
+            text = text.decode_complete()
 
         if success and text.startswith(':mount'):
             acted = True
