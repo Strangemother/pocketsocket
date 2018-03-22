@@ -29,6 +29,7 @@ var jsonFetchApp = new Vue({
             let ws = new WebSocket(p);
             ws.onmessage = this.socketMessage;
             ws.onopen = this.socketOpen;
+            ws.onclose = this.socketClose;
             this.webSocket = ws;
         }
 
@@ -36,6 +37,7 @@ var jsonFetchApp = new Vue({
             this.webSocket.close()
             this.connected = false
         }
+
         , socketMessage(d){
             this.$emit('websocketData', d)
             //console.log(d);
@@ -50,6 +52,11 @@ var jsonFetchApp = new Vue({
         , socketOpen(d){
             console.log('open', d);
             this.connected = true
+        }
+
+        ,socketClose(e){
+            console.log('Closed')
+            this.connected = false
         }
 
         , clearMessages(){
