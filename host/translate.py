@@ -20,10 +20,14 @@ class JSONEncoderDecoder(PluginBase):
 
         if hasattr(message, 'utf8_decode'):
             data = message.utf8_decode()
-
         try:
-            print('Decoding')
-            return True, json.loads(data)
+            _json = json.loads(data)
+            # This is prety cool - we replace the output expected 'value' with
+            # a result to work better with the renderer.
+            # This allows us to render the data once within the message (in)
+            # and use the same out; saving the nested JSON string slashing.
+            message.append_content('value', _json)
+            return True, _json
         except json.decoder.JSONDecodeError:
             print('  Decoding JSON Failed')
             return False, message
@@ -32,7 +36,6 @@ class JSONEncoderDecoder(PluginBase):
 
         if isinstance(message, dict):
 
-            print('Encoding', type(message))
             message['from'] = client.id
             return True, json.dumps(message, default=JSONSerializer)
 

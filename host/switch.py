@@ -60,7 +60,6 @@ def manage_switched(message, client, clients):
     res = ()
     # parse using urllib
     ds = parse_qs(message[1:], keep_blank_values=True)
-    print('Switched', ds)
 
     for key in ds:
         if key in ignored:
@@ -86,14 +85,12 @@ def autoload_methods(METHODS):
 
 def add_switch(name, method):
     global METHODS
-    print('  add_switch', name)
 
     METHODS[name] = method
 
 
 def add_switches(dic):
     global METHODS
-    print('  add_switches', dic)
 
     METHODS.update(dic)
 
