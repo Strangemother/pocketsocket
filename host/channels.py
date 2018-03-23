@@ -36,14 +36,11 @@ class Channels(PluginBase):
     authorized methods are tested first.'''
 
     def mounted(self, session):
-        print('mounted channels')
 
         # duck mount the session, injecting clients alternation.
         if hasattr(session, 'channels') is False:
-            print('Creating new channels')
             session.channels = {}
 
-        print('add_switches')
         add_switches({
                 'channel': set_channel,
                 'channels': list_channels,
@@ -73,7 +70,6 @@ class Channels(PluginBase):
             del self.session.channels[cid]
 
     def text_message(self, message, client):
-        print('Channels text_message')
         # Only send to subscribed channels.
         pass
         # broadcast(message, client, self.get_clients(client), cid=client.id)
@@ -129,8 +125,6 @@ def list_channels(values, options, client, clients):
 
 
 def set_channel(values, options, client, clients):
-
-    print('setting channel', values)
 
     for value in values:
         if hasattr(client, 'channels') is False:
