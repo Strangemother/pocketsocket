@@ -41,10 +41,14 @@ class MetaMessage(object):
 
     @property
     def is_binary(self):
+        if self.message is None:
+            return False
         return self.message.is_binary
 
     @property
     def is_text(self):
+        if self.message is None:
+            return True
         return self.message.is_text
 
     @property

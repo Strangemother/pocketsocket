@@ -46,8 +46,9 @@ class Announce(PluginBase):
         self.send_msg(client, cid, 'remove client')
 
     def text_message(self, message, client):
-        cid = client.id if hasattr(client, 'id') else id(client)
-        self.send_msg(client, cid, 'text')
+        pass
+        # cid = client.id if hasattr(client, 'id') else id(client)
+        # self.send_msg(client, cid, 'text')
 
     def binary_message(self, message, client):
         cid = client.id if hasattr(client, 'id') else id(client)

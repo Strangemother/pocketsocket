@@ -37,7 +37,7 @@ class Session(object):
     '''
 
 class RawEncoder(object):
-    
+
     terminator = '|'
 
     def __init__(self, terminator='|'):
@@ -59,7 +59,7 @@ class RawEncoder(object):
         return True, output
 
 
-from datetime import datetime 
+from datetime import datetime
 
 class TimestampEncoder(object):
 
@@ -100,7 +100,7 @@ class SystemSession(Session, PluginMixin):
             ('timestamp', TimestampEncoder(),),
             ('json', JSONEncoderDecoder(),),
             #('raw', RawEncoder(terminator='\r\n'),),
-            
+
         )
 
         self.add_plugins(self.plugins)
@@ -134,12 +134,13 @@ class SystemSession(Session, PluginMixin):
     def process_message(self, message, recv_client):
         '''Pump a message through the session from an originating client.'''
 
+        res = self.decode(message, recv_client)
         if message.is_binary is False:
-            res = self.decode(message, recv_client) 
-            self.call_plugins('text_message', message, recv_client)
+            self.call_plugins('text_message', res, recv_client)
             return
 
-        print('Binary message not implemented')
+        self.call_plugins('binary_message', res, recv_client)
+        print('Binary message processed')
 
     def decode(self, message, client):
         """Decode a given message, converting it through session formattersa"""
@@ -158,7 +159,7 @@ class SystemSession(Session, PluginMixin):
         """Encode a given message, converting it through session formatters
         """
         self.call_plugins('encode_message', message, client)
-        output = self.translate_encode(message, client, clients)        
+        output = self.translate_encode(message, client, clients)
         return output
 
     def translate_encode(self, message, client, clients):

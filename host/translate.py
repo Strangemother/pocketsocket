@@ -10,6 +10,7 @@ def JSONSerializer(obj):
         return obj.isoformat()
     raise TypeError ("Type %s not serializable" % type(obj))
 
+
 class JSONEncoderDecoder(PluginBase):
 
     ensure_json_out = True
@@ -18,6 +19,8 @@ class JSONEncoderDecoder(PluginBase):
 
         data = message
 
+        if message.is_binary:
+            return False, message.message
         if hasattr(message, 'utf8_decode'):
             data = message.utf8_decode()
         try:
@@ -33,6 +36,10 @@ class JSONEncoderDecoder(PluginBase):
             return False, message
 
     def encode_message(self, message, client):
+
+        if message.is_binary:
+            return False, message.message
+
 
         if isinstance(message, dict):
 
