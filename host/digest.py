@@ -19,7 +19,14 @@ class Announce(PluginBase):
         statement to all connected clients.
         '''
         ss = 'New client: {}'.format(cid)
-        client.session.broadcast(ss,
+        msg = MetaMessage(client=client)
+        msg.append_dict({
+                'type': 'announce',
+                'value': 'new client',
+                'cid': cid,
+            })
+
+        client.session.broadcast(msg,
                                  client,
                                  self.get_clients(client),
                                  cid=cid)

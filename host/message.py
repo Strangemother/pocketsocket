@@ -14,7 +14,7 @@ class MetaMessage(object):
     A result content to push back to clients is altered by the session and
     any client translators.
     '''
-    def __init__(self, message, client=None):
+    def __init__(self, message=None, client=None):
         self.message = message
         self.client = client
         self._decoded = None
@@ -31,6 +31,14 @@ class MetaMessage(object):
         msg.content_keys = other.content_keys.copy()
         return msg
 
+    def append_content(self, key, value):
+        self.content += ( (key, value), )
+        self.content_keys.add(key)
+
+    def append_dict(self, d):
+        for k in d:
+            self.append_content(k, d[k])
+
     @property
     def is_binary(self):
         return self.message.is_binary
@@ -45,6 +53,8 @@ class MetaMessage(object):
 
     @property
     def completed(self):
+        if self.message is None:
+            return True
         return self.message.completed
 
     @property
@@ -61,8 +71,12 @@ class MetaMessage(object):
         return self.message.__unicode__()
 
     def utf8_decode(self, bytes_str=None):
+        if self.message is None:
+            return None
         data = bytes_str or self.message.data
-        return data.decode('utf-8')
+        if hasattr(data, 'decode'):
+            return data.decode('utf-8')
+        return None
 
     def render(self):
         '''return a complete version of the internal message for
@@ -71,7 +85,7 @@ class MetaMessage(object):
         '''
         decoded = self.decode_complete()
 
-        if decoded is None:
+        if decoded is None and len(self.content) == 0:
             print('Message is None or not complete.')
             return None
 
@@ -101,8 +115,15 @@ class MetaMessage(object):
 
         # Detect switch,
         # encat or continue
-        data = self.message.data
+        data = None
+        if self.message is not None:
+            data = self.message.data
+
         client = self.client
+        cid = id(client)
+        if hasattr(client, 'id'):
+            cid = client.id
+
         text = None
         message = self.message
 
@@ -111,22 +132,22 @@ class MetaMessage(object):
 
         if self.completed:
 
-            if client.id in handling_stacks:
+            if cid in handling_stacks:
                 # If previous bytes exist, stack the last message then create
                 # a final byte string.
-                handling_stacks[client.id] += (self.data)
+                handling_stacks[cid] += (self.data)
                 final = bytes()
-                for str_bytes in handling_stacks[client.id]:
+                for str_bytes in handling_stacks[cid]:
                     final += str_bytes
                 # remove the old stack data.
-                del handling_stacks[client.id]
+                del handling_stacks[cid]
                 # convert bytes to readable
                 text = self.utf8_decode(final)
             else:
                 text = self.utf8_decode()
         else:
-            if client.id not in handling_stacks:
-                handling_stacks[client.id] = ()
+            if cid not in handling_stacks:
+                handling_stacks[cid] = ()
 
             handling_stacks[client.id] += (self.data, )
 

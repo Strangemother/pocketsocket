@@ -1,7 +1,6 @@
 from urllib.parse import parse_qs
 from host.digest import PluginBase
 
-
 METHODS = {}
 SWITCH = '/'
 
@@ -80,7 +79,8 @@ def autoload_methods(METHODS):
         name=name,
         list=names,
         help=list_methods,
-        pause=pause
+        pause=pause,
+        info=info,
         )
 
 
@@ -140,8 +140,8 @@ def name(value, options, client, clients):
 
     return ( (old_id, new_id), True, )
 
-# def extend(value, options, client, clients):
 
+# def extend(value, options, client, clients):
 def names(value, options, client, clients):
     '''
     Return a list of all client names in `clients`
@@ -150,10 +150,21 @@ def names(value, options, client, clients):
     '''
     return (client.id, tuple((x, clients[x].id,) for x in clients), )
 
+
 def pause(value, options, client, clients):
     session = client.session
     import pdb; pdb.set_trace()  # breakpoint 0d4cfd8e //
 
+
+def info(value, options, client, clients):
+    session = client.session
+    from channels import master_channels
+    d = dict(
+            master_channels=master_channels(),
+            clients=tuple(session.get_clients().keys()),
+        )
+
+    return d
 
 def kick(value, options, client, clients):
     '''
