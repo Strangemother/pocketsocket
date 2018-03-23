@@ -100,7 +100,6 @@ class MetaMessage(object):
         # Map in the extra data assigned by plugins.
         # The ordered set is handled later with a translator
         for item in self.content:
-            print('Processing keys {}'.format(item))
             if item[0] in self.content_keys:
                 result += ( item, )
             else:

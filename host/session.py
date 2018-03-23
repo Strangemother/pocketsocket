@@ -13,7 +13,6 @@ def setup_session(address, server):
     Setup and start a new global session for the given server.
     The new SystemSession is globalised and returned.
     '''
-    print('Creating new system session')
     ss = SystemSession(address, server)
     server.system_session = ss
     # port only
@@ -48,8 +47,6 @@ class RawEncoder(object):
         return True, message
 
     def encode_message(self, message, client):
-        print('Translate raw')
-
         output = message
 
         if hasattr(message, 'data'):
@@ -69,14 +66,12 @@ class TimestampEncoder(object):
 
     def encode_message(self, message, client):
         if hasattr(message, 'content'):
-            print('Translate encoder', id(client))
             message.content_keys.add('time_out')
             message.content += ( ('time_out', datetime.now()), )
         return True, message
 
     def decode_message(self, message, client):
         if hasattr(message, 'content'):
-            print('Translate decoder')
             message.content_keys.add('time_in')
             message.content += ( ('time_in', datetime.now()), )
         return True, message
@@ -104,7 +99,7 @@ class SystemSession(Session, PluginMixin):
         self.translators = (
             ('timestamp', TimestampEncoder(),),
             ('json', JSONEncoderDecoder(),),
-            ('raw', RawEncoder(terminator='\r\n'),),
+            #('raw', RawEncoder(terminator='\r\n'),),
             
         )
 
@@ -119,7 +114,6 @@ class SystemSession(Session, PluginMixin):
         '''
         cid = id(client)
         clients[cid] = client
-        print('Adding client {} {}'.format(cid, client))
         self.call_plugins('add_client', client, cid)
         return cid
 
@@ -149,14 +143,12 @@ class SystemSession(Session, PluginMixin):
 
     def decode(self, message, client):
         """Decode a given message, converting it through session formattersa"""
-        # print('session decode')
         res = self.decode_message(message, client)
         self.call_plugins('decode_message', res, client)
         return message
 
     def decode_message(self, message, client):
         '''Using the translators list, decode the data relative to the client'''
-        print('Calling session decode_message')
         res = message
         for name, decoder in self.translators:
             success, res = decoder.decode_message(res, client)
@@ -165,7 +157,6 @@ class SystemSession(Session, PluginMixin):
     def encode(self, message, client, clients, is_binary=False):
         """Encode a given message, converting it through session formatters
         """
-        print('session encode:', message)
         self.call_plugins('encode_message', message, client)
         output = self.translate_encode(message, client, clients)        
         return output

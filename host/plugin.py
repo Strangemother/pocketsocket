@@ -60,7 +60,6 @@ class PluginMixin(object):
         if plugin is None:
             print('Plugin "{}" does not exist'.format(plugin_path))
             return None
-        print('Adding plugin {}'.format(plugin_path))
 
         if callable(plugin):
             plugin = plugin()
@@ -111,7 +110,6 @@ class PluginMixin(object):
                     _continue = can_continue
 
                 if _continue is False:
-                    print('Break Plugin iteration because', name)
                     return False
 
         return res
