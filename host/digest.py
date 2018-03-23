@@ -14,46 +14,44 @@ class Announce(PluginBase):
     '''Send string messages to all siblings of the client on events 'add',
     'remove', 'text' and 'binary',
     '''
-    def add_client(self, client, cid):
-        '''A new client has connected to the server. Broadcast the 'new client'
-        statement to all connected clients.
-        '''
-        ss = 'New client: {}'.format(cid)
+
+    def send_msg(self, client, cid, data=None):
         msg = MetaMessage(client=client)
-        msg.append_dict({
-                'type': 'announce',
-                'value': 'new client',
-                'cid': cid,
-            })
+        d = {
+            'type': 'announce',
+            'value': 'announcement',
+            'cid': cid,
+        }
+
+        if data is not None:
+            if isinstance(data, dict):
+                d.update(data)
+            else:
+                d.update({'value': data})
+
+        msg.append_dict(d)
 
         client.session.broadcast(msg,
                                  client,
                                  self.get_clients(client),
                                  cid=cid)
 
-    def remove_client(self, client, cid):
+    def add_client(self, client, cid):
+        '''A new client has connected to the server. Broadcast the 'new client'
+        statement to all connected clients.
+        '''
+        self.send_msg(client, cid, 'new client')
 
-        ss = 'Remove client: {}'.format(cid)
-        client.session.broadcast(ss,
-                                 client,
-                                 self.get_clients(client),
-                                 cid=cid)
+    def remove_client(self, client, cid):
+        self.send_msg(client, cid, 'remove client')
 
     def text_message(self, message, client):
-
-        ss = 'Text: {}'.format(client.id)
-        client.session.broadcast(ss,
-                                 client,
-                                 self.get_clients(client),
-                                 cid=client.id)
+        cid = client.id if hasattr(client, 'id') else id(client)
+        self.send_msg(client, cid, 'text')
 
     def binary_message(self, message, client):
-
-        ss = 'Binary: {}'.format(client.id)
-        client.session.broadcast(ss,
-                                 client,
-                                 self.get_clients(client),
-                                 cid=client.id)
+        cid = client.id if hasattr(client, 'id') else id(client)
+        self.send_msg(client, cid, 'binary')
 
     def decode_message(self, message, client):
         pass #perform_message('Text {}'.format(client.id), client, self.get_clients(client), cid=client.id)
