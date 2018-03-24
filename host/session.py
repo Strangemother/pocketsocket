@@ -2,6 +2,7 @@ from translate import JSONEncoderDecoder
 from pydoc import locate
 from host.message import postmaster, broadcast, handle_text, MetaMessage
 from plugin import PluginMixin
+from datetime import datetime
 
 
 global_sessions = {}
@@ -58,8 +59,6 @@ class RawEncoder(object):
             return True, ss
         return True, output
 
-
-from datetime import datetime
 
 class TimestampEncoder(object):
 
