@@ -163,6 +163,7 @@ def info(value, options, client, clients):
 
     return d
 
+
 def kick(value, options, client, clients):
     '''
     Send a kick action. Not Complete.
@@ -174,5 +175,6 @@ def kick(value, options, client, clients):
     for name in value:
         res += ( (name in clients, name,), )
     return res
+
 
 METHODS = autoload_methods(METHODS)

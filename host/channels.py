@@ -44,6 +44,8 @@ class Channels(PluginBase):
         add_switches({
                 'channel': set_channel,
                 'channels': list_channels,
+                'add-channel': add_channel,
+                'rem-channel': remove_channel,
             })
 
         self.session = session
@@ -124,8 +126,9 @@ def list_channels(values, options, client, clients):
     return ('channels', client.channels, master_channels(), )
 
 
-def set_channel(values, options, client, clients):
+def add_channel(values, options, client, clients):
 
+    print(' -- add_channel')
     for value in values:
         if hasattr(client, 'channels') is False:
             return (value, False, 'Client has no channels')
@@ -139,6 +142,57 @@ def set_channel(values, options, client, clients):
 
         # Add channel name to client
         client.channels.add(value)
+
+        # add client to system session channels
+        if value not in client.session.channels:
+            client.session.channels[value] = set()
+
+        client.session.channels[value].add(client.id)
+
+        return (value, True, client.session.channels[value])
+
+
+def remove_channel(values, options, client, clients):
+
+    print(' -- remove_channel')
+    for value in values:
+        if hasattr(client, 'channels') is False:
+            return (value, False, 'Client has no channels')
+
+        records = master_channels()
+        if value not in records:
+            # client.session.channels[value] = set()
+            return (value, False, 'Channel "{}" does not exist'.format(value))
+
+        channel_d = records[value]
+
+        # Add channel name to client
+        if value in client.channels:
+            client.channels.remove(value)
+
+        # add client to system session channels
+        if value in client.session.channels:
+            client.session.channels[value].remove(client.id)
+
+        return (value, True, client.session.channels[value])
+
+
+def set_channel(values, options, client, clients):
+
+    print(' -- set_channel')
+    for value in values:
+        if hasattr(client, 'channels') is False:
+            return (value, False, 'Client has no channels')
+
+        records = master_channels()
+        if value not in records:
+            # client.session.channels[value] = set()
+            return (value, False, 'Channel "{}" does not exist'.format(value))
+
+        channel_d = records[value]
+
+        # Add channel name to client
+        client.channels = set([value])
 
         # add client to system session channels
         if value not in client.session.channels:

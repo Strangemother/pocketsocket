@@ -62,6 +62,7 @@ def setup_django_wsgi():
     application = WSGIHandler()
     return application
 
+
 class SessionServer(WebSocketWSGIApplication):
     base_html = None
     dev_mode = True

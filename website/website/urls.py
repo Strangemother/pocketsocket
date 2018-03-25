@@ -23,7 +23,9 @@ import re
 from website.views import serve
 
 urlpatterns = [
+    # path('oauth/', include('allauth.urls')),
     path('admin/', admin.site.urls),
+    path('accounts/', include('userena.urls')),
     path('client/', include('client.urls')),
     path('static/', serve, kwargs={"document_root":settings.STATIC_ROOT, "show_indexes": True}),
     path('static/<path:path>', serve, kwargs={"document_root":settings.STATIC_ROOT, "show_indexes": True}),
