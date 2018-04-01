@@ -7,7 +7,7 @@ class PluginBase(object):
         pass
 
     def mounted(self, session):
-        print('mounted broadcast')
+        print('mounted base', self)
         self.session = session
 
     def add_client(self, client, cid):

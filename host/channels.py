@@ -18,6 +18,30 @@ def master_channels():
     return {x: y for x, y in CHANNELS}
 
 
+def get_channel(value, client=None):
+    records = master_channels()
+
+    if value not in records:
+        # client.session.channels[value] = set()
+        return get_service_channel(value, client)
+
+    channel_d = records[value]
+
+    return True, channel_d
+
+
+def get_service_channel(value, client=None):
+
+    if client is None:
+        return False, 'Channel "{}" does not exist'.format(value)
+
+    wss = client.environ.get('WEBSOCKET_SESSION', None)
+    if wss is not None:
+            if value in wss.channels:
+                return True, wss.channels[value]
+    return False, 'Channel "{}" does not exist'.format(value)
+
+
 class Channel(object):
 
     def __init__(self, definition):
@@ -133,12 +157,10 @@ def add_channel(values, options, client, clients):
         if hasattr(client, 'channels') is False:
             return (value, False, 'Client has no channels')
 
-        records = master_channels()
-        if value not in records:
-            # client.session.channels[value] = set()
-            return (value, False, 'Channel "{}" does not exist'.format(value))
+        success, channel_d = get_channel(value, client=client)
+        if success is False:
+            return channel_d
 
-        channel_d = records[value]
 
         # Add channel name to client
         client.channels.add(value)
@@ -159,12 +181,10 @@ def remove_channel(values, options, client, clients):
         if hasattr(client, 'channels') is False:
             return (value, False, 'Client has no channels')
 
-        records = master_channels()
-        if value not in records:
-            # client.session.channels[value] = set()
-            return (value, False, 'Channel "{}" does not exist'.format(value))
+        success, channel_d = get_channel(value, client=client)
+        if success is False:
+            return channel_d
 
-        channel_d = records[value]
 
         # Add channel name to client
         if value in client.channels:
@@ -184,12 +204,10 @@ def set_channel(values, options, client, clients):
         if hasattr(client, 'channels') is False:
             return (value, False, 'Client has no channels')
 
-        records = master_channels()
-        if value not in records:
-            # client.session.channels[value] = set()
-            return (value, False, 'Channel "{}" does not exist'.format(value))
+        success, channel_d = get_channel(value, client=client)
+        if success is False:
+            return channel_d
 
-        channel_d = records[value]
 
         # Add channel name to client
         client.channels = set([value])

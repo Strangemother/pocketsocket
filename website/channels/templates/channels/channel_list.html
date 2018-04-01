@@ -1,0 +1,10 @@
+<a href="{% url 'channel-create' %}" class="delete">create</a>
+{{ ws_session }}
+<ul>
+    {% for channel in object_list %}
+        <li>
+        Channel {{ channel.name }}
+        <a href="{% url 'channel-delete' channel.pk %}" class="delete">Delete</a>
+        </li>
+    {% endfor %}
+</ul>

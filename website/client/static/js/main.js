@@ -150,6 +150,8 @@ var jsonFetchApp = new Vue({
         , indexItem: -1
         , index: 0
         , autoConnect: true
+        , selectOffset: 0
+        , values: []
     }
 
     , mounted() {
@@ -185,6 +187,24 @@ var jsonFetchApp = new Vue({
 
         }
 
+        , keyupHandle(e){
+            this.selectOffset += 1
+            if(this.selectOffset > this.values.length) {
+                this.selectOffset = 0
+            }
+
+            this.message = this.values[this.values.length - this.selectOffset]
+        }
+
+        , keydownHandle(e){
+            this.selectOffset -= 1
+            if(this.selectOffset < 0) {
+                this.selectOffset = 0
+            }
+
+            this.message = this.values[this.values.length - this.selectOffset]
+        }
+
         , socketOpen(d){
             console.log('open', d);
             this.connected = true
@@ -197,10 +217,15 @@ var jsonFetchApp = new Vue({
 
         , clearMessages(){
             this.socketMessages = []
+
         }
 
         , sendMessage(){
             this.webSocket.send(this.message)
+            this.values.push(this.message)
+            if(this.values.length>100) {
+                this.values.splice(0, this.values.length - 100)
+            }
             this.socketMessages.push({
                 type: 'out'
                 , data: this.message

@@ -44,6 +44,8 @@
                     <input
                         v-model='message'
                         @keyup.enter='sendMessage'
+                        @keyup.up='keyupHandle($event)'
+                        @keyup.down='keydownHandle($event)'
                         id="message"
                         type="text"
                         ref='message'

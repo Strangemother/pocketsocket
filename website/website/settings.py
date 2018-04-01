@@ -48,7 +48,7 @@ INSTALLED_APPS = [
     'userena',
     'accounts',
     'client',
-
+    'channels',
 
     # ... include the providers you want to enable:
       # 'allauth.socialaccount.providers.amazon',

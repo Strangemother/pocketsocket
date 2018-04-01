@@ -27,6 +27,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('userena.urls')),
     path('client/', include('client.urls')),
+    path('channels/', include('channels.urls')),
     path('static/', serve, kwargs={"document_root":settings.STATIC_ROOT, "show_indexes": True}),
     path('static/<path:path>', serve, kwargs={"document_root":settings.STATIC_ROOT, "show_indexes": True}),
 ]# + static('static/', document_root=settings.STATIC_ROOT)

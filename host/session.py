@@ -3,18 +3,19 @@ from pydoc import locate
 from host.message import postmaster, broadcast, handle_text, MetaMessage
 from plugin import PluginMixin
 from datetime import datetime
-
+from pydoc import locate
 
 global_sessions = {}
 clients = {}
 #_man = WebSocketManager()
 
-def setup_session(address, server):
+def setup_session(server, settings=None):
     '''
     Setup and start a new global session for the given server.
     The new SystemSession is globalised and returned.
     '''
-    ss = SystemSession(address, server)
+    ss = SystemSession(server, settings)
+    address = server.address
     server.system_session = ss
     # port only
     global_sessions[str(address[1])] = ss
@@ -81,28 +82,23 @@ class SystemSession(Session, PluginMixin):
     server configurations. One system_session exists for a server. All clients
     can use the global session
     '''
-    plugins = (
-            'host.digest.Announce',
-            'host.digest.Mount',
-            'host.switch.Switch',
-            'host.digest.DirectMessage',
-            'host.channels.Channels',
-            'host.digest.Broadcast',
-        )
+    plugins = ()
 
-    def __init__(self, address, server):
-        self.address = address
+    def __init__(self, server, settings=None):
+        self.settings = settings
         self.server = server
         self._plugins = {}
 
-        self.translators = (
-            ('timestamp', TimestampEncoder(),),
-            ('json', JSONEncoderDecoder(),),
-            #('raw', RawEncoder(terminator='\r\n'),),
+        self.translators = ()
 
-        )
+        self.add_plugins(self.settings.SESSION_PLUGINS)
+        self.create_translators(self.settings.SESSION_TRANSLATORS)
 
-        self.add_plugins(self.plugins)
+    def create_translators(self, trans):
+        for name, imp_path, conf in trans:
+            self.translators += (
+                ( (name, locate(imp_path)(**{}), ), )
+            )
 
     def get_clients(self, client=None):
         return clients
