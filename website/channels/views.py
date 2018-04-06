@@ -34,12 +34,29 @@ class ChannelDeleteView(WebSocketSessionMixin, DeleteView):
     model = models.Channel
 
 
+from django.http import JsonResponse
+
 class ChannelListView(WebSocketSessionMixin, ListView):
     model = models.Channel
 
+    def get(self, request, *args, **kwargs):
+
+        if kwargs.get('as_json', False) is True:
+            # return json response
+            return JsonResponse(self.get_data(request), safe=False)
+        return super(ChannelListView, self).get(self, request, *args, **kwargs)
+
+    def get_data(self, request):
+        data = self.get_queryset()
+        res =  tuple(data.values('name', 'public', 'created', 'owner'))
+        return res
+
     def get_queryset(self):
         queryset = super(ChannelListView, self).get_queryset()
-        queryset = queryset.filter(owner=self.request.user)
+        if self.request.user.is_anonymous:
+            queryset = queryset.filter(public=True)
+        else:
+            queryset = queryset.filter(owner=self.request.user)
         return queryset
 
 
@@ -54,6 +71,8 @@ class ChannelCreateView(WebSocketSessionMixin, CreateView):
         wss = self.get_wss()
         if wss is not None:
             data = form.cleaned_data
-            wss.channels[data['name']] = data
+            print('Adding new channel to service')
+
+            print( wss.channels.create_channel(data['name'], {}))
 
         return super().form_valid(form)

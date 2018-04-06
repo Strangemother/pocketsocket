@@ -17,6 +17,7 @@ def setup_session(server, settings=None):
     ss = SystemSession(server, settings)
     address = server.address
     server.system_session = ss
+    ss.server = server
     # port only
     global_sessions[str(address[1])] = ss
 
@@ -37,6 +38,7 @@ class Session(object):
     and server options.
     It can act as transient key value storage
     '''
+
 
 class RawEncoder(object):
 
@@ -62,7 +64,6 @@ class RawEncoder(object):
 
 
 class TimestampEncoder(object):
-
 
     def encode_message(self, message, client):
         if hasattr(message, 'content'):

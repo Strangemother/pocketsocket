@@ -33,18 +33,14 @@ class SessionServer(WebSocketWSGIApplication):
 
         ws_token = environ.get("HTTP_UPGRADE", None)
         if ws_token is None:
-
+            # Return a standard request call.
             if environ['SERVER_PROTOCOL'] == 'HTTP/1.1':
-                environ['AKDJF'] = lambda: 1
                 return self.application(environ, start_response)
 
                 # fn = get_asset
                 # if environ['PATH_INFO'] == '/':
                 #     fn = index_response
                 # return fn(environ, start_response)
-
-        elif environ.get('REQUEST_METHOD') != 'GET':
-            raise HandshakeError('HTTP method must be a GET')
 
         return super(SessionServer, self).__call__(environ, start_response)
 
