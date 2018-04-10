@@ -22,9 +22,15 @@ def main(address=None):
     server = WSGIServer(address, SessionServer(handler_cls=SessionClient))
     session = setup_session(server, settings=conf)
     server.environ['WEBSOCKET_SESSION'] = session
-    server.serve_forever()
-
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt as e:
+        print('.. Stopped')
+        session.close()
+        server.stop()
+        server.close()
 
 if __name__ == '__main__':
     main()
+
 

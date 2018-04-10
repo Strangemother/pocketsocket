@@ -29,24 +29,22 @@ def perform_command(text, client, clients):
     # splitting client and broadcast data
     #
     # This is ugly.
-    for key, result in data:
-        if result is False:
+    for key, msg in data:
+
+        if msg is False:
             print('Key "{}" returned unparsable data'.format(key))
             client.send('Fail: {}'.format(key))
             continue
 
-        _to, *hook_data = result
-        if 'CLIENT' in _to:
-            client_msgs += ((key, hook_data,), )
-
-        if 'BROADCAST' in _to:
-            broadcast_msgs += ((key, hook_data,), )
-
-    for hook_data in client_msgs:
-        client.send(str(hook_data))
+        try:
+            msg.send(client)
+        except Exception as e:
+            print("Error with switch send message", e)
+            raise e
 
     for hook_data in broadcast_msgs:
-        broadcast(hook_data, client, clients, message.is_binary, ignore=[client])
+        for item in hook_data:
+            broadcast(item, client, clients, message.is_binary, ignore=[client])
 
     return data
 
@@ -110,7 +108,7 @@ def call_hook(key, options, client, clients):
         print('Method does not exist "switch.{}"'.format(key))
         return False
 
-    return (('CLIENT',), action(options[key], options, client, clients))
+    return action(options[key], options, client, clients)
 
 
 def name(value, options, client, clients):

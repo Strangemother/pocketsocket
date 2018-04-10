@@ -101,8 +101,18 @@ class SystemSession(Session, PluginMixin):
                 ( (name, locate(imp_path)(**{}), ), )
             )
 
-    def get_clients(self, client=None):
+    def get_clients(self, client=None, only=None):
+        if only is not None:
+            #print('get only', only)
+            return [clients[x] for x in only]
         return clients
+
+    def close(self):
+        self.call_plugins('close')
+        clients = list(self.get_clients().values())
+        for cl in clients:
+            cl.closed(0)
+
 
     def add(self, client):
         '''Add a client to the session, applying to the call list

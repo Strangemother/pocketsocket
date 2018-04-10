@@ -1,1 +1,17 @@
-Hi Channels.
+{% extends "channels/base.html" %}
+
+{% block main %}
+<div class="container">
+    <h2>Channels</h2>
+    <div id="channels">
+        <p class='flow-text'>Your Channels</p>
+    </div>
+    <div class="row">
+        <p><a href="{% url 'channel-list' %}">Channels</a></p>
+    </div>
+</div>
+{% endblock main %}
+
+{% block js %}
+    <script type="text/javascript" src="/static/js/channels_index.js?1"></script>
+{% endblock js %}

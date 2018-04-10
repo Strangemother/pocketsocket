@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'accounts',
     'client',
     'channels',
-
+    'website',
     # ... include the providers you want to enable:
       # 'allauth.socialaccount.providers.amazon',
       # 'allauth.socialaccount.providers.angellist',
@@ -135,7 +135,9 @@ ROOT_URLCONF = 'website.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'accounts/templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

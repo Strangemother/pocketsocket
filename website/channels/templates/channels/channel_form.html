@@ -1,5 +1,29 @@
-<form method='POST'>
-    {% csrf_token %}
-    {{ form }}
-    <input type="submit" value="Save">
-</form>
+
+{% extends "channels/base.html" %}
+
+{% block main %}
+<div class="container browser-default">
+    <form method='POST'>
+        {% csrf_token %}
+        <div class="row">
+            <div class="input-field col s6">
+                <input placeholder="Placeholder" id="id_name" name="name" type="text" class="validate">
+                <label for="id_name">Name</label>
+            </div>
+        </div>
+        <div class="row">
+            <label>
+                <input type="checkbox" name="public" id='id_public' />
+                <span>Public</span>
+            </label>
+        </div>
+        <div class="row">
+            <input type="submit" value="Save">
+        </div>
+    </form>
+</div>
+{% endblock main %}
+
+{% block js %}
+    <script type="text/javascript" src="/static/js/channels_index.js?1"></script>
+{% endblock js %}

@@ -131,6 +131,17 @@ class Channels(PluginBase):
         #self.session.channel_data[name] = data
         #return name in self.session.channel_data
 
+    def remove_channel(self, name, data):
+        global CHANNELS
+        dc = dict(CHANNELS)
+        if name in dc:
+            print('Deleting', name)
+            del dc[name]
+        CHANNELS = tuple(dc.items())
+        return name not in dc
+        #self.session.channel_data[name] = data
+        #return name in self.session.channel_data
+
     def add_client(self, client, cid):
 
         # Write allowed channels to the client
@@ -150,7 +161,10 @@ class Channels(PluginBase):
                 del self.session.channel_data[name]
 
         if cid in client.session.channel_data:
-            del self.session.channel_data[cid]
+            if hasattr(self, 'session'):
+                del self.session.channel_data[cid]
+            else:
+                print("Channels could not delete from session, no session exists?")
 
     def text_message(self, message, client):
         # Only send to subscribed channels.
@@ -204,9 +218,30 @@ class Channels(PluginBase):
 
         return _used, _continue
 
+    def get_clients(self, channel_name):
+        '''Return a list of all clients for the given channel name.
+        This method queries the attached service.
+        '''
+        ses = self.session
+        chan_clients = tuple(ses.channel_data.get(channel_name, set()))
+        # Provide a list of clients to resolve, rather than return the entire
+        # list and iterate.
+        # print('Channels.get_clients', channel_name, chan_clients)
+        return ses.get_clients(only=chan_clients)
+
 
 def list_channels(values, options, client, clients):
-    return ('channels', client.channels, master_channels(), )
+
+    msg = MetaMessage(
+        client=client,
+        value='channels',
+        success=True,
+        channels=list(client.channels),
+        master_channels=list(master_channels()),
+        )
+
+    return msg
+    # return ('channels', client.channels, master_channels(), )
 
 
 def add_host(values, options, client, clients):
@@ -228,6 +263,7 @@ def rem_host(values, options, client, clients):
 def add_channel(values, options, client=None, clients=None, session=None):
 
     print(' -- add_channel')
+
     for value in values:
 
         res = []
@@ -235,12 +271,21 @@ def add_channel(values, options, client=None, clients=None, session=None):
 
             if hasattr(client, 'channels') is False:
                 print('client has no channels')
-                return (value, False, 'Client has no channels')
-
+                return MetaMessage(
+                    value='Client has no channels',
+                    client=client,
+                    success=False,
+                    )
+                # return (value, False, 'Client has no channels')
             success, channel_d = get_channel(value, client=client)
+
             if success is False:
                 print('Did not succeed with get_channel')
-                return channel_d
+                return MetaMessage(
+                    value=channel_d,
+                    client=client,
+                    success=success,
+                    )
 
             # Add channel name to client
             client.channels.add(value)
@@ -259,8 +304,11 @@ def add_channel(values, options, client=None, clients=None, session=None):
         else:
             print('Did not add Channel "{}" to a service '.format(value))
 
-        return (value, True, res)
+        return MetaMessage(client=client, value=value, success=True, channel=list(res))
+        #return (value, True, res)
 
+
+from host.message import MetaMessage
 
 def remove_channel(values, options, client, clients):
 
@@ -271,7 +319,12 @@ def remove_channel(values, options, client, clients):
 
         success, channel_d = get_channel(value, client=client)
         if success is False:
-            return channel_d
+            return MetaMessage(
+                value=channel_d,
+                client=client,
+                success=success,
+                )
+
 
 
         # Add channel name to client
@@ -280,21 +333,35 @@ def remove_channel(values, options, client, clients):
 
         # add client to system session channels
         if value in client.session.channel_data:
-            client.session.channel_data[value].remove(client.id)
+            try:
+                client.session.channel_data[value].remove(client.id)
+            except KeyError:
+                # Was not in channel.
+                pass
 
-        return (value, True, client.session.channel_data[value])
+        return MetaMessage(
+            value=value,
+            client=client,
+            success=True,
+            channel=channel_d,
+            )
 
 
 def set_channel(values, options, client, clients):
 
     print(' -- set_channel')
+
     for value in values:
         if hasattr(client, 'channels') is False:
             return (value, False, 'Client has no channels')
 
         success, channel_d = get_channel(value, client=client)
         if success is False:
-            return channel_d
+            return MetaMessage(
+                value=channel_d,
+                client=client,
+                success=success,
+                )
 
 
         # Add channel name to client
@@ -306,4 +373,9 @@ def set_channel(values, options, client, clients):
 
         client.session.channel_data[value].add(client.id)
 
-        return (value, True, client.session.channel_data[value])
+        return MetaMessage(
+            value=value,
+            client=client,
+            success=True,
+            channel=list(client.session.channel_data[value]),
+            )

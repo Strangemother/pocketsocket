@@ -14,12 +14,14 @@ class MetaMessage(object):
     A result content to push back to clients is altered by the session and
     any client translators.
     '''
-    def __init__(self, message=None, client=None):
+    def __init__(self, message=None, client=None, **content_kwargs):
         self.message = message
         self.client = client
         self._decoded = None
         self.content = ()
         self.content_keys = {'client_id', 'value'}
+        self.update(**content_kwargs)
+
 
     def copy(self, other=None):
         other = other or self
@@ -34,6 +36,10 @@ class MetaMessage(object):
     def append_content(self, key, value):
         self.content += ( (key, value), )
         self.content_keys.add(key)
+
+    def update(self, **kwargs):
+        for k in kwargs:
+            self.append_content(k, kwargs[k])
 
     def append_dict(self, d):
         for k in d:
@@ -82,7 +88,14 @@ class MetaMessage(object):
             return data.decode('utf-8')
         return None
 
-    def render(self):
+    def send(self, *clients):
+        rendered = self.render()
+        for client in clients:
+            msg = self.render(client)
+            out = client.session.translate_encode(self, client, None)
+            client.send(out)
+
+    def render(self, client=None):
         '''return a complete version of the internal message for
         transport to a client. The internal session, client and translators
         are used for a final string or binary.
@@ -93,7 +106,7 @@ class MetaMessage(object):
             print('Message is None or not complete.')
             return None
 
-        client = self.client
+        client = client or self.client
         result = (
             # The value or message content as default
             ('value', decoded, ),

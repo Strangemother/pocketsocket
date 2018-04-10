@@ -6,6 +6,12 @@ class PluginBase(object):
     def created(self):
         pass
 
+    def close(self):
+        '''
+        server close
+        '''
+        del self.session
+
     def mounted(self, session):
         print('mounted base', self)
         self.session = session
@@ -64,7 +70,9 @@ class PluginMixin(object):
         if callable(plugin):
             plugin = plugin()
 
-        plugin.get_clients = self.get_clients
+        if hasattr(plugin, 'get_clients') is False:
+            plugin.get_clients = self.get_clients
+
 
         if hasattr(plugin, 'created'):
             plugin.created()

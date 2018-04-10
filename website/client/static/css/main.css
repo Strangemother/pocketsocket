@@ -46,6 +46,7 @@ span.message {
     flex-direction: row-reverse;
 }
 
+
 #main #form-output li.in + li.out,
 #main #form-output li.out + li.in {
     margin-top: 0;
@@ -63,4 +64,31 @@ li.out .message-key {
     background: #EEE;
     padding: 0.1em 0.3em;
     margin: 0 0.5em 0 0em;
+}
+
+
+.channels .list-content {
+    display: flex;
+    width: 100%;
+}
+
+.list-content .publicity {min-width: 3rem;}
+
+.list-content a.delete {
+    margin-left: auto;
+    /* display: flex; */
+    /* outline: solid; */
+    /* justify-self: flex-end; */
+    /* align-self: flex-end; */
+}
+
+.list-content span.name {
+    display: flex;
+    flex-grow: 1;
+}
+
+i.material-icons {}
+
+a.btn-floating, a.btn, a.btn-small, a.btn-large {
+    box-shadow: none !important;
 }

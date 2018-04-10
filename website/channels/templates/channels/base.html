@@ -1,0 +1,50 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Channels{% endblock %}</title>
+    <!--Import Google Icon Font-->
+
+    <!--Import materialize.css-->
+    <link type="text/css" rel="stylesheet" href="{% static 'materialize/css/materialize.css' %}"  media="screen,projection"/>
+    <link type="text/css" rel="stylesheet" href="{% static 'css/main.css' %}"  media="screen,projection"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    {% block css %}{% endblock %}
+
+    <!--Let browser know website is optimized for mobile-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    {% block meta %}{% endblock %}
+</head>
+
+<body id="{% block body_id %}{% endblock %}" class="{% block body_class %}{% endblock %}">
+
+
+    <nav class="blue darken-3" role="navigation">
+        <divclass="nav-wrapper container">
+            <a id="logo-container" href="#" class="brand-logo">Logo</a>
+            <ul class="right hide-on-med-and-down">
+
+                <li><a href="{% url 'client' %}">client</a></li>
+                <li><a href="{% url 'channel-list' %}">channels</a></li>
+                {% if user.is_authenticated %}
+                    <li><a href="#">{{ user.username }}</a></li>
+                    <li><a href="{% url 'userena_signout' %}">Logout</a></li>
+                {% else %}
+                    <li><a href="{% url 'userena_signin' %}">Login</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    {% block main %}
+    {% endblock main %}
+
+    <script type="text/javascript" src="{% static '/js/jquery-2.1.1.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'materialize/js/materialize.js' %}"></script>
+    <script type="text/javascript" src="{% static '/js/vue.js' %}"></script>
+    <script type="text/javascript" src="{% static '/js/base.js' %}"></script>
+    {% block js %}
+    {% endblock js %}
+</body>
+</html>

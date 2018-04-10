@@ -33,6 +33,17 @@ class ChannelDeleteView(WebSocketSessionMixin, DeleteView):
     success_url = '/channels/list/'
     model = models.Channel
 
+    def delete(self, request, *args, **kwargs):
+        # owner = self.request.user
+        wss = self.get_wss()
+
+        if wss is not None:
+            data = self.get_object()
+            print('Removing channel from service: "{}"'.format(data))
+            print( wss.channels.remove_channel(data.name, {}))
+
+        res = super().delete(request, *args, **kwargs)
+        return res
 
 from django.http import JsonResponse
 

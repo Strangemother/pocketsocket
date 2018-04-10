@@ -1,10 +1,45 @@
-<a href="{% url 'channel-create' %}" class="delete">create</a>
-{{ ws_session }}
-<ul>
-    {% for channel in object_list %}
-        <li>
-        Channel {{ channel.name }}
-        <a href="{% url 'channel-delete' channel.pk %}" class="delete">Delete</a>
+{% extends "channels/base.html" %}
+
+{% block main %}
+<div class="container">
+
+
+    <ul class="collection channels">
+        {% for channel in object_list %}
+        <li class='collection-item'>
+
+            <div class="list-content">
+
+                <div class="publicity">
+                    {% if channel.public %}
+                        <span class="public">
+                            <i class="material-icons">public</i>
+                        </span>
+                    {% else %}
+                        <span class="private"></span>
+                    {% endif %}
+                </div>
+
+                <span class="name">{{ channel.name }}</span>
+
+                <a href="{% url 'channel-delete' channel.pk %}" class="waves-effect waves-light btn-small secondary-content delete">
+                    <i class="material-icons left">delete</i> Delete
+                </a>
+            </div>
+
+
         </li>
-    {% endfor %}
-</ul>
+        {% endfor %}
+    </ul>
+
+    <a class="btn-floating btn-large waves-effect waves-light green lighten-2" href='{% url 'channel-create' %}'>
+        <i class="material-icons">add</i>
+    </a>
+
+    <p>Session: {{ ws_session }}</p>
+</div>
+{% endblock main %}
+
+{% block js %}
+    <script type="text/javascript" src="/static/js/channels_index.js?1"></script>
+{% endblock js %}
