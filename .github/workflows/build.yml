@@ -60,7 +60,7 @@ jobs:
           path: dist/pocketsocket-cli*
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.1.1
+        uses: pypa/cibuildwheel@v3.2.1
 
       - name: Upload wheels
         uses: actions/upload-artifact@v4
