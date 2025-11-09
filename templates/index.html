@@ -1,6 +1,6 @@
 <body style="background:#111;color:#ccc">
 <script>
-ws = new WebSocket('ws://'+location.host)
+ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host)
 ws.onmessage=e=>document.body.innerHTML=e.data
 ws.onopen = e=>{
     // window.location = window.location.href

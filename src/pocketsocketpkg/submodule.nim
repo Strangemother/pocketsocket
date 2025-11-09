@@ -32,7 +32,7 @@ proc getWelcomeMessage*(): string =
     # let base_dir = getAppDir()
     let filepath = Path(base_dir) / Path(filepath_str)
 
-    if cstring(loaded_template_str) != nil:
+    if loaded_template_str.len > 0:
       return loaded_template_str
     else:
       echo "Template String is nil: ", loaded_template_str ,". Discovering: ", cast[string](filepath)
