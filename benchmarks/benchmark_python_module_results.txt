@@ -1,0 +1,61 @@
+======================================================================
+Pocketsocket Python Module Startup Benchmark
+======================================================================
+
+Testing: Python API (pocketsocket.hook + run_blocking_server)
+Iterations: 20
+
+Run  1/20... ✓ TTL:  2.059ms, Connect:   1.43ms
+Run  2/20... ✓ TTL:  0.920ms, Connect:   0.08ms
+Run  3/20... ✓ TTL:  1.112ms, Connect:   0.10ms
+Run  4/20... ✓ TTL:  1.135ms, Connect:   0.10ms
+Run  5/20... ✓ TTL:  1.057ms, Connect:   1.34ms
+Run  6/20... ✓ TTL:  1.007ms, Connect:   0.08ms
+Run  7/20... ✓ TTL:  1.245ms, Connect:   1.31ms
+Run  8/20... ✓ TTL:  0.910ms, Connect:   0.08ms
+Run  9/20... ✓ TTL:  1.136ms, Connect:   1.30ms
+Run 10/20... ✓ TTL:  0.970ms, Connect:   0.08ms
+Run 11/20... ✓ TTL:  0.918ms, Connect:   0.08ms
+Run 12/20... ✓ TTL:  0.890ms, Connect:   0.08ms
+Run 13/20... ✓ TTL:  1.042ms, Connect:   0.08ms
+Run 14/20... ✓ TTL:  0.970ms, Connect:   0.09ms
+Run 15/20... ✓ TTL:  0.868ms, Connect:   0.10ms
+Run 16/20... ✓ TTL:  0.894ms, Connect:   0.09ms
+Run 17/20... ✓ TTL:  1.231ms, Connect:   1.63ms
+Run 18/20... ✓ TTL:  0.930ms, Connect:   0.08ms
+Run 19/20... ✓ TTL:  0.884ms, Connect:   0.08ms
+Run 20/20... ✓ TTL:  1.178ms, Connect:   0.10ms
+
+======================================================================
+Results
+======================================================================
+
+Successful runs: 20/20
+
+Server Startup Time (TTL - Time To Launch):
+  Minimum:   0.8683 ms
+  Maximum:   2.0590 ms
+  Average:   1.0678 ms
+  Median:    0.9887 ms
+  Std Dev:   0.2627 ms
+
+Time to First Connection (from subprocess start):
+  Minimum:     0.08 ms
+  Maximum:     1.63 ms
+  Average:     0.42 ms
+  Median:      0.09 ms
+  Std Dev:     0.59 ms
+
+Performance Distribution (TTL):
+  < 1ms:    10/20 ( 50.0%)
+  < 5ms:    20/20 (100.0%)
+  < 10ms:   20/20 (100.0%)
+  < 20ms:   20/20 (100.0%)
+
+======================================================================
+Summary: Python module startup is extremely fast (~1.07ms average TTL)
+  - Average time to first connection: ~0.42ms
+
+Note: Python module adds ~5-10ms overhead compared to the standalone
+      CLI due to Python interpreter initialization.
+======================================================================

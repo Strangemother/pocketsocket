@@ -1,0 +1,94 @@
+======================================================================
+WebSocket Server Startup Time Comparison
+======================================================================
+
+Iterations per server: 10
+Method: Time from process start to accepting first connection
+
+Checking available libraries...
+  ✓ pocketsocket
+  ✓ websockets
+  ✓ tornado
+  ✓ aiohttp
+  ✓ fastapi
+
+Running benchmarks...
+======================================================================
+
+[1/5] Benchmarking Pocketsocket...
+
+[2/5] Benchmarking websockets library...
+
+[3/5] Benchmarking Tornado...
+
+[4/5] Benchmarking aiohttp...
+
+[5/5] Benchmarking FastAPI + uvicorn...
+
+======================================================================
+Results Summary
+======================================================================
+
+Pocketsocket:
+  Successful runs: 10
+  Average:   36.76 ms
+  Median:    27.18 ms
+  Min:       16.37 ms
+  Max:       96.26 ms
+  Std Dev:   27.30 ms
+
+websockets:
+  Successful runs: 10
+  Average:  139.07 ms
+  Median:   108.29 ms
+  Min:       89.22 ms
+  Max:      269.53 ms
+  Std Dev:   61.64 ms
+
+Tornado:
+  Successful runs: 10
+  Average:  170.09 ms
+  Median:   137.50 ms
+  Min:      129.30 ms
+  Max:      427.91 ms
+  Std Dev:   91.53 ms
+
+aiohttp:
+  Successful runs: 10
+  Average:  228.78 ms
+  Median:   212.62 ms
+  Min:      208.99 ms
+  Max:      306.92 ms
+  Std Dev:   31.87 ms
+
+FastAPI:
+  Successful runs: 10
+  Average:  395.79 ms
+  Median:   387.92 ms
+  Min:      372.98 ms
+  Max:      439.57 ms
+  Std Dev:   22.76 ms
+
+======================================================================
+Speed Comparison (relative to Pocketsocket)
+======================================================================
+
+Server                   Avg Time vs Pocketsocket     Factor
+----------------------------------------------------------------------
+Pocketsocket              36.76ms      (baseline)       1.0x
+websockets               139.07ms       +102.31ms       3.8x
+Tornado                  170.09ms       +133.33ms       4.6x
+aiohttp                  228.78ms       +192.02ms       6.2x
+FastAPI                  395.79ms       +359.03ms      10.8x
+
+======================================================================
+
+Visual Comparison:
+
+Pocketsocket         ▓▓▓▓▓ 36.76ms
+websockets           ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 139.07ms
+Tornado              ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 170.09ms
+aiohttp              ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 228.78ms
+FastAPI              ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 395.79ms
+
+======================================================================

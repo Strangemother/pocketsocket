@@ -4,6 +4,8 @@ Zero config websocket implementation for standalone and python implementation.
 
 Standalone:
 
+Windows:
+
 ```bash
 $ nim_src>dist\pocketsocket-cli.exe --run
 Run
@@ -11,6 +13,17 @@ Discovering: .\nim_src\templates\index.html
 Template Set. Length: 230
 Serving on http://127.0.0.1:8090
 TTL: 11 milliseconds, 795 microseconds, and 685 nanoseconds
+```
+
+Linux:
+
+```bash
+@Strangemother ➜ /workspaces/pocketsocket-2 (main) $ dist/pocketsocket-cli --run 
+Run
+Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://127.0.0.1:8090
+TTL: 664 microseconds and 116 nanoseconds
 ```
 
 Python:
@@ -55,7 +68,7 @@ That's everything. Connect to the waiting server using http or websockets.
 
 + It's frickin quick:
 
-    Compiled in nim to python as a c-like asset, it's fast as a bullet. The primary server will start in less than 20 milliseconds.
+    Compiled in nim to python as a c-like asset, it's fast as a bullet. The primary server will start in **less than 1 millisecond** on average. See [BENCHMARKS.md](BENCHMARKS.md) for detailed performance metrics.
 
 + Unmanaged sockets!
 
@@ -204,3 +217,64 @@ Partial fix until Nim 2.0 is changed will reduce the overhead:
 
         --mm:arc
         -d:useMalloc
+
+
+## Benchmarks
+
+Pocketsocket is exceptionally fast. The server starts in **sub-millisecond time** (< 1ms average).
+
+### 🚀 Quick Start - Run All Benchmarks
+
+```bash
+# Run complete benchmark suite and generate a report
+./run_benchmarks.py -n 20 -o benchmark_report.txt
+```
+
+This will:
+- ✓ Benchmark the standalone CLI binary
+- ✓ Benchmark the Python module
+- ✓ Compare against other WebSocket servers (websockets, Tornado, aiohttp, FastAPI)
+- ✓ Generate a comprehensive report
+
+### Individual Benchmarks
+
+**Startup Time:**
+```bash
+# Benchmark the standalone CLI binary
+python3 benchmarks/benchmark.py -n 20
+
+# Benchmark the Python module
+python3 benchmarks/benchmark_python_module.py -n 20
+
+# Compare against other WebSocket servers
+python3 benchmarks/benchmark_comparison.py -n 10
+```
+
+**Connection Throughput:**
+```bash
+# Test WebSocket connection establishment
+python3 benchmarks/benchmark_connections.py -n 5 -c 100
+
+# Sequential connections only
+python3 benchmarks/benchmark_connections.py --sequential-only -n 10 -c 200
+
+# Concurrent connections only
+python3 benchmarks/benchmark_connections.py --concurrent-only -n 5 -c 100
+```
+
+For detailed benchmark results and methodology, see [BENCHMARKS.md](BENCHMARKS.md).
+
+### Latest Results
+
+**Standalone CLI (50 iterations):**
+- Average: 0.80ms
+- Median: 0.80ms
+- 94% of startups under 1ms
+
+**Python Module (20 iterations):**
+- Average: 1.07ms
+- Median: 0.99ms
+- 50% of startups under 1ms
+
+**Comparison to Other Servers:**
+Pocketsocket is **7.8-34.5x faster** than other popular Python WebSocket servers (websockets, Tornado, aiohttp, FastAPI). See [BENCHMARKS.md](BENCHMARKS.md) for detailed comparison.

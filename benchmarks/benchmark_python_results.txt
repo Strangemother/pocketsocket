@@ -1,0 +1,88 @@
+======================================================================
+Pocketsocket Python Module Startup Benchmark
+======================================================================
+
+Testing: Python API (hook + run_blocking_server)
+Iterations: 15
+
+Run  1/15... Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://0.0.0.0:9091
+TTL: 15 milliseconds, 267 microseconds, and 538 nanoseconds
+✗ Failed
+Run  2/15... Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://0.0.0.0:9092
+TTL: 3 seconds, 20 milliseconds, 708 microseconds, and 461 nanoseconds
+✗ Failed
+Run  3/15... Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://0.0.0.0:9093
+TTL: 6 seconds, 23 milliseconds, 715 microseconds, and 174 nanoseconds
+✗ Failed
+Run  4/15... Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://0.0.0.0:9094
+TTL: 9 seconds, 28 milliseconds, 188 microseconds, and 302 nanoseconds
+✗ Failed
+Run  5/15... Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://0.0.0.0:9095
+TTL: 12 seconds, 33 milliseconds, 532 microseconds, and 984 nanoseconds
+✗ Failed
+Run  6/15... Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://0.0.0.0:9096
+TTL: 15 seconds, 39 milliseconds, 273 microseconds, and 371 nanoseconds
+✗ Failed
+Run  7/15... Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://0.0.0.0:9097
+TTL: 18 seconds, 44 milliseconds, 483 microseconds, and 145 nanoseconds
+✗ Failed
+Run  8/15... Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://0.0.0.0:9098
+TTL: 21 seconds, 50 milliseconds, 247 microseconds, and 265 nanoseconds
+✗ Failed
+Run  9/15... Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://0.0.0.0:9099
+TTL: 24 seconds, 57 milliseconds, 825 microseconds, and 827 nanoseconds
+✗ Failed
+Run 10/15... Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://0.0.0.0:9100
+TTL: 27 seconds, 60 milliseconds, 418 microseconds, and 931 nanoseconds
+✗ Failed
+Run 11/15... Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://0.0.0.0:9091
+TTL: 30 seconds, 63 milliseconds, 264 microseconds, and 669 nanoseconds
+✗ Failed
+Run 12/15... Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://0.0.0.0:9092
+TTL: 33 seconds, 67 milliseconds, 465 microseconds, and 819 nanoseconds
+✗ Failed
+Run 13/15... Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://0.0.0.0:9093
+TTL: 36 seconds, 71 milliseconds, 187 microseconds, and 119 nanoseconds
+✗ Failed
+Run 14/15... Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://0.0.0.0:9094
+TTL: 39 seconds, 75 milliseconds, 429 microseconds, and 337 nanoseconds
+✗ Failed
+Run 15/15... Discovering: /workspaces/pocketsocket-2/templates/index.html
+Template Set. Length: 278
+Serving on http://0.0.0.0:9095
+TTL: 42 seconds, 85 milliseconds, 96 microseconds, and 868 nanoseconds
+✗ Failed
+
+======================================================================
+Results
+======================================================================
+
+No successful measurements captured.
