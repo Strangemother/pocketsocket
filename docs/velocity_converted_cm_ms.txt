@@ -1,0 +1,263 @@
+====================================================================================================
+BALLISTICS VELOCITY CONVERSION
+Feet per Second (fps) → Centimeters per Millisecond (cm/ms)
+====================================================================================================
+
+GUN / CARTRIDGE                                                     FPS |      CM/MS
+----------------------------------------------------------------------------------------------------
+17 Mach 2 15.5 gr. NTX®                                            2050 |    62.4840
+17 Mach 2 17 gr. V-MAX®                                            2100 |    64.0080
+17 HMR 15.5 gr. NTX®                                               2525 |    76.9620
+17 HMR 17 gr. V-MAX®                                               2550 |    77.7240
+17 HMR 20 gr. XTP®                                                 2375 |    72.3900
+17 WSM 20 gr. V-MAX®                                               3000 |    91.4400
+17 Hornet 20 gr. V-MAX®                                            3650 |   111.2520
+204 Ruger 24 gr. NTX® (26" Bbl)                                    4400 |   134.1120
+204 Ruger 32 gr. V-MAX® (26" Bbl)                                  4225 |   128.7780
+204 Ruger 40 gr. V-MAX® (26" Bbl)                                  3900 |   118.8720
+22 WMR 30 gr. V-MAX®                                               2200 |    67.0560
+22 Hornet 35 gr. V-MAX®                                            3070 |    93.5736
+22 Hornet 45 gr. SP                                                2665 |    81.2292
+218 Bee 45 gr. HP Match                                            2750 |    83.8200
+222 Rem 35 gr. NTX®                                                3760 |   114.6048
+222 Rem 50 gr. V-MAX®                                              3345 |   101.9556
+5.45 x 39mm 60 gr. V-MAX® (16" Bbl)                                2810 |    85.6488
+223 Rem 35 gr. NTX®                                                4000 |   121.9200
+223 Rem 53 gr. V-MAX®                                              3465 |   105.6132
+223 Rem 55 gr. CX™                                                 3250 |    99.0600
+223 Rem 55 gr. FTX®                                                3240 |    98.7552
+223 Rem 55 gr. HP Match                                            3240 |    98.7552
+223 Rem 55 gr. V-MAX®                                              3240 |    98.7552
+223 Rem 62 gr. FMJ                                                 3100 |    94.4880
+223 Rem 73 gr. ELD® Match                                          2790 |    85.0392
+223 Rem 73 gr. FTX®                                                2790 |    85.0392
+223 Rem 75 gr. BTHP                                                2790 |    85.0392
+223 Rem 75 gr. BTHP                                                2790 |    85.0392
+223 Rem 75 gr. BTHP                                                2930 |    89.3064
+5.56 NATO 55 gr. CX™ (20" Bbl)                                     3175 |    96.7740
+5.56 NATO 62 gr. FMJ (20" Bbl)                                     3060 |    93.2688
+5.56 NATO 75 gr. BTHP (20" Bbl)                                    2910 |    88.6968
+5.56 NATO 75 gr. InterLock® HD SBR™ (20" Bbl)                      2310 |    70.4088
+224 Valkyrie 60 gr. V-MAX® W/C                                     3300 |   100.5840
+224 Valkyrie 75 gr. BTHP W/C                                       3000 |    91.4400
+224 Valkyrie 88 gr. ELD® Match                                     2675 |    81.5340
+22-250 Rem 35 gr. NTX®                                             4450 |   135.6360
+22-250 Rem 50 gr. V-MAX®                                           3800 |   115.8240
+22-250 Rem 50 gr. V-MAX®                                           4000 |   121.9200
+22-250 Rem 55 gr. V-MAX®                                           3680 |   112.1664
+220 Swift 55 gr. V-MAX®                                            3680 |   112.1664
+6mm ARC 103 gr. ELD-X®                                             2800 |    85.3440
+6mm ARC 105 gr. BTHP                                               2750 |    83.8200
+6mm ARC 108 gr. ELD® Match                                         2750 |    83.8200
+243 Win 58 gr. V-MAX®                                              3925 |   119.6340
+243 Win 75 gr. V-MAX®                                              3580 |   109.1184
+243 Win 80 gr. CX™                                                 3200 |    97.5360
+243 Win 87 gr. SST®                                                2800 |    85.3440
+243 Win 87 gr. V-MAX®                                              3240 |    98.7552
+243 Win 90 gr. ELD-X®                                              3150 |    96.0120
+243 Win 95 gr. SST®                                                3185 |    97.0788
+243 Win 100 gr. InterLock® BTSP                                    2960 |    90.2208
+6mm Rem 95 gr. SST®                                                3235 |    98.6028
+6mm Creedmoor 87 gr. V-MAX®                                        3210 |    97.8408
+6mm Creedmoor 90 gr. CX™                                           3325 |   101.3460
+6mm Creedmoor 103 gr. ELD-X®                                       3050 |    92.9640
+6mm Creedmoor 105 gr. BTHP                                         2960 |    90.2208
+6mm Creedmoor 108 gr. ELD® Match                                   2960 |    90.2208
+25-35 Win 110 gr. FTX®                                             2425 |    73.9140
+250 Savage 100 gr. InterLock® SP                                   2800 |    85.3440
+257 Roberts +P 117 gr. SST®                                        2946 |    89.7941
+25-06 Rem 90 gr. CX™                                               3350 |   102.1080
+25-06 Rem 110 gr. ELD-X®                                           3140 |    95.7072
+25-06 Rem 117 gr. InterLock® BTSP                                  2990 |    91.1352
+25-06 Rem 117 gr. SST®                                             3110 |    94.7928
+257 Wby Mag 90 gr. CX™                                             3625 |   110.4900
+257 Wby Mag 110 gr. ELD-X®                                         3240 |    98.7552
+6.5 Grendel 123 gr. ELD® Match                                     2580 |    78.6384
+6.5 Grendel 123 gr. SST®                                           2580 |    78.6384
+6.5 x 55mm 140 gr. SST®                                            2735 |    83.3628
+260 Rem 129 gr. SST®                                               2930 |    89.3064
+260 Rem 130 gr. ELD® Match                                         2840 |    86.5632
+6.5 Creedmoor 95 gr. V-MAX®                                        3300 |   100.5840
+6.5 Creedmoor 120 gr. CX™                                          2925 |    89.1540
+6.5 Creedmoor 120 gr. CX™                                          3050 |    92.9640
+6.5 Creedmoor 120 gr. ELD® Match                                   2910 |    88.6968
+6.5 Creedmoor 129 gr. InterLock®                                   2820 |    85.9536
+6.5 Creedmoor 129 gr. SST®                                         2950 |    89.9160
+6.5 Creedmoor 140 gr. BTHP Match                                   2690 |    81.9912
+6.5 Creedmoor 140 gr. ELD® Match                                   2710 |    82.6008
+6.5 Creedmoor 143 gr. ELD-X®                                       2700 |    82.2960
+6.5 Creedmoor 147 gr. ELD® Match                                   2695 |    82.1436
+6.5 PRC 130 gr. CX™                                                2975 |    90.6780
+6.5 PRC 143 gr. ELD-X®                                             2960 |    90.2208
+6.5 PRC 147 gr. ELD® Match                                         2910 |    88.6968
+264 Win Mag 140 gr. InterLock® SP                                  2935 |    89.4588
+6.8mm SPC 100 gr. CX™                                              2550 |    77.7240
+6.8mm SPC 110 gr. V-MAX® (16" Bbl)                                 2575 |    78.4860
+6.8mm SPC 120 gr. SST® (16" Bbl)                                   2460 |    74.9808
+270 Win 130 gr. CX™                                                3000 |    91.4400
+270 Win 130 gr. CX™                                                3190 |    97.2312
+270 Win 130 gr. SST®                                               3200 |    97.5360
+270 Win 130 gr. InterLock® SP                                      3060 |    93.2688
+270 Win 140 gr. InterLock® SP                                      2940 |    89.6112
+270 Win 140 gr. SST®                                               3090 |    94.1832
+270 Win 145 gr. ELD-X®                                             2970 |    90.5256
+270 WSM 130 gr. CX™                                                3150 |    96.0120
+270 WSM 145 gr. ELD-X®                                             3100 |    94.4880
+275 Rigby 140 gr. InterLock® SP                                    2680 |    81.6864
+7mm-08 Rem 120 gr. SST®                                            2675 |    81.5340
+7mm-08 Rem 139 gr. CX™                                             2910 |    88.6968
+7mm-08 Rem 139 gr. InterLock® SP                                   2840 |    86.5632
+7mm-08 Rem 139 gr. SST®                                            2950 |    89.9160
+7mm-08 Rem 150 gr. ELD-X®                                          2770 |    84.4296
+280 Rem 150 gr. ELD-X®                                             2925 |    89.1540
+280 Ackley Imp 162 gr. ELD-X®                                      2850 |    86.8680
+7mm Rem Mag 139 gr. InterLock® SP                                  3150 |    96.0120
+7mm Rem Mag 139 gr. SST®                                           3240 |    98.7552
+7mm Rem Mag 150 gr. CX™                                            3000 |    91.4400
+7mm Rem Mag 154 gr. InterLock® SP                                  3035 |    92.5068
+7mm Rem Mag 154 gr. SST®                                           3100 |    94.4880
+7mm Rem Mag 162 gr. ELD-X®                                         2975 |    90.6780
+7mm Rem Mag 162 gr. SST®                                           3030 |    92.3544
+7mm WSM 150 gr. CX™                                                3050 |    92.9640
+7mm WSM 162 gr. ELD-X®                                             3000 |    91.4400
+7-30 Waters 120 gr. FTX®                                           2700 |    82.2960
+28 Nosler 162 gr. ELD-X®                                           3175 |    96.7740
+7mm STW 162 gr. ELD-X®                                             3050 |    92.9640
+30 Carbine 110 gr. FTX® (20" Bbl)                                  2000 |    60.9600
+300 Blackout 110 gr. CX™ (16" Bbl)                                 2285 |    69.6468
+300 Blackout 110 gr. V-MAX® (16" Bbl)                              2375 |    72.3900
+300 Blackout 125 gr. HP Match (16" Bbl)                            2175 |    66.2940
+300 Blackout 135 gr. FTX® (16" Bbl)                                2085 |    63.5508
+300 Blackout 190 gr. SUB-X™ (16" Bbl)                              1050 |    32.0040
+300 Blackout 208 gr. A-MAX® (16" Bbl)                              1020 |    31.0896
+30-30 Win 140 gr. MonoFlex®                                        2465 |    75.1332
+30-30 Win 150 gr. RN                                               2390 |    72.8472
+30-30 Win 160 gr. FTX®                                             2400 |    73.1520
+30-30 Win 175 gr. SUB-X™                                           1050 |    32.0040
+300 Savage 150 gr. SST®                                            2740 |    83.5152
+307 Win 160 gr. FTX®                                               2650 |    80.7720
+308 Marlin Express 160 gr. FTX®                                    2660 |    81.0768
+308 Win 125 gr. SST®                                               2675 |    81.5340
+308 Win 150 gr. InterLock® SP                                      2820 |    85.9536
+308 Win 150 gr. SST®                                               3000 |    91.4400
+308 Win 150 gr. SST®                                               2820 |    85.9536
+308 Win 155 gr. A-MAX®                                             2850 |    86.8680
+308 Win 155 gr. BTHP Match                                         2700 |    82.2960
+308 Win 155 gr. FTX®                                               2785 |    84.8868
+308 Win 165 gr. CX™                                                2610 |    79.5528
+308 Win 165 gr. CX™                                                2750 |    83.8200
+308 Win 165 gr. InterLock® SP                                      2700 |    82.2960
+308 Win 165 gr. SST®                                               2840 |    86.5632
+308 Win 168 gr. A-MAX®                                             2700 |    82.2960
+308 Win 168 gr. BTHP                                               2700 |    82.2960
+308 Win 168 gr. ELD® Match                                         2700 |    82.2960
+308 Win 168 gr. ELD® Match                                         2840 |    86.5632
+308 Win 178 gr. BTHP                                               2600 |    79.2480
+308 Win 178 gr. ELD-X®                                             2600 |    79.2480
+30-40 Krag 180 gr. InterLock® SP                                   2430 |    74.0664
+30 TC 150 gr. SST®                                                 3000 |    91.4400
+30-06 Springfield 125 gr. SST®                                     2700 |    82.2960
+30-06 Springfield 150 gr. InterLock® SP                            2910 |    88.6968
+30-06 Springfield 150 gr. SST®                                     3080 |    93.8784
+30-06 Springfield 165 gr. CX™                                      2940 |    89.6112
+30-06 Springfield 165 gr. SST®                                     2960 |    90.2208
+30-06 Springfield 168 gr. ELD® Match                               2710 |    82.6008
+30-06 Springfield 178 gr. ELD-X®                                   2750 |    83.8200
+30-06 Springfield 180 gr. CX™                                      2600 |    79.2480
+30-06 Springfield 180 gr. InterLock® SP                            2700 |    82.2960
+30-06 Springfield 180 gr. SST®                                     2820 |    85.9536
+300 H&H Mag 180 gr. InterBond®                                     2870 |    87.4776
+300 RSAUM 178 gr. ELD-X®                                           2950 |    89.9160
+300 RCM 150 gr. SST®                                               3310 |   100.8888
+300 RCM 178 gr. ELD-X®                                             2900 |    88.3920
+300 WSM 165 gr. InterLock®                                         3130 |    95.4024
+300 WSM 180 gr. CX™                                                2900 |    88.3920
+300 WSM 200 gr. ELD-X®                                             2820 |    85.9536
+300 Win Mag 150 gr. InterLock® SP                                  3275 |    99.8220
+300 Win Mag 165 gr. CX™                                            3260 |    99.3648
+300 Win Mag 178 gr. ELD-X®                                         2960 |    90.2208
+300 Win Mag 178 gr. ELD® Match                                     2960 |    90.2208
+300 Win Mag 180 gr. CX™                                            2960 |    90.2208
+300 Win Mag 180 gr. InterLock® SP                                  2960 |    90.2208
+300 Win Mag 180 gr. SST®                                           3130 |    95.4024
+300 Win Mag 195 gr. ELD® Match                                     2930 |    89.3064
+300 Win Mag 200 gr. ELD-X®                                         2860 |    87.1728
+300 Wby Mag 180 gr. CX™                                            3100 |    94.4880
+300 Wby Mag 200 gr. ELD-X®                                         2960 |    90.2208
+300 PRC 190 gr. CX™                                                3000 |    91.4400
+300 PRC 212 gr. ELD-X®                                             2860 |    87.1728
+300 PRC 225 gr. ELD® Match                                         2810 |    85.6488
+300 Rem Ultra Mag 180 gr. CX™                                      3200 |    97.5360
+300 Rem Ultra Mag 220 gr. ELD-X®                                   2910 |    88.6968
+30-378 Wby Mag 220 gr. ELD-X®                                      3025 |    92.2020
+7.62 x 39 123 gr. HP Match (20" Bbl)                               2350 |    71.6280
+7.62 x 39 123 gr. SST® (20" Bbl)                                   2350 |    71.6280
+303 British 150 gr. InterLock® SP                                  2685 |    81.8388
+32 Win Special 165 gr. FTX®                                        2410 |    73.4568
+8 x 57 196 gr. BTHP                                                2500 |    76.2000
+338 Marlin Express 200 gr. FTX®                                    2565 |    78.1812
+338 RCM 225 gr. SST®                                               2750 |    83.8200
+338 Win Mag 200 gr. SST®                                           3030 |    92.3544
+338 Win Mag 225 gr. CX™                                            2800 |    85.3440
+338 Win Mag 225 gr. SST®                                           2840 |    86.5632
+338 Win Mag 230 gr. ELD-X®                                         2810 |    85.6488
+338 Lapua Mag 250 gr. BTHP                                         2860 |    87.1728
+338 Lapua Mag 270 gr. ELD-X®                                       2800 |    85.3440
+338 Lapua Mag 285 gr. ELD® Match                                   2745 |    83.6676
+348 Win 200 gr. FTX®                                               2560 |    78.0288
+350 Legend 165 gr. FTX®                                            2200 |    67.0560
+350 Legend 170 gr. InterLock® SP                                   2200 |    67.0560
+350 Legend 250 gr. SUB-X™                                          1050 |    32.0040
+35 Rem 200 gr. FTX®                                                2225 |    67.8180
+358 Win 200 gr. InterLock® SP                                      2475 |    75.4380
+35 Whelen 200 gr. InterLock® SP                                    2910 |    88.6968
+9.3 x 74R 286 gr. InterLock® SP-RP                                 2360 |    71.9328
+9.3 x 62mm 286 gr. InterLock® SP-RP                                2360 |    71.9328
+376 Steyr 225 gr. InterLock® SP-RP                                 2600 |    79.2480
+376 Steyr 270 gr. InterLock® SP-RP                                 2600 |    79.2480
+375 H&H Mag 250 gr. CX™                                            2700 |    82.2960
+375 H&H Mag 270 gr. InterLock® SP-RP SPF                           2800 |    85.3440
+375 H&H Mag 300 gr. DGS®                                           2530 |    77.1144
+375 H&H Mag 300 gr. DGX® Bonded                                    2530 |    77.1144
+375 Ruger 250 gr. CX™                                              2800 |    85.3440
+375 Ruger 270 gr. InterLock® SP-RP                                 2840 |    86.5632
+375 Ruger 300 gr. DGS®                                             2660 |    81.0768
+375 Ruger 300 gr. DGX® Bonded                                      2660 |    81.0768
+450-400 Nitro Express 3" 400 gr. DGS®                              2050 |    62.4840
+450-400 Nitro Express 3" 400 gr. DGX® Bonded                       2050 |    62.4840
+405 Win 300 gr. InterLock® SP                                      2200 |    67.0560
+416 Ruger 400 gr. DGS®                                             2400 |    73.1520
+416 Ruger 400 gr. DGX® Bonded                                      2400 |    73.1520
+416 Rem Mag 400 gr. DGS®                                           2400 |    73.1520
+416 Rem Mag 400 gr. DGX® Bonded                                    2400 |    73.1520
+416 Rigby 400 gr. DGS®                                             2415 |    73.6092
+416 Rigby 400 gr. DGX® Bonded                                      2415 |    73.6092
+404 Jeffery 400 gr. DGS®                                           2300 |    70.1040
+404 Jeffery 400 gr. DGX® Bonded                                    2300 |    70.1040
+444 Marlin 265 gr. FTX®                                            2325 |    70.8660
+444 Marlin 265 gr. InterLock® FP                                   2400 |    73.1520
+450 Bushmaster 245 gr. InterLock®                                  2200 |    67.0560
+450 Bushmaster 250 gr. FTX® (20" Bbl)                              2200 |    67.0560
+450 Bushmaster 250 gr. FTX® (20" Bbl)                              2200 |    67.0560
+450 Bushmaster 395 gr. SUB-X™ (20" Bbl)                            1050 |    32.0040
+45-70 Govt 250 gr. MonoFlex®                                       2025 |    61.7220
+45-70 Govt 325 gr. FTX®                                            2000 |    60.9600
+45-70 Govt 410 gr. SUB-X™                                          1075 |    32.7660
+450 Marlin 325 gr. FTX®                                            2225 |    67.8180
+450 Nitro Express 3¼" 480 gr. DGS®                                 2150 |    65.5320
+450 Nitro Express 3¼" 480 gr. DGX® Bonded                          2150 |    65.5320
+458 Win Mag 500 gr. DGS® SPF                                       2140 |    65.2272
+458 Win Mag 500 gr. DGX® Bonded SPF                                2140 |    65.2272
+458 Lott 500 gr. DGS®                                              2300 |    70.1040
+458 Lott 500 gr. DGX® Bonded                                       2300 |    70.1040
+470 Nitro Express 500 gr. DGS®                                     2150 |    65.5320
+470 Nitro Express 500 gr. DGX® Bonded                              2150 |    65.5320
+500 Nitro Express 3" 570 gr. DGS®                                  2120 |    64.6176
+500 Nitro Express 3" 570 gr. DGX® Bonded                           2120 |    64.6176
+50 BMG 750 gr. A-MAX® (36" Bbl)                                    2815 |    85.8012
+
+====================================================================================================
+Total entries: 250
+
+Conversion Factor: 1 fps = 0.03048 cm/ms
+(1 foot = 30.48 cm, 1 second = 1000 milliseconds)

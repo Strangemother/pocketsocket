@@ -70,11 +70,11 @@ We benchmarked pocketsocket against popular Python WebSocket libraries using the
 
 **Visual Comparison:**
 ```
-Pocketsocket     ▓ 12.36ms
-websockets       ▓▓▓▓▓▓▓▓▓▓▓▓▓ 96.27ms
-Tornado          ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 142.97ms
-aiohttp          ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 226.48ms
-FastAPI          ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓ 425.91ms
+Pocketsocket     - 12.36ms
+websockets       ------------- 96.27ms
+Tornado          -------------------- 142.97ms
+aiohttp          ------------------------------- 226.48ms
+FastAPI          ----------------------------------------------------------- 425.91ms
 ```
 
 **Pocketsocket is 7.8-34.5x faster** than other Python WebSocket servers at startup.
