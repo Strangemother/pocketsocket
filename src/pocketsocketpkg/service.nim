@@ -2,7 +2,7 @@
 # uses this file as the main entry point of the application.
 
 # import os
-import std/hashes, std/locks, std/tables, std/times, std/monotimes
+import std/locks, std/times, std/monotimes, std/cpuinfo
 import asyncdispatch
 import nimpy
 #import terminal
@@ -10,11 +10,11 @@ import nimpy
 import mummy, mummy/routers
 import submodule
 
-import websocket_dispatch
-
 from broadcast import websocketHandler_broadcast
 import broadcast
 import ingress
+import gil
+import config
 
 
 var
@@ -24,7 +24,6 @@ var
   receiveThread: Thread[void]
   pyHook: PyObject
   wake_time: MonoTime = getMonoTime()
-  clientSheet: Table[uint64, WebSocket]
 
 
 # Remember to initialize the lock.
@@ -34,12 +33,9 @@ initLock(lock)
 proc send_all*(message_kind: MessageKind, message_data: string, exclude_uuid: uint64): int =
   #[ Send a message to _all_ clients. Provide an exclude for ignoring the
     receiver]#
-  return websocket_dispatch.send_all(
-      clientSheet,
-      message_kind,
-      message_data,
-      exclude_uuid
-    )
+  # The connected clients are owned by `broadcast`, which registers them as
+  # they connect.
+  return broadcast.locked_send_all(message_kind, message_data, exclude_uuid)
 
 
 proc send*(uuid: uint64, message_kind: MessageKind, message_data: string): int =
@@ -49,21 +45,11 @@ proc send*(uuid: uint64, message_kind: MessageKind, message_data: string): int =
      return int for success - 0 being ok, any other integer representing a
      error code (typically 1)
   ]#
-  return websocket_dispatch.send(
-      clientSheet,
-      uuid,
-      message_kind,
-      message_data,
-  )
+  return broadcast.locked_send(uuid, message_kind, message_data)
 
 
 proc close_remove_client*(uuid: uint64): void =
-  {.gcsafe.}:
-    withLock lock:
-      let websocket = clientSheet[uuid]
-      websocket.close()
-      clientSheet.del(cast[uint64](websocket.hash()))
-      # echo "Client Sheet Size: ", $clientSheet.len
+  broadcast.locked_close_remove_client(uuid)
 
 
 proc ctrlc() {.noconv.} =
@@ -81,25 +67,50 @@ proc poke_wake_time*(): void =
 
 
 proc set_broadcast_mode*(mode:bool): void =
-  broadcast.set_broadcast_mode(mode)
+  config.set_broadcast_mode(mode)
+
+
+proc set_echo_mode*(mode:bool): void =
+  config.set_echo_mode(mode)
 
 
 proc set_print_mode*(mode:bool = false): void =
-  broadcast.set_print_mode(mode)
+  config.set_print_mode(mode)
 
 
-proc run_blocking_server*(address: string = "127.0.0.1", port: int = 8090): void =
-  # if isatty(stdout):
-  #   run_blocking_server()
+proc run_blocking_server*(
+    address: string = "127.0.0.1",
+    port: int = 8090,
+    worker_threads: int = 0,
+    max_message_len: int = 64 * 1024,
+    max_body_len: int = 1024 * 1024,
+    tcp_no_delay: bool = true
+  ): void =
   when isMainModule:
     echo(getWelcomeMessage())
-  # load_lib()
   submodule.setLoadedTemplate("./templates/index.html")
-  server = newServer(ingress.router, broadcast.websocketHandler_broadcast)
-  # server = newServer(router, websocketHandler)
+  # mummy defaults to countProcessors() * 10 workers, which oversubscribes
+  # small hosts badly. 0 keeps that default, anything else is taken literally.
+  let workers =
+    if worker_threads > 0: worker_threads
+    else: max(countProcessors() * 10, 1)
+  server = newServer(
+      ingress.router,
+      broadcast.websocketHandler_broadcast,
+      workerThreads = workers,
+      maxMessageLen = max_message_len,
+      maxBodyLen = max_body_len,
+      tcpNoDelay = tcp_no_delay,
+    )
   echo "Serving on http://", address, ":", port
   setControlCHook(ctrlc)
   let total_time: Duration = getMonoTime() - wake_time
   echo "TTL: ", $total_time
-  server.serve(Port(port), address)
+  # serve() blocks this (python) thread; hand the GIL back so mummy's worker
+  # threads are able to acquire it when calling the python hook.
+  let threadState = gil.save_thread()
+  try:
+    server.serve(Port(port), address)
+  finally:
+    gil.restore_thread(threadState)
   echo "Serve complete"

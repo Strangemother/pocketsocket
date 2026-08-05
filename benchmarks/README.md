@@ -1,224 +1,173 @@
-# Pocketsocket Benchmarks
+# pocketsocket benchmarks
 
-This directory contains the performance benchmarking suite for pocketsocket.
-
-## Benchmark Scripts
-
-### 1. `benchmark.py` - Standalone CLI Binary Benchmark
-Measures the startup time of the compiled `dist/pocketsocket-cli` binary.
-
-**Usage:**
-```bash
-python3 benchmarks/benchmark.py -n 20
+```
+benchmarks/
+  bench_startup.py       cold start: spawn -> accepting, and Nim-side TTL
+  bench_message_path.py  the steady-state message path, with cost decomposition
+  bench_compare.py       pocketsocket vs websockets / tornado / aiohttp / uvicorn
+  run_all.py             runs all three, writes dated reports to results/
+  lib/                   shared client, harness, server definitions, workloads
+  results/               generated reports
+  archive/               the pre-2026-08 suite, kept for historical reference
 ```
 
-**What it measures:**
-- Time To Launch (TTL) from process start to server ready
-- Includes template loading and socket binding
-- Pure Nim compiled binary performance
+## Running
 
-**Requirements:**
-- Compiled CLI binary at `dist/pocketsocket-cli`
-- Build with: `nimble buildCliCI -d:release -d:lto -d:strip`
-
----
-
-### 2. `benchmark_python_module.py` - Python Module Benchmark
-Measures the startup time of the Python module API (`pocketsocket.hook()` + `run_blocking_server()`).
-
-**Usage:**
 ```bash
-python3 benchmarks/benchmark_python_module.py -n 20
+python3 benchmarks/run_all.py                 # full suite -> results/
+python3 benchmarks/run_all.py --quick         # ~5x faster, indicative only
+python3 benchmarks/run_all.py --tag postfix   # label the output files
+
+python3 benchmarks/bench_message_path.py      # or run one suite directly
+python3 benchmarks/bench_compare.py -o /tmp/compare.txt
 ```
 
-**What it measures:**
-- Time To Launch (TTL) from server initialization to ready state
-- Connection establishment time
-- Python API overhead vs standalone CLI
+Requires a built module (`nimble buildPyd`). `bench_compare.py` additionally
+needs the servers it compares against; it silently skips any that are missing:
 
-**Requirements:**
-- Installed pocketsocket Python module
-- Build with: `nimble buildPyd` or `pip install -e .`
-
----
-
-### 3. `benchmark_comparison.py` - Server Comparison Benchmark
-Compares pocketsocket against other popular Python WebSocket servers.
-
-**Usage:**
-```bash
-python3 benchmarks/benchmark_comparison.py -n 10
-```
-
-**What it measures:**
-- Startup time comparison with websockets, Tornado, aiohttp, FastAPI
-- Uses identical methodology for all servers (fair comparison)
-- Subprocess-based measurement for consistency
-
-**Requirements:**
 ```bash
 pip install websockets tornado aiohttp fastapi uvicorn
 ```
-
-**Servers tested:**
-- `websockets` - Pure async WebSocket library
-- `Tornado` - Async web framework with WebSocket support
-- `aiohttp` - Async HTTP/WebSocket framework
-- `FastAPI` - Modern web framework with WebSocket support (via Uvicorn)
-
----
-
-## Running All Benchmarks
-
-Use the master benchmark runner at the project root:
-
-```bash
-# From project root
-./run_benchmarks.py -n 20 -o benchmarks/full_report.txt
-```
-
-**Options:**
-- `-n` / `--iterations`: Number of iterations per benchmark (default: 10)
-- `-o` / `--output`: Save report to file (default: benchmark_report.txt)
-- `--skip-cli`: Skip CLI benchmark
-- `--skip-python`: Skip Python module benchmark
-- `--skip-comparison`: Skip comparison benchmark
-
----
-
-## Benchmark Results
-
-Result files are automatically saved in this directory:
-
-- `benchmark_results.txt` - CLI benchmark results
-- `benchmark_python_module_results.txt` - Python module results
-- `benchmark_comparison_results.txt` - Comparison benchmark results
-- `benchmark_report.txt` - Comprehensive report from `run_benchmarks.py`
 
 ---
 
 ## Methodology
 
-All benchmarks measure **startup time** - the time from process start to the server being ready to accept connections.
+These notes exist because most of them were learned the hard way, by producing
+numbers that turned out to be measuring the wrong thing.
 
-**Why startup time matters:**
-- Cold start performance for microservices
-- Development iteration speed (server restarts)
-- Scaling responsiveness (spinning up new instances)
-- Testing overhead minimization
+### The client must not be the bottleneck
 
-**Measurement approach:**
-1. Start server process
-2. Capture "Time To Launch" (TTL) from server logs
-3. Verify server is accepting connections
-4. Calculate statistics over multiple runs
+All load is generated with raw blocking sockets and a hand-rolled RFC 6455
+framer (`lib/wsclient.py`). An asyncio client library becomes the limiting
+factor well before the server does, at which point every server under test
+looks identical -- because you are benchmarking the client.
 
-**Fairness:**
-- Same measurement methodology for all servers
-- Subprocess-based execution (includes full initialization)
-- Minimal configuration (comparable to real-world usage)
-- Multiple iterations for statistical reliability
+Three specific traps:
 
----
+* **Masking cost.** Client-to-server frames must be masked, which is a per-byte
+  XOR. Doing that in a Python comprehension inside the timed loop caps the
+  client at a few thousand messages/second on 16KB payloads. Frames are built
+  once via `WSClient.frame()` and reused, using a single big-integer XOR rather
+  than a byte loop.
 
-## Expected Results
+* **Syscall cost.** One `sendall()` plus one `recv()` per message is two
+  syscalls per message on the client. On a small host that alone caps the
+  measurement around 15-20k msg/s. The `batched()` workload concatenates N
+  frames into one `sendall()` and parses many frames out of each `recv()`.
 
-Based on typical runs on Linux x86_64:
+* **Client GIL.** Concurrent load uses `multiprocessing`, not threads. A
+  multi-threaded Python client contends on its own GIL, which shows up in the
+  results looking exactly like server-side contention.
 
-| Server | Average Startup | Speed Factor |
-|--------|----------------|--------------|
-| **Pocketsocket CLI** | **~0.8 ms** | **baseline** |
-| **Pocketsocket Python** | **~1.0 ms** | **1.3x slower** |
-| websockets | ~100 ms | 125x slower |
-| Tornado | ~150 ms | 188x slower |
-| aiohttp | ~230 ms | 288x slower |
-| FastAPI | ~430 ms | 538x slower |
+`bench_message_path.py` section 0 reports `client_parse_ceiling()`: how fast the
+client can parse frames with no server and no kernel involved. **Any throughput
+figure approaching that number is measuring Python, not pocketsocket.** On the
+reference host it is ~800k msg/s at 64B, comfortably above anything measured.
 
-*Actual results may vary based on system configuration.*
+### A workload is only complete when the server says so
 
----
+Fire-and-forget send rates measure the kernel socket buffer, not the server.
+Sending 6,000 x 64B and timing it just times `memcpy` into a socket buffer that
+swallowed the lot.
 
-### 4. `benchmark_throughput.py` - Client-to-Client Throughput Benchmark
-Measures message passing throughput and latency between WebSocket clients.
+Two acknowledgement strategies are used:
 
-**Usage:**
-```bash
-python3 benchmarks/benchmark_throughput.py -n 5 -m 1000
-```
+* **Round-trip** -- every message is acknowledged by its reply. Used wherever
+  the server replies per message.
+* **Sentinel** -- for one-way modes, a trailing `__PING__` that the server
+  *does* reply to. This is only valid because mummy claims a websocket and
+  drains its queue in order (`mummy.nim:483-500`), so the sentinel reply proves
+  every preceding message was handled. It must never be used against a mode
+  that replies to every message, or the first `recv()` returns that mode's
+  first echo instead of the sentinel.
 
-**What it measures:**
-- Echo mode: Round-trip message latency (client -> server -> same client)
-- Broadcast mode: Multi-client message distribution (1 sender -> N receivers)
-- Batch mode: Rapid-fire send performance (send all, then receive all)
-- Messages per second throughput
-- Average latency per message
+`send_only()` has no acknowledgement available at all and is therefore an
+**upper bound**, not a measurement. It is used only for `ps-ingest`, and only
+with a volume far exceeding the socket buffers so backpressure dominates.
 
-**Test Modes:**
-```bash
-# Run all throughput tests
-python3 benchmarks/benchmark_throughput.py -n 5
+### Server stdout goes to a file, never a pipe
 
-# Echo only (round-trip latency)
-python3 benchmarks/benchmark_throughput.py --echo-only -n 10 -m 1000
+An unread `subprocess.PIPE` fills at 64KB and silently blocks the server
+mid-benchmark. `ServerProcess` captures to a temp file, which doubles as the
+measurement for hot-path logging volume.
 
-# Broadcast only (multi-client distribution)
-python3 benchmarks/benchmark_throughput.py --broadcast-only -n 5 --clients 10
+### Warmup
 
-# Batch send only (maximum throughput)
-python3 benchmarks/benchmark_throughput.py --batch-only -n 3 -m 10000
-```
-
-**Requirements:**
-```bash
-# pocketsocket module must be built
-nimble buildPyd
-pip install -e .
-
-# Client library
-pip install websockets
-```
-
-**Configuration Options:**
-- `-n` / `--iterations`: Number of test iterations (default: 5)
-- `-m` / `--messages`: Messages per iteration (default: 1000)
-- `-s` / `--size`: Message size in bytes (default: 100)
-- `--clients`: Number of clients for broadcast test (default: 5)
-- `--echo-only`: Run only echo benchmark
-- `--broadcast-only`: Run only broadcast benchmark
-- `--batch-only`: Run only batch send benchmark
+Every workload sends a couple of hundred messages before timing. The first
+Python callback on each mummy worker thread allocates a `PyThreadState` via
+`PyGILState_Ensure` -- a one-time per-thread cost that would otherwise land in
+the samples.
 
 ---
 
-### 5. `benchmark_connections.py` - Connection Throughput Benchmark  
-Measures WebSocket connection establishment and concurrent connection handling.
+## Interpreting the message path results
 
-**Usage:**
-```bash
-python3 benchmarks/benchmark_connections.py -n 5 -c 100
-```
+`bench_message_path.py` runs the same workload through progressively more
+expensive paths so the costs separate cleanly:
 
-**What it measures:**
-- Sequential connection throughput (connections per second)
-- Average connection establishment time
-- Concurrent connection handling (N simultaneous connections)
-- Connection stability under load
+| mode | what it exercises |
+| --- | --- |
+| `ps-ingest` | framing only; message parsed and dropped |
+| `ps-nim-echo` | Nim reflects to sender; **no Python in the message path** |
+| `ps-nim-broadcast` | Nim fans out to all others; no Python |
+| `ps-hook-noop` | Python callback fires, sends nothing |
+| `ps-hook-echo` | Python callback + `ps.send()` -- the real-world path |
+| `ps-hook-broadcast` | Python callback + `ps.send_all()` |
 
-**Test Modes:**
-```bash
-# Run all connection tests
-python3 benchmarks/benchmark_connections.py -n 5 -c 100
+The single most useful comparison is **`ps-nim-echo` vs `ps-hook-echo`**. If
+they land close together, the Python bridge is not the limiting factor and
+optimising it further is wasted effort.
 
-# Sequential only
-python3 benchmarks/benchmark_connections.py --sequential-only -n 10 -c 200
+### One-way vs round-trip
 
-# Concurrent only
-python3 benchmarks/benchmark_connections.py --concurrent-only -n 5 -c 100
-```
+`ps-ingest` and `ps-hook-noop` are one-way: one thread handoff per message
+(io thread -> worker). `ps-nim-echo` and `ps-hook-echo` are round trips and add
+the outbound path, a second handoff back to the io thread. Do not compare a
+one-way row against a round-trip row and call the difference "Python overhead".
 
-**Latest Results:**
-- **Sequential:** ~1,300 connections/second, 0.78ms average
-- **Concurrent:** 50 simultaneous connections in ~0.53s
+### Architecture context
+
+mummy runs a dedicated io thread plus a worker pool, and dispatches WebSocket
+events serially per connection. That costs a thread handoff per message but
+lets connections be serviced in parallel across cores. The asyncio servers in
+`bench_compare.py` run a single-threaded event loop: no handoff, no
+parallelism.
+
+On a small host this trade goes against pocketsocket, and the comparison
+results say so. The handoff is a fixed per-message cost that a 2-core box has
+no spare capacity to hide, while the event-loop servers pay nothing for it. The
+trade only pays off with enough cores and enough concurrent connections to use
+them.
+
+`worker_threads` is tunable via `run_blocking_server(..., worker_threads=N)`.
+mummy's default is `countProcessors() * 10`, which heavily oversubscribes small
+hosts -- though measurement on the reference host showed the default is not
+itself the bottleneck.
 
 ---
 
-For detailed benchmark results and analysis, see [BENCHMARKS.md](../BENCHMARKS.md) in the project root.
+## Reference host
+
+Results in `results/` were produced on a 2 vCPU codespace. That is a
+constrained environment and it matters:
+
+* Client processes compete with the server for CPU, so concurrency scaling
+  beyond ~2 clients reflects host oversubscription rather than pocketsocket.
+  Those tables are shape-only.
+* Absolute throughput is not representative of a real deployment.
+* Latency percentiles and the **relative** costs between modes are the
+  trustworthy numbers, because every mode pays the same host penalty.
+
+Re-run on a larger host before quoting any absolute figure.
+
+---
+
+## Archive
+
+`archive/` holds the previous suite. Those scripts drive the module via
+`import pocketsocket; pocketsocket.hook(...)`. That import path was broken for
+a period when `python/pocketsocket/__init__.py` was empty (from commit
+`bfb6042` until it was restored), so the committed `*_results.txt` files in
+that folder could not be reproduced at the time this suite was written, and
+should be treated as historical only.

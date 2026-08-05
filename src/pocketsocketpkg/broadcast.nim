@@ -3,16 +3,14 @@ import std/hashes, std/locks, std/tables
 import mummy
 
 import hook
-## This example shows a basic chat server over WebSocket.
+import websocket_dispatch
+import config
+## Connection registry and the WebSocket event handler.
 ##
-## To try the example, run the server (nim c -r examples/chat.nim)
-## then open a few tabs to http://localhost:8080
-##
-## Each tab can send messages and they'll be received by all tabs.
-##
-## This file includes the HTML being sent to the client as a string. In a real
-## web app, you'd probably have this in a file or served some other way.
-## I'm just keeping everything in one file and as simple as possible.
+## This module owns the authoritative `clientSheet`: it is the only writer,
+## registering clients on OpenEvent and dropping them on CloseEvent. Everything
+## that needs to reach a connected client goes through the `locked_*` procs
+## below.
 
 var
   lock: Lock
@@ -24,33 +22,39 @@ initLock(lock)
 
 proc send_all*(message_kind: MessageKind, message_data: string, exclude_uuid: uint64): int =
   #[ Send a message to _all_ clients. Provide an exclude for ignoring the
-    receiver]#
+    receiver. Caller must hold `lock`. ]#
   for other_uuid, websocket in clientSheet:
     if other_uuid == exclude_uuid:
-      echo "skipping exclude uuid: ", exclude_uuid
       continue
     websocket.send(message_data, message_kind)
   return 0
+
+
+proc locked_send_all*(message_kind: MessageKind, message_data: string, exclude_uuid: uint64): int =
+  {.gcsafe.}:
+    withLock lock:
+      result = send_all(message_kind, message_data, exclude_uuid)
+
+
+proc locked_send*(uuid: uint64, message_kind: MessageKind, message_data: string): int =
+  {.gcsafe.}:
+    withLock lock:
+      result = websocket_dispatch.send(clientSheet, uuid, message_kind, message_data)
+
+
+proc locked_close_remove_client*(uuid: uint64): void =
+  {.gcsafe.}:
+    withLock lock:
+      if clientSheet.hasKey(uuid):
+        let websocket = clientSheet[uuid]
+        websocket.close()
+        clientSheet.del(uuid)
 
 
 proc remove_client*(websocket: WebSocket): void =
   {.gcsafe.}:
     withLock lock:
       clientSheet.del(cast[uint64](websocket.hash()))
-      # echo "Client Sheet Size: ", $clientSheet.len
-
-
-var broadcast_mode*:bool = false
-
-proc set_broadcast_mode*(mode:bool = false): void =
-  echo "broadcast_mode: ", $mode
-  broadcast_mode = mode
-
-var print_mode*:bool = false
-
-proc set_print_mode*(mode:bool = false): void =
-  echo "print_mode: ", $mode
-  print_mode = mode
 
 
 proc websocketHandler_broadcast*(
@@ -58,48 +62,46 @@ proc websocketHandler_broadcast*(
   event: WebSocketEvent,
   message: Message
 ) =
-  var infoInt:int = 0
+  var infoInt: int = 0
   case event:
   of OpenEvent:
-    if print_mode:
+    if config.print_mode:
       echo websocket, ": connected"
     {.gcsafe.}:
       withLock lock:
-        let uuid = cast[uint64](hash(websocket))
-        clientSheet[uuid] = websocket
-        # echo "Client Sheet Size: ", $clientSheet.len
+        clientSheet[cast[uint64](hash(websocket))] = websocket
     discard call_py_hook(websocket, event, message)
 
   of MessageEvent:
-    # let message_data: string = move message.data
-    if print_mode:
-      echo message.kind, ": ", $message.data
-    # If the python hook returns an int,
-    # test the int for force socket closure.
+    if config.print_mode:
+      echo message.kind, ": ", message.data
+    # Reflect straight back to the sender without involving python at all.
+    if config.echo_mode:
+      websocket.send(message.data, message.kind)
+    # A python hook returning 1 requests that the socket be dropped.
     infoInt = call_py_hook(websocket, event, message)
-    {.gcsafe.}:
-      withLock lock:
-        if broadcast_mode:
-          let uuid = cast[uint64](hash(websocket))
-          discard send_all(message.kind, message.data, uuid)
-    # echo "resp ", type(info), ":", info
-    # websocket.send(message_data, message.kind)
+    # Tested before taking the lock: the common case is broadcast_mode off,
+    # and this runs on every inbound message.
+    if config.broadcast_mode:
+      {.gcsafe.}:
+        withLock lock:
+          discard send_all(message.kind, message.data,
+                           cast[uint64](hash(websocket)))
+
   of ErrorEvent:
-    echo "Error event occured: ", $event, " : ", $message
-    # websocket.close()
-    # remove_client(websocket)
+    if config.print_mode:
+      echo "Error event: ", message
     discard call_py_hook(websocket, event, message)
 
   of CloseEvent:
-    if print_mode:
+    if config.print_mode:
       echo websocket, ": close"
-    # Lock global memory and remove the websocket.
     remove_client(websocket)
     discard call_py_hook(websocket, event, message)
 
   if infoInt == 1:
-    if print_mode:
-      echo "Drop socket", $websocket
+    if config.print_mode:
+      echo "Drop socket ", websocket
     websocket.close()
     remove_client(websocket)
     discard call_py_hook(websocket, event, message)

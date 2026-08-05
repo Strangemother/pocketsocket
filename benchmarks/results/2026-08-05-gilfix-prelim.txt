@@ -1,0 +1,161 @@
+################################################################################
+# HISTORICAL - PRE-CLEANUP SNAPSHOT
+#
+# Produced immediately after the GIL fix but BEFORE the cleanup pass, using a
+# now-removed one-off script. Kept because it captures two things the current
+# suite can no longer reproduce:
+#
+#   * section 7: 51 bytes of stdout per message, from the debug `echo` that
+#     used to run on every send()/send_all(). That is now zero.
+#   * the note that set_broadcast_mode/set_print_mode were not exported, so no
+#     pure-Nim path could be measured. They are exported now, and set_echo_mode
+#     was added.
+#
+# For current numbers see 2026-08-05-postcleanup-*.txt.
+################################################################################
+
+==============================================================================
+Pocketsocket Message-Path Throughput Benchmark
+==============================================================================
+Date         : 2026-08-05T22:34:15
+Python       : 3.12.1
+Platform     : Linux-6.8.0-1052-azure-x86_64-with-glibc2.39
+CPU count    : 2
+Module       : /workspaces/pocketsocket-2/python/pocketsocket
+
+Measures the steady-state message path, not startup time.
+All client load is generated with raw sockets; concurrent load uses
+separate processes to avoid client-side GIL contention.
+
+------------------------------------------------------------------------------
+1. ROUND-TRIP LATENCY  (1 connection, 1 message in flight)
+------------------------------------------------------------------------------
+
+mode               size       min       p50       p90       p99       max       msg/s
+                               us        us        us        us        us            
+hook-echo           64B      94.1     109.5     133.8     908.2    2311.9       7,551
+hook-echo           1KB     102.6     110.4     143.1     853.7    3111.6       7,298
+hook-echo          16KB     212.0     246.0     366.9    1481.2    5152.9       3,363
+
+------------------------------------------------------------------------------
+2. PIPELINED THROUGHPUT  (1 connection, window=64)
+------------------------------------------------------------------------------
+
+mode                size     msgs      sec       msg/s      MB/s
+hook-echo            64B   20,000    1.151      17,376       1.1
+hook-echo            1KB   20,000    1.422      14,062      13.7
+hook-echo           16KB    4,000    1.060       3,774      59.0
+hook-echo           64KB    4,000    2.797       1,430      89.4
+
+------------------------------------------------------------------------------
+3. COST DECOMPOSITION  (64B, N messages fully handled)
+------------------------------------------------------------------------------
+
+The same one-way workload against progressively more expensive paths.
+Completion is proven by an acknowledgement in every row except the
+first, so these are true 'processed N messages' rates.
+
+mode                 msgs      sec       msg/s     MB/s  vs floor   stdout B
+nim-ingest        300,000    2.785     107,701      6.6      100%          0
+hook-noop          30,000    0.547      54,874      3.3       51%         48
+hook-echo          30,000    1.625      18,463      1.1       17%  1,479,800
+
+  nim-ingest  : no Python hook; frame parsed and dropped (floor)
+  hook-noop   : hook invoked per message, no send  (isolates GIL bridge)
+  hook-echo   : hook invoked per message + ps.send() (real-world path)
+
+------------------------------------------------------------------------------
+4. CONCURRENCY SCALING  (echo, 64B, window=64, N client processes)
+------------------------------------------------------------------------------
+
+mummy claims a websocket per worker thread and drains its queue in
+order, so a single connection is serviced serially; contention only
+appears across connections.
+
+  !! This host has 2 vCPU. Client processes compete with
+     the server for CPU, so figures above ~2 clients are dominated
+     by host oversubscription, NOT by pocketsocket. Treat the shape
+     of this table as indicative only.
+
+ clients      msgs      sec   total msg/s   per-client   scaling
+       1     8,000    0.446        17,944       17,944     1.00x
+       2    16,000    0.782        20,450       10,225     1.14x
+       4    32,000    1.689        18,947        4,737     1.06x
+       8    64,000    3.792        16,877        2,110     0.94x
+
+------------------------------------------------------------------------------
+5. BROADCAST FAN-OUT  (1 sender -> N receivers, 64B)
+------------------------------------------------------------------------------
+
+mode              recv   in msg/s   out msg/s     MB/s     delivered
+hook-broadcast       2     11,635      23,270      1.4   6,000/6,000
+hook-broadcast       8      5,347      42,772      2.6 24,000/24,000
+
+------------------------------------------------------------------------------
+6. CONNECTION ESTABLISHMENT  (handshake + OpenEvent callback)
+------------------------------------------------------------------------------
+
+mode              conns      sec     conn/s   ms each
+nim-ingest          500    0.147      3,412     0.293
+hook-echo           500    0.153      3,264     0.306
+
+------------------------------------------------------------------------------
+7. DEBUG LOGGING ON THE HOT PATH
+------------------------------------------------------------------------------
+
+pocketsocket_server.nim `echo`s a line on every send() and send_all().
+That is a string format plus a write syscall per message.
+
+mode                 msgs   stdout bytes   bytes/msg
+nim-ingest          5,000             64         0.0
+hook-echo           5,000        254,864        51.0
+
+==============================================================================
+NOTES
+==============================================================================
+* 'nim-ingest' has nothing to acknowledge with, so its rate is bounded
+  by client send speed and TCP backpressure. Treat it as an UPPER BOUND
+  on the floor, not an exact figure.
+* Latency includes the full client->kernel->server->kernel->client loop
+  on loopback. Subtract roughly 20-40us for loopback overhead to
+  approximate the server-only cost.
+* Every Python callback serialises on the GIL. That is inherent to
+  CPython, not to pocketsocket's bridge.
+* set_broadcast_mode/set_print_mode are implemented in Nim but not
+  exported via {.exportpy.}, so a pure-Nim fan-out path could not be
+  measured from Python.
+
+
+==============================================================================
+APPENDIX: PRE-FIX vs POST-FIX A/B
+==============================================================================
+
+Both builds produced from the same tree with `nimble buildPyd`; the pre-fix
+build is main @ b1443ba with the GIL bridge stashed out. 20 iterations each.
+
+                        Nim TTL (ms)                 spawn->accept (ms)
+                  min     med    mean     max     min     med    mean
+PRE-FIX        0.7153  0.8797  0.9857  2.8282   12.44   13.39   15.54
+POST-FIX       0.8006  0.8743  0.9962  3.1089   12.29   13.52   16.28
+
+  => Startup cost of the fix: none measurable. Medians differ by 0.005ms,
+     well inside run-to-run noise. GIL symbols are resolved lazily and
+     PyEval_SaveThread is a single call, so this is expected.
+
+                        Message path
+PRE-FIX        CRASHED - SIGSEGV: Illegal storage access. (Attempt to read from nil?)
+POST-FIX       ALIVE   - echo path works
+
+  => No pre-fix throughput baseline is possible: the server segfaults on the
+     first WebSocket event. Every figure in sections 1-7 above is a NEW
+     capability, not a regression or an improvement over a working number.
+
+NOTE ON THE COMMITTED BASELINES
+-------------------------------
+benchmarks/benchmark_python_module_results.txt (and the other committed .txt
+files) cannot be reproduced on the current tree: they drive the module via
+`import pocketsocket; pocketsocket.hook(...)`, but python/pocketsocket/__init__.py
+has been empty since the repo reorganisation (bfb6042), so that attribute does
+not exist. Re-running benchmark_python_module.py today yields
+"Failed to capture TTL" on every iteration. Those baselines should be treated
+as stale.

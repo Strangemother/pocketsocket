@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PocketSocket Chat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">POCKETSOCKET</p>
+      <h1>Small room, open sockets.</h1>
+      <p id="status" data-state="offline">Offline</p>
+    </header>
+
+    <section class="connection">
+      <label for="server">WebSocket server</label>
+      <div class="row">
+        <input id="server" value="ws://127.0.0.1:8090/ws/" spellcheck="false">
+        <button id="connect" type="button">Connect</button>
+      </div>
+    </section>
+
+    <ol id="messages" aria-live="polite"></ol>
+
+    <form id="message-form" class="row">
+      <label class="sr-only" for="message">Message</label>
+      <input id="message" placeholder="Write a message" autocomplete="off" disabled>
+      <button id="send" type="submit" disabled>Send</button>
+    </form>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

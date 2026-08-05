@@ -1,13 +1,14 @@
 import mummy
 import std/tables
 
+import config
+
 
 proc send_all*(clientSheet: Table[uint64, WebSocket], message_kind: MessageKind, message_data: string, exclude_uuid: uint64): int =
   #[ Send a message to _all_ clients. Provide an exclude for ignoring the
     receiver]#
   for other_uuid, websocket in clientSheet:
     if other_uuid == exclude_uuid:
-      echo "skipping exclude uuid: ", exclude_uuid
       continue
     websocket.send(message_data, message_kind)
   return 0
@@ -23,6 +24,6 @@ proc send*(clientSheet: Table[uint64, WebSocket], uuid: uint64, message_kind: Me
   if clientSheet.hasKey(uuid):
     clientSheet[uuid].send(message_data, message_kind)
     return 0
-  else:
+  if config.print_mode:
     echo "Attempted send() to unknown uuid: ", uuid
-    return 1
+  return 1

@@ -4,6 +4,8 @@ import mummy
 import nimpy
 import nimpy/py_lib as lib
 
+import gil
+
 var
   pyHook: PyObject
 
@@ -13,12 +15,30 @@ proc call_py_hook*(
   message: Message
 ): int =
   result = 0
-  if pyHook != nil:
-    let info:PyObject = pyHook.callObject(cast[uint64](hash(websocket)), event, message)
-    if cast[pointer](info) != cast[pointer](lib.pyLib.Py_None):
-      # echo "Given: ", $info
-      result = info.to(int)
-    discard info
+  {.gcsafe.}:
+    if pyHook == nil:
+      return 0
+
+    # This runs on a mummy worker thread, so the GIL must be held around every
+    # python C-API call below - including nimpy's argument marshalling.
+    let gilState = gil.acquire_gil()
+    try:
+      # Marshal by hand; mummy's `Message` object is handed to python as a
+      # plain dict of {"kind": int, "data": str}.
+      let messageDict = pyDict()
+      messageDict["kind"] = message.kind.ord
+      messageDict["data"] = message.data
+
+      let info: PyObject = pyHook.callObject(
+          cast[uint64](hash(websocket)),
+          event.ord,
+          messageDict
+        )
+      if info != nil and
+          cast[pointer](info.privateRawPyObj) != cast[pointer](lib.pyLib.Py_None):
+        result = info.to(int)
+    finally:
+      gil.release_gil(gilState)
 
 
 proc hook*(p: PyObject): void =
@@ -27,4 +47,5 @@ proc hook*(p: PyObject): void =
     message events.
   ]#
   # Keep the function as the callable.
+  gil.ensure_gil_procs()
   pyHook = p
