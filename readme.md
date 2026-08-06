@@ -52,7 +52,10 @@ Serving on http://127.0.0.1:8090
 TTL: 664 microseconds and 116 nanoseconds
 ```
 
-Navigate to [http://127.0.0.1:8090](http://127.0.0.1:8090) for the web interface, or connect with a WebSocket client to [ws://127.0.0.1:8090/](ws://127.0.0.1:8090/) (or [ws://127.0.0.1:8090/ws/](ws://127.0.0.1:8090/ws/) to be more explicit).
+Navigate to [http://127.0.0.1:8090](http://127.0.0.1:8090) for the web interface, or connect with a WebSocket client: 
+
++ [ws://127.0.0.1:8090/](ws://127.0.0.1:8090/) 
++ [ws://127.0.0.1:8090/ws/](ws://127.0.0.1:8090/ws/)
 
 
 ### Python
