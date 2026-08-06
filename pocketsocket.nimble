@@ -31,10 +31,27 @@ print(sysconfig.get_config_var("EXT_SUFFIX"))
   if exitCode != 0:
     raise newException(OSError, "Could not get python native extension suffix")
 
+  # `nimble build` injects -d:release, but a custom task does not: without this
+  # the extension ships as an unoptimised debug build (measured ~2x slower).
+  switch("define", "release")
+  switch("out", "python" / "pocketsocket" / "pocketsocket_server" & extSuffix)
+  setCommand "c", srcDir / "pocketsocketpkg" / "pocketsocket_server.nim"
+
+task buildPydDebug, "build python extension module with debug info":
+  var (extSuffix, exitCode) = gorgeEx("python3", """
+import sysconfig
+print(sysconfig.get_config_var("EXT_SUFFIX"))
+""")
+  stripLineEnd(extSuffix)
+
+  if exitCode != 0:
+    raise newException(OSError, "Could not get python native extension suffix")
+
   switch("out", "python" / "pocketsocket" / "pocketsocket_server" & extSuffix)
   setCommand "c", srcDir / "pocketsocketpkg" / "pocketsocket_server.nim"
 
 task buildCliCI, "build pocketsocket-cli for CI":
   # For simpler logic in CI, tag binary name with target OS and CPU
+  switch("define", "release")
   switch("out", toExe(binDir / "pocketsocket-cli-" & hostOS & "_" & hostCPU))
   setCommand "c", srcDir / "pocketsocket.nim"

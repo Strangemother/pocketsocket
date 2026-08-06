@@ -126,40 +126,77 @@ optimising it further is wasted effort.
 the outbound path, a second handoff back to the io thread. Do not compare a
 one-way row against a round-trip row and call the difference "Python overhead".
 
+### Build the module with -d:release before measuring anything
+
+`nimble build` injects `-d:release` automatically. A custom nimble `task` does
+not. `buildPyd` is a custom task, so for a long time it silently produced an
+unoptimised extension module -- worth **~2x throughput** and half the binary
+size. It is fixed now, but check the compiler hint if a number looks wrong:
+
+```
+Hint: mm: arc; threads: on; opt: speed; options: -d:release   <- correct
+Hint: mm: arc; threads: on; opt: none (DEBUG BUILD, ...)      <- do not measure this
+```
+
+`nimble buildPydDebug` exists when you actually want an unoptimised build.
+
 ### Architecture context
 
-mummy runs a dedicated io thread plus a worker pool, and dispatches WebSocket
-events serially per connection. That costs a thread handoff per message but
-lets connections be serviced in parallel across cores. The asyncio servers in
-`bench_compare.py` run a single-threaded event loop: no handoff, no
-parallelism.
+mummy has exactly **one io thread**: a single `Selector` (`mummy.nim:97`)
+driven by a single `selectInto` loop (`mummy.nim:1164`). Worker threads only
+execute handlers -- every byte read from or written to every socket passes
+through that one thread.
 
-On a small host this trade goes against pocketsocket, and the comparison
-results say so. The handoff is a fixed per-message cost that a 2-core box has
-no spare capacity to hide, while the event-loop servers pay nothing for it. The
-trade only pays off with enough cores and enough concurrent connections to use
-them.
+```
+worker threads  -> parallel handler execution   (scales)
+io thread       -> all socket read/write        (count = 1, does not scale)
+```
 
-`worker_threads` is tunable via `run_blocking_server(..., worker_threads=N)`.
-mummy's default is `countProcessors() * 10`, which heavily oversubscribes small
-hosts -- though measurement on the reference host showed the default is not
-itself the bottleneck.
+For an echo workload the handler is trivial, so the worker pool has nothing to
+parallelise and the io thread is effectively 100% of the cost. Measured on
+16 vCPU with a release build, a **single connection already saturates the
+server** at ~37k round-trips/sec, and 32 concurrent connections produce no more
+throughput than one.
+
+This was tested rather than assumed. The original hypothesis -- that mummy's
+per-message thread handoff is a cost that buys cross-core parallelism -- is not
+supported: 8x the cores changed nothing, and `worker_threads` is flat from 1 to
+160. Neither is a lever for this workload.
+
+Anything that needs to beat that ceiling requires **multiple io threads**, e.g.
+`SO_REUSEPORT` with one epoll loop per core. Removing the worker handoff alone
+would improve latency but not the ceiling, because the read side stays
+single-threaded.
+
+Where pocketsocket wins decisively is **startup** (~20 ms vs 108-385 ms) and
+**connection establishment** (~4,900/s, ahead of every asyncio server tested),
+because there is no framework import graph to walk.
 
 ---
 
-## Reference host
+## Reference hosts
 
-Results in `results/` were produced on a 2 vCPU codespace. That is a
-constrained environment and it matters:
+Results in `results/` were produced on two GitHub codespaces:
 
-* Client processes compete with the server for CPU, so concurrency scaling
-  beyond ~2 clients reflects host oversubscription rather than pocketsocket.
-  Those tables are shape-only.
-* Absolute throughput is not representative of a real deployment.
-* Latency percentiles and the **relative** costs between modes are the
-  trustworthy numbers, because every mode pays the same host penalty.
+| tag | host | notes |
+| --- | --- | --- |
+| `postcleanup` | 2 vCPU, 8 GB | debug-build module, understated |
+| `16core` | 16 vCPU AMD EPYC 9V74, 62 GB | debug-build module, understated |
+| `16core-release` | 16 vCPU AMD EPYC 9V74, 62 GB | **current, use these** |
 
-Re-run on a larger host before quoting any absolute figure.
+Only `16core-release` reflects an optimised build. The earlier two are kept
+because the deltas between them are still informative, but do not quote their
+absolute figures.
+
+Running on both host sizes mattered: the 2 vCPU numbers were ambiguous because
+the client competed with the server for CPU, and conclusions drawn from them
+turned out to be wrong once there was headroom. If you only have a small host,
+treat concurrency scaling as shape-only and trust the latency percentiles and
+the relative costs between modes instead.
+
+The two hosts are different hardware, not just different core counts -- the
+16 vCPU machine is roughly 1.5x faster per core. Compare within a run, not
+across runs.
 
 ---
 
