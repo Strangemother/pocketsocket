@@ -8,14 +8,15 @@ A zero-configuration WebSocket server that works with Python or as a standalone 
 
 </div>
 
-PocketSocket handles the socket lifecycle, handshakes, decoding, and pongs. Your code doesn't.
+
+Pocketsocket _acts_ like its own stack. It handles itself, and the websocket process. With Pocketsocket you (the developer) can implement websockets without thinking about it.
 
 ## Run It
 
 Compiled for Windows, Linux, and MacOS:
 
 ```bash
-@Strangemother ➜ /app (main) $ ./pocketsocket-cli --run 
+$ ./pocketsocket-cli --run 
 Run
 Discovering: /workspaces/pocketsocket-2/templates/index.html
 Template Set. Length: 278
@@ -57,7 +58,8 @@ Default address and port are:
 - [ws://127.0.0.1:8090/](ws://127.0.0.1:8090/) WebSocket connection
 - [ws://127.0.0.1:8090/ws/](ws://127.0.0.1:8090/ws/) WebSocket connection. Same as above but a more explicit path.
 
-> Pocketsocket _acts_ like its own stack. It handles itself, and the websocket process. With Pocketsocket you can implement websockets without thinking about it.
+
+PocketSocket handles the socket lifecycle, handshakes, decoding, and pongs. Your code doesn't.
 
 
 ## Features
