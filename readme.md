@@ -2,16 +2,32 @@
 
 # Pocketsocket v2
 
-A zero-configuration WebSocket server that works with Python or as a standalone application.
+A standalone dependency-free zero-configuration WebSocket server for CLI or Python.
 
 ---
 
 </div>
 
 
-Pocketsocket _acts_ like its own stack. It handles itself, and the websocket process. With Pocketsocket you (the developer) can implement websockets without thinking about it.
+Pocketsocket _acts_ like its own stack. It handles itself, and the websocket process. With Pocketsocket you can implement websockets without thinking about it.
+
+## Install It
+
+### Standalone
+
+Download the latest binary release from [Releases](https://github.com/strangemother/pocketsocket-2/releases)
+
+### Python
+
+Or grab from [PyPi](https://pypi.org/project/pocketsocket/):
+
+```bash
+$ pip install pocketsocket
+```
 
 ## Run It
+
+### Standalone CLI
 
 Compiled for Windows, Linux, and MacOS:
 
@@ -24,11 +40,15 @@ Serving on http://127.0.0.1:8090
 TTL: 664 microseconds and 116 nanoseconds
 ```
 
-Python:
+Navigate to [http://127.0.0.1:8090](http://127.0.0.1:8090) for the web interface, or connect with a WebSocket client to [ws://127.0.0.1:8090/](ws://127.0.0.1:8090/) (or [ws://127.0.0.1:8090/ws/](ws://127.0.0.1:8090/ws/) to be more explicit).
+
+
+### Python
+
+Ensure you have the latest version of pocketsocket installed, then run the following code:
 
 ```py
 import pocketsocket
-
 
 def ingress(uuid: str, event_type: int, event: dict):
     if event_type == 0:  # new connect event
@@ -51,13 +71,6 @@ And you're ready to go. Connect to the waiting server using http or websockets.
     http://<address>:<port>
     ws://<address>:<port>/
     ws://<address>:<port>/ws/
-
-Default address and port are:
-
-- [http://127.0.0.1:8090](http://127.0.0.1:8090) Quick test with a browser
-- [ws://127.0.0.1:8090/](ws://127.0.0.1:8090/) WebSocket connection
-- [ws://127.0.0.1:8090/ws/](ws://127.0.0.1:8090/ws/) WebSocket connection. Same as above but a more explicit path.
-
 
 PocketSocket handles the socket lifecycle, handshakes, decoding, and pongs. Your code doesn't.
 
