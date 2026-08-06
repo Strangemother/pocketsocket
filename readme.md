@@ -1,4 +1,4 @@
-<div style="text-align: center;" markdown="1">
+<div markdown=1 align="center">
 
 # Pocketsocket v2
 
@@ -13,10 +13,18 @@ Pocketsocket _acts_ like its own stack. It handles itself, and the websocket pro
 
 ## Install It
 
+<table>
+<tr>
+<td width="50%">
+
 ### Standalone
 
 Download the latest binary release from [Releases](https://github.com/strangemother/pocketsocket-2/releases)
 
+
+</td>
+<td width="50%">
+    
 ### Python
 
 Or grab from [PyPi](https://pypi.org/project/pocketsocket/):
@@ -24,6 +32,10 @@ Or grab from [PyPi](https://pypi.org/project/pocketsocket/):
 ```bash
 $ pip install pocketsocket
 ```
+
+</td>
+</tr>
+</table>
 
 ## Run It
 
