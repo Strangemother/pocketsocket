@@ -48,11 +48,16 @@ artifacts = [
 [tool.hatch.build.targets.wheel.hooks.custom]
 path = "package/hatch_build.py"
 
+# Build the native module inside each cibuildwheel environment so its ABI and
+# glibc symbols match the Python interpreter and manylinux image being built.
+[tool.cibuildwheel]
+before-build = "cd server && nimble buildPyd -d:release -d:lto -d:strip"
+
 [tool.cibuildwheel.linux]
 environment = { PATH = "$HOME/.nimble/bin:$HOME/.local/share/grabnim/current/bin:$PATH" }
 # Install Nim into the Linux build container.
 before-all = [
     "curl https://codeberg.org/janAkali/grabnim/raw/branch/master/misc/install.sh -sSf | sh",
     "grabnim",
-    "nimble install --depsOnly -y"
+    "cd server && nimble install --depsOnly -y"
 ]
