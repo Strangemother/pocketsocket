@@ -59,7 +59,7 @@ proc indexHandler(request: Request) =
   # headers["Content-Type"] = "text/plain"
   # let index_html_content:string =
   # request.respond(200, headers, $request.headers)
-  request.respond(200, headers, getCachedLocalFileContents("./templates/index.html"))
+  request.respond(200, headers, getCachedLocalFileContents("./server/templates/index.html"))
 
 
 proc send_all*(message_kind: MessageKind, message_data: string, exclude_uuid: uint64): int =
@@ -263,7 +263,7 @@ proc run_blocking_server*(address: string = "127.0.0.1", port: int = 8090): void
   when isMainModule:
     echo(getWelcomeMessage())
   load_lib()
-  submodule.setLoadedTemplate("./templates/index.html")
+  submodule.setLoadedTemplate("./server/templates/index.html")
   server = newServer(router, websocketHandler_broadcast)
   # server = newServer(router, websocketHandler)
   echo "Serving on http://", address, ":", port

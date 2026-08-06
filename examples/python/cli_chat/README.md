@@ -5,7 +5,7 @@ PocketSocket runs as a standalone binary bridge. Python is used only for the cli
 Build and start the bridge from the repository root:
 
 ```bash
-nimble buildCliCI
+(cd server && nimble buildCliCI)
 ./dist/pocketsocket-cli-linux_amd64 --run --broadcast
 ```
 

@@ -11,7 +11,7 @@ python3 -m pip install websockets
 Start the server:
 
 ```bash
-PYTHONPATH=python python3 examples/python/terminal_chat/chat_server.py
+PYTHONPATH=package python3 examples/python/terminal_chat/chat_server.py
 ```
 
 In two more terminals, run:

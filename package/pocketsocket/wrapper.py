@@ -1,4 +1,4 @@
-from pocketsocket import pocketsocket_server
+import pocketsocket_server
 
 
 class IngressReceiver:

@@ -1,5 +1,5 @@
-nimble c --app:lib ^
-    --out:dist/pocketsocket_server.pyd ^
+nimble c --app:console ^
+    --out:..\dist/pocketsocket-cli.exe ^
     --threads:on ^
     --tlsEmulation:off ^
     -d:lto ^
@@ -8,4 +8,4 @@ nimble c --app:lib ^
     -d:release ^
     --opt:speed ^
     -d:strip ^
-    --passL:-static server/pocketsocketpkg/pocketsocket_server.nim
+    --passL:-static pocketsocket.nim

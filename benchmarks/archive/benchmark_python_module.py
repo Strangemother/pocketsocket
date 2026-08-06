@@ -14,7 +14,7 @@ import subprocess
 import re
 from statistics import mean, median, stdev
 
-sys.path.insert(0, 'python')
+sys.path.insert(0, 'package')
 
 
 def parse_ttl(text):
@@ -79,7 +79,7 @@ def run_single_test(port=9700):
     # Create a test script that uses the Python API
     test_script = f'''
 import sys
-sys.path.insert(0, 'python')
+sys.path.insert(0, 'package')
 import pocketsocket
 
 def hook(uuid, etype, event):

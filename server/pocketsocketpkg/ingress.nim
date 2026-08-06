@@ -28,7 +28,7 @@ proc indexHandler(request: Request) =
   # headers["Content-Type"] = "text/plain"
   # let index_html_content:string =
   # request.respond(200, headers, $request.headers)
-  request.respond(200, headers, getCachedLocalFileContents("./templates/index.html"))
+  request.respond(200, headers, getCachedLocalFileContents("./server/templates/index.html"))
 
 
 router.get("/**", indexHandler)

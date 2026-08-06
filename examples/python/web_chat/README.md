@@ -7,7 +7,7 @@ This demo uses the standalone PocketSocket CLI as a WebSocket bridge and a tiny 
 From the repository root:
 
 ```bash
-nimble buildCliCI
+(cd server && nimble buildCliCI)
 ./dist/pocketsocket-cli-linux_amd64 --run --broadcast
 ```
 

@@ -13,7 +13,7 @@ callback hook.
     pocketsocket.run_blocking_server('127.0.0.1', 8090)
 """
 
-from pocketsocket import pocketsocket_server
+import pocketsocket_server
 
 # Event types passed to the hook as `etype`.
 CONNECT = 0

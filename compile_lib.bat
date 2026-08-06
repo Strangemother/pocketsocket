@@ -4,4 +4,4 @@ nim c --app:lib ^
     --threads:on ^
     --opt:size ^
     --tlsEmulation:off ^
-    --passl:"-static -static-libgcc -static-libstdc++" src\imp.nim
+    --passl:"-static -static-libgcc -static-libstdc++" server\imp.nim

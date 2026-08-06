@@ -8,7 +8,7 @@ PocketSocket handles the socket lifecycle, handshakes, decoding, and pongs. You 
 
 ### Standalone CLI
 
-The CLI is the simplest path: run the binary from a directory containing `templates/index.html`.
+The CLI is the simplest path: run the binary from a directory containing `server/templates/index.html`.
 
 Windows:
 
@@ -26,7 +26,7 @@ Linux:
 ```bash
 $ dist/pocketsocket-cli --run
 Run
-Discovering: /workspaces/pocketsocket-2/templates/index.html
+Discovering: /workspaces/pocketsocket-2/server/templates/index.html
 Template Set. Length: 278
 Serving on http://127.0.0.1:8090
 TTL: 664 microseconds and 116 nanoseconds

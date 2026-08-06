@@ -52,7 +52,7 @@ def start_server(mode='echo'):
     if mode == 'echo':
         server_code = """
 import sys
-sys.path.insert(0, '/workspaces/pocketsocket-2/python')
+sys.path.insert(0, '/workspaces/pocketsocket-2/package')
 import pocketsocket
 
 def echo_handler(uuid, etype, event):
@@ -72,7 +72,7 @@ pocketsocket.run_blocking_server('127.0.0.1', 8090)
     else:  # broadcast
         server_code = """
 import sys
-sys.path.insert(0, '/workspaces/pocketsocket-2/python')
+sys.path.insert(0, '/workspaces/pocketsocket-2/package')
 import pocketsocket
 
 def broadcast_handler(uuid, etype, event):
@@ -379,7 +379,7 @@ def check_pocketsocket():
     """Check if pocketsocket module is available"""
     try:
         import sys
-        sys.path.insert(0, '/workspaces/pocketsocket-2/python')
+        sys.path.insert(0, '/workspaces/pocketsocket-2/package')
         import pocketsocket
         return True
     except ImportError:

@@ -76,7 +76,7 @@ def benchmark_pocketsocket_python(port=10001, iterations=5):
     
     script = f'''
 import sys
-sys.path.insert(0, 'python')
+sys.path.insert(0, 'package')
 import pocketsocket
 
 def hook(uuid, etype, event):
@@ -279,7 +279,7 @@ def main():
     available = {}
     
     if 'pocketsocket' not in skip:
-        available['pocketsocket'] = os.path.exists('python/pocketsocket/pocketsocket_server.cpython-312-x86_64-linux-gnu.so')
+        available['pocketsocket'] = os.path.exists('package/pocketsocket/pocketsocket_server.cpython-312-x86_64-linux-gnu.so')
     
     if 'websockets' not in skip:
         available['websockets'] = check_library_available('import websockets')

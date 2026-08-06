@@ -10,8 +10,8 @@
 set -euo pipefail
 
 NIM_VERSION="${NIM_VERSION:-2.2.10}"
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$REPO_ROOT"
+SERVER_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SERVER_ROOT"
 
 export PATH="$HOME/.local/share/grabnim/nim-$NIM_VERSION/bin:$HOME/.nimble/bin:$PATH"
 
@@ -20,9 +20,9 @@ echo "==> host: $(nproc) vCPU"
 if ! command -v nim >/dev/null 2>&1; then
   echo "==> nim not found, installing $NIM_VERSION"
   if ! command -v grabnim >/dev/null 2>&1; then
-    echo "    grabnim missing too - install a Nim toolchain first, e.g.:"
-    echo "    curl https://nim-lang.org/choosenim/init.sh -sSf | sh"
-    exit 1
+    echo "    grabnim missing, installing it"
+    curl https://codeberg.org/janAkali/grabnim/raw/branch/master/misc/install.sh -sSf | sh
+    export PATH="$HOME/.nimble/bin:$PATH"
   fi
   grabnim "$NIM_VERSION"
   export PATH="$HOME/.local/share/grabnim/nim-$NIM_VERSION/bin:$PATH"
@@ -44,7 +44,7 @@ nimble build
 echo "==> smoke test"
 python3 - <<'PY'
 import sys
-sys.path.insert(0, 'package')
+sys.path.insert(0, '../package')
 import pocketsocket as ps
 missing = [n for n in ps.__all__ if not hasattr(ps, n)]
 assert not missing, f"missing exports: {missing}"

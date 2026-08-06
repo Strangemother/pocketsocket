@@ -75,7 +75,7 @@ def test_message_sending():
     
     server_code = """
 import sys
-sys.path.insert(0, '/workspaces/pocketsocket-2/python')
+sys.path.insert(0, '/workspaces/pocketsocket-2/package')
 import pocketsocket
 
 def echo_handler(uuid, etype, event):
@@ -159,7 +159,7 @@ def main():
     if not results[0][1]:
         print("\n❌ Cannot proceed - module not available")
         print("\nPlease build the module first:")
-        print("  nimble buildPyd")
+        print("  (cd server && nimble buildPyd)")
         return False
     
     # Test 2: Server start
@@ -188,7 +188,7 @@ def main():
         print("\n❌ Some tests failed. The bug may still exist.")
         print("\nIf 'Message Echo' fails with SIGSEGV, the bug is not fixed.")
         print("Make sure you rebuilt after applying the hook.nim changes:")
-        print("  nimble buildPyd")
+        print("  (cd server && nimble buildPyd)")
     
     return all_passed
 

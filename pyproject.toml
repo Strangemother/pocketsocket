@@ -25,7 +25,6 @@ server = []
 # Development dependencies
 dev = [
     "hatch",
-    "hatch-build-scripts",
 ]
 
 [project.urls]
@@ -35,27 +34,19 @@ Repository = "https://github.com/Strangemother/pocketsocket-2"
 Issues = "https://github.com/Strangemother/pocketsocket-2/issues"
 
 [build-system]
-requires = ["hatchling", "hatch-build-scripts"]
+requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = [
-    "python/pocketsocket",
+    "package/pocketsocket",
 ]
 artifacts = [
-    "*.pyd", "*.so"
-]
-
-[[tool.hatch.build.targets.wheel.hooks.build-scripts.scripts]]
-artifacts = [
-    "python/pocketsocket/*.pyd", "python/pocketsocket/*.so"
-]
-commands = [
-    "nimble buildPyd -d:release -d:lto -d:strip"
+    "package/*.pyd", "package/*.so"
 ]
 
 [tool.hatch.build.targets.wheel.hooks.custom]
-path = "python/hatch_build.py"
+path = "package/hatch_build.py"
 
 [tool.cibuildwheel.linux]
 environment = { PATH = "$HOME/.nimble/bin:$HOME/.local/share/grabnim/current/bin:$PATH" }
