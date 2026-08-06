@@ -8,4 +8,4 @@ nimble c --app:lib ^
     -d:release ^
     --opt:speed ^
     -d:strip ^
-    --passL:-static pocketsocketpkg/pocketsocket_server.nim
+    --passL:-static src/pocketsocketpkg/pocketsocket_server.nim

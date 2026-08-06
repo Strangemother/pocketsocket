@@ -2,7 +2,10 @@
 Test the new loadHookModule approach.
 """
 import sys
-sys.path.insert(0, '/workspaces/pocketsocket-2/package')
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'package'))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import pocketsocket
 

@@ -2,7 +2,9 @@
 Test the polling-based WebSocket event handling.
 """
 import sys
-sys.path.insert(0, '/workspaces/pocketsocket-2/package')
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'package'))
 
 import pocketsocket
 import threading

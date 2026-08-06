@@ -9,8 +9,10 @@ import sys
 import time
 import asyncio
 import subprocess
+from pathlib import Path
 
-sys.path.insert(0, '/workspaces/pocketsocket-2/package')
+PACKAGE_DIR = Path(__file__).resolve().parents[2] / 'package'
+sys.path.insert(0, str(PACKAGE_DIR))
 
 def test_module_import():
     """Test that module imports"""
@@ -30,7 +32,7 @@ def test_server_start():
     
     server_code = """
 import sys
-sys.path.insert(0, '/workspaces/pocketsocket-2/package')
+sys.path.insert(0, __PACKAGE_DIR__)
 import pocketsocket
 
 def test_handler(uuid, etype, event):
@@ -45,7 +47,7 @@ def test_handler(uuid, etype, event):
 pocketsocket.hook(test_handler)
 print('Server starting...', flush=True)
 pocketsocket.run_blocking_server('127.0.0.1', 8091)
-"""
+""".replace('__PACKAGE_DIR__', repr(str(PACKAGE_DIR)))
     
     proc = subprocess.Popen(
         [sys.executable, '-c', server_code],
@@ -75,7 +77,7 @@ def test_message_sending():
     
     server_code = """
 import sys
-sys.path.insert(0, '/workspaces/pocketsocket-2/package')
+sys.path.insert(0, __PACKAGE_DIR__)
 import pocketsocket
 
 def echo_handler(uuid, etype, event):
@@ -86,7 +88,7 @@ def echo_handler(uuid, etype, event):
 
 pocketsocket.hook(echo_handler)
 pocketsocket.run_blocking_server('127.0.0.1', 8091)
-"""
+""".replace('__PACKAGE_DIR__', repr(str(PACKAGE_DIR)))
     
     proc = subprocess.Popen(
         [sys.executable, '-c', server_code],
@@ -104,6 +106,7 @@ import websockets
 
 async def test():
     async with websockets.connect('ws://127.0.0.1:8091/ws/') as ws:
+        await ws.recv()  # The server sends request headers after upgrading.
         await ws.send('Hello World')
         response = await ws.recv()
         print(f'Received: {response}')
@@ -127,6 +130,7 @@ exit(0 if result else 1)
             success = True
         else:
             print("   ✗ Message echo failed")
+            print(f"   stdout: {result.stdout}")
             print(f"   stderr: {result.stderr}")
             success = False
             

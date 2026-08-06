@@ -5,7 +5,9 @@ KEY INSIGHT: The polling must happen on the Python MAIN thread!
 Run the server in a background thread and poll from main.
 """
 import sys
-sys.path.insert(0, '/workspaces/pocketsocket-2/package')
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'package'))
 
 import pocketsocket
 import threading

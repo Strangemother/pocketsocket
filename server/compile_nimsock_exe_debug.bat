@@ -6,4 +6,4 @@ nimble c --app:console ^
     --mm:arc ^
     -d:useMalloc ^
     --excessiveStackTrace:on ^
-    --passL:-static pocketsocket.nim
+    --passL:-static src/pocketsocket.nim
