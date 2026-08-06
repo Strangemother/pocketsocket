@@ -87,6 +87,20 @@ And you're ready to go. Connect to the waiting server using http or websockets.
 PocketSocket handles the socket lifecycle, handshakes, decoding, and pongs. Your code doesn't.
 
 
+## Verify a download
+
+Each release includes `SHA256SUMS.txt`. In PowerShell, calculate the hash of the
+downloaded executable:
+
+```powershell
+Get-FileHash .\pocketsocket-cli-*.exe -Algorithm SHA256
+```
+
+Compare the resulting `Hash` value with the matching entry in `SHA256SUMS.txt`.
+A matching SHA-256 hash confirms that the downloaded file is identical to the
+release asset. It does not replace antivirus scanning or code signing.
+
+
 ## Features
 
 + Not async

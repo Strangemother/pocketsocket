@@ -35,8 +35,9 @@ jobs:
         runner:
           - ubuntu-22.04
           - ubuntu-22.04-arm
-          - macos-13 # Latest x86 macOS
-          - macos-14 # Oldest supported ARM macOS
+          - macos-14
+          - macos-15-intel # Intel macOS
+          - macos-15 # Native Apple Silicon macOS
           - windows-2022
 
     runs-on: ${{ matrix.runner }}

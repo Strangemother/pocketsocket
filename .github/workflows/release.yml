@@ -27,6 +27,12 @@ jobs:
         with:
           merge-multiple: true
 
+      - name: Generate SHA-256 checksums
+        run: |
+          find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -print0 \
+            | sort -z \
+            | xargs -0 sha256sum > SHA256SUMS.txt
+
       # INFO: Switch to this if you only want exes uploaded on release
       #
       # - name: Download all built binaries
