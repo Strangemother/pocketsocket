@@ -22,7 +22,8 @@ requires "crunchy >= 0.1.11"
 import std/[os, strutils]
 
 task buildPyd, "build python extension module":
-  var (extSuffix, exitCode) = gorgeEx("python3", """
+  let pythonCommand = getEnv("POCKETSOCKET_PYTHON", "python3")
+  var (extSuffix, exitCode) = gorgeEx(pythonCommand, """
 import sysconfig
 print(sysconfig.get_config_var("EXT_SUFFIX"))
 """)
@@ -38,7 +39,8 @@ print(sysconfig.get_config_var("EXT_SUFFIX"))
   setCommand "c", srcDir / "pocketsocketpkg" / "pocketsocket_server.nim"
 
 task buildPydDebug, "build python extension module with debug info":
-  var (extSuffix, exitCode) = gorgeEx("python3", """
+  let pythonCommand = getEnv("POCKETSOCKET_PYTHON", "python3")
+  var (extSuffix, exitCode) = gorgeEx(pythonCommand, """
 import sysconfig
 print(sysconfig.get_config_var("EXT_SUFFIX"))
 """)

@@ -52,9 +52,13 @@ path = "package/hatch_build.py"
 # glibc symbols match the Python interpreter and manylinux image being built.
 [tool.cibuildwheel]
 before-build = "cd server && nimble buildPyd -d:release -d:lto -d:strip"
+environment = { POCKETSOCKET_PYTHON = "python" }
+
+[tool.cibuildwheel.macos]
+environment = { MACOSX_DEPLOYMENT_TARGET = "11.0", POCKETSOCKET_PYTHON = "python" }
 
 [tool.cibuildwheel.linux]
-environment = { PATH = "$HOME/.nimble/bin:$HOME/.local/share/grabnim/current/bin:$PATH" }
+environment = { PATH = "$HOME/.nimble/bin:$HOME/.local/share/grabnim/current/bin:$PATH", POCKETSOCKET_PYTHON = "python" }
 # Install Nim into the Linux build container.
 before-all = [
     "curl https://codeberg.org/janAkali/grabnim/raw/branch/master/misc/install.sh -sSf | sh",
