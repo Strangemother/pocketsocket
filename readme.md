@@ -1,24 +1,21 @@
-# Pocket Socket Version 2
+<div style="text-align: center;" markdown="1">
 
-Zero config websocket implementation for standalone and python implementation.
+# Pocketsocket v2
 
-Standalone:
+A zero-configuration WebSocket server that works with Python or as a standalone application.
 
-Windows:
+---
 
-```bash
-$ nim_src>dist\pocketsocket-cli.exe --run
-Run
-Discovering: .\nim_src\templates\index.html
-Template Set. Length: 230
-Serving on http://127.0.0.1:8090
-TTL: 11 milliseconds, 795 microseconds, and 685 nanoseconds
-```
+</div>
 
-Linux:
+PocketSocket handles the socket lifecycle, handshakes, decoding, and pongs. Your code doesn't.
+
+## Run It
+
+Compiled for Windows, Linux, and MacOS:
 
 ```bash
-@Strangemother ➜ /workspaces/pocketsocket-2 (main) $ dist/pocketsocket-cli --run 
+@Strangemother ➜ /app (main) $ ./pocketsocket-cli --run 
 Run
 Discovering: /workspaces/pocketsocket-2/templates/index.html
 Template Set. Length: 278
@@ -31,58 +28,101 @@ Python:
 ```py
 import pocketsocket
 
-def ingress(uuid, etype, event):
-    if etype == 0: # connect event
+
+def ingress(uuid: str, event_type: int, event: dict):
+    if event_type == 0:  # new connect event
         pocketsocket.send(uuid, 1, "Howdy...")
         return
-    # broadcast the message to everyone, excluding the origin socket
+    # Broadcast the message to everyone
+    # excluding the origin socket.
     pocketsocket.send_all(event['kind'], event['data'], uuid)
 
+# Ready to go.
+pocketsocket.hook(ingress) 
 
-# Add a function or method to run.
-pocketsocket.hook(ingress)
-# start the server
-pocketsocket.run_blocking_server('127.0.0.1', port=8090)
+address = '127.0.0.1'
+port = 8090
+pocketsocket.run_blocking_server(address, port) 
 ```
 
-That's everything. Connect to the waiting server using http or websockets.
+And you're ready to go. Connect to the waiting server using http or websockets.
+    
+    http://<address>:<port>
+    ws://<address>:<port>/
+    ws://<address>:<port>/ws/
 
-    http://127.0.0.1:8090
-    ws://127.0.0.1:8090/
-    ws://127.0.0.1:8090/ws/
+Default address and port are:
+
+- [http://127.0.0.1:8090](http://127.0.0.1:8090) Quick test with a browser
+- [ws://127.0.0.1:8090/](ws://127.0.0.1:8090/) WebSocket connection
+- [ws://127.0.0.1:8090/ws/](ws://127.0.0.1:8090/ws/) WebSocket connection. Same as above but a more explicit path.
+
+> Pocketsocket _acts_ like its own stack. It handles itself, and the websocket process. With Pocketsocket you can implement websockets without thinking about it.
 
 
 ## Features
 
-+ Not Async!
++ Not async
 
-    The pocketsocket server is sync under the hood. So you don't need to worry about incoming socket locks or the colour of functions. Thanks to nim and the underlying package `mummy`, sockets are threaded by default.
+    The PocketSocket server is synchronous under the hood. You do not need to worry about incoming socket locks or the colour of functions. Thanks to Nim and the underlying package `mummy`, sockets are threaded by default.
 
-+ Process and Thread executable:
++ Process and thread friendly
 
-    Run a pocketsocket server on a python Process, Thread, or main loop. Messages are thread-safe.
+    Run a PocketSocket server on a Python process, thread, or main loop. Messages are thread-safe.
 
-+ _Singleton style_ Interconnected process hook (lock-ignorant)
++ Singleton-style interconnected process hook
 
-    All processes or thread can receive from the same hook. Threading occurs on execution of the hooked function.
+    All processes or threads can receive from the same hook. You don't need to worry about socket locks.
+    
+    - Lock Ignorant: GIL is handled before the `hook` function is called.
+    - Thread Safe: One epoll thread handles all incoming sockets. 
+    
++ It's quick
 
-+ It's frickin quick:
+    The compiled server starts in **sub-millisecond time** on average, with a small compiled footprint. See the [benchmark summary](#benchmarks) for a quick look at the numbers.
 
-    Compiled in nim to python as a c-like asset, it's fast as a bullet. The primary server will start in **less than 1 millisecond** on average. See [BENCHMARKS.md](BENCHMARKS.md) for detailed performance metrics.
 
-+ Unmanaged sockets!
++ Unmanaged sockets
 
     Socket handles are managed **before your python layer**. Your code does not need to solve any handshakes, decoding, or pongs.
 
-+ Tiny tiny tiny:
+    Ignore:
 
-    No dependencies, Near 1mb of code when compiled.
+    - marshalling or unmarshalling
+    - socket management 
+    - lifecycle handling
+    - pongs and keep-alives
+    - locks or threading issues
+    - flooding, throughput, and concurrency issues
+    
+    Pocketsocket handles all of this for you. Your code needs one hook function.
 
++ Tiny footprint:
+
+    - No dependencies.
+    - Small Binary: Near 1mb of code when compiled.
+    - Minimal RAM usage: cli (windows) uses less than 4mb of RAM when idle.
+    - Low memory overhead: 
+        - A waiting socket consumes ~4kb of memory. 
+        - A connected socket consumes ~40kb of memory. 
+    - Fast: The server starts in sub-millisecond time on average.
+    - Scalable: The server can handle thousands of concurrent connections with minimal overhead.
 
 
 ## API
 
-Heh, It's almost childs-play:
+The API is deliberately small:
+
+| Function | Purpose |
+| --- | --- |
+| `hook(callback)` | Register the function that receives socket events. |
+| `send(uuid, message_kind, message_data)` | Send a message to one socket. |
+| `send_all(message_kind, message_data, origin_uuid)` | Broadcast to all sockets except `origin_uuid`. |
+| `run_blocking_server(address, port)` | Start the server and block the current thread. |
+| `shutdown_server()` | Stop the running server. |
+
+Fundamentally, `hook` is the receiver for all events. Your application does not need to manage WebSocket handshakes, decoding, pongs, or socket iteration itself.
+
 
 ```py
 import pocketsocket
@@ -99,48 +139,64 @@ pocketsocket.run_blocking_server(address, port)
 pocketsocket.shutdown_server()
 ```
 
+### Hook Event Data
 
-Fundamentally the `pocketsocket.hook` function is the receiver for all events.
+Your hook receives three values:
 
+| Value | Meaning |
+| --- | --- |
+| `uuid` | The numeric identifier for the socket. |
+| `event_type` | The lifecycle event: `0` connect, `1` message, `2` error, or `3` close. |
+| `event` | The event payload, containing `kind` and `data` for message events. |
 
-### An Echo Server:
+The hook is the one place where your application receives socket events. 
 
-You can create an echo server py calling functions within the hook:
+- Return `1` to request that the current socket is closed
+- return `0` or nothing to keep the socket open.
+
+## Examples
+
+### Echo Server
+
+Call `send` from inside the hook to echo a message back to its socket:
 
 ```py
 import pocketsocket
 
-def echo_receiver(uuid, event_type, data):
-    pocketsocket.send(uuid, event_type, data)
+address = '127.0.0.1'
+port = 8090
+
+def echo_receiver(uuid, event_type, event):
+    pocketsocket.send(uuid, event['kind'], event['data'])
 
 
 pocketsocket.hook(echo_receiver)
-
 pocketsocket.run_blocking_server(address, port)
 ```
 
-
-### A Broadcast Server
+### Broadcast Server
 
 ```py
 import pocketsocket
 
-def broadcast_receiver(uuid, event_type, data):
-    if etype == 0: # connect event
+address = '127.0.0.1'
+port = 8090
+
+def broadcast_receiver(uuid, event_type, event):
+    if event_type == 0:  # connect event
         pocketsocket.send_all(1, f"Connected:{uuid}", uuid)
         return
-    # Send the message to everyone
     pocketsocket.send_all(event['kind'], event['data'], uuid)
 
-pocketsocket.hook(broadcast_receiver)
 
+pocketsocket.hook(broadcast_receiver)
 pocketsocket.run_blocking_server(address, port)
 ```
 
 
 ## How does it Work
 
-Pocketsocket is written in nim-lang, pre-compiled into an isolated `.pyd`. The Pocketsocket server runs independently of your python code, handling the life-cycle of incoming sockets. It's self-threading and process-safe, allowing you to leverage the Websocket stack without handling any of it.
+Pocketsocket is written in [nim-lang](https://nim-lang.org/), pre-compiled into an isolated `.pyd`. The Pocketsocket server runs independently of your python code, handling the life-cycle of incoming sockets. It's self-threading and process-safe, allowing you to leverage the Websocket stack without handling any of it.
 
 
 1. Built on-top of nim-mummy server, and its websocket tooling
@@ -187,94 +243,24 @@ However websockets still has its limits when it comes to implementation. I maint
 
 ---
 
-Therefore Pocketsocket _acts_ like its own stack. It handles itself, and the websocket process. With Pocketsocket you (the developer) can implement websockets without thinking about it.
-
-
----
-
-## Dev Notes
-
-
-    # Compile on Windows:
-    nim c --app:lib --out:mymodule.pyd --threads:on --tlsEmulation:off --passL:-static mymodule
-    # Compile on everything else:
-    nim c --app:lib --out:mymodule.so --threads:on mymodule
-
-
-### Memory Leak for incoming sockets
-
-All sockets leak for ingress. With `-d:useMalloc` the leak is 4KB. Without the switch, the leak is near `~40KB`.
-
-#### Issue:
-
-    https://github.com/nim-lang/Nim/issues/24693
-    https://github.com/nim-lang/Nim/pull/24701
-    https://github.com/nim-lang/Nim/issues/22510
-
-#### Solution
-
-Partial fix until Nim 2.0 is changed will reduce the overhead:
-
-        --mm:arc
-        -d:useMalloc
+Pocketsocket _acts_ like its own stack. It handles itself, and the websocket process. With Pocketsocket you (the developer) can implement websockets without thinking about it.
 
 
 ## Benchmarks
 
-Pocketsocket is exceptionally fast. The server starts in **sub-millisecond time** (< 1ms average).
+These are light reference numbers from Linux on x86_64. See [BENCHMARKS.md](docs/BENCHMARKS.md) for methodology and the full comparison.
 
-### 🚀 Quick Start - Run All Benchmarks
+| Test | Result |
+| --- | --- |
+| Standalone CLI startup | 0.8922 ms average, 80% under 1 ms |
+| Python module startup | 1.0678 ms average, 50% under 1 ms |
+| CLI versus other Python WebSocket servers | 7.8x to 34.5x faster at startup |
+
+### Run the Benchmarks Yourself
 
 ```bash
-# Run complete benchmark suite and generate a report
+# Run the complete suite and generate a report
 ./run_benchmarks.py -n 20 -o benchmark_report.txt
 ```
 
-This will:
-- ✓ Benchmark the standalone CLI binary
-- ✓ Benchmark the Python module
-- ✓ Compare against other WebSocket servers (websockets, Tornado, aiohttp, FastAPI)
-- ✓ Generate a comprehensive report
-
-### Individual Benchmarks
-
-**Startup Time:**
-```bash
-# Benchmark the standalone CLI binary
-python3 benchmarks/benchmark.py -n 20
-
-# Benchmark the Python module
-python3 benchmarks/benchmark_python_module.py -n 20
-
-# Compare against other WebSocket servers
-python3 benchmarks/benchmark_comparison.py -n 10
-```
-
-**Connection Throughput:**
-```bash
-# Test WebSocket connection establishment
-python3 benchmarks/benchmark_connections.py -n 5 -c 100
-
-# Sequential connections only
-python3 benchmarks/benchmark_connections.py --sequential-only -n 10 -c 200
-
-# Concurrent connections only
-python3 benchmarks/benchmark_connections.py --concurrent-only -n 5 -c 100
-```
-
-For detailed benchmark results and methodology, see [BENCHMARKS.md](BENCHMARKS.md).
-
-### Latest Results
-
-**Standalone CLI (50 iterations):**
-- Average: 0.80ms
-- Median: 0.80ms
-- 94% of startups under 1ms
-
-**Python Module (20 iterations):**
-- Average: 1.07ms
-- Median: 0.99ms
-- 50% of startups under 1ms
-
-**Comparison to Other Servers:**
-Pocketsocket is **7.8-34.5x faster** than other popular Python WebSocket servers (websockets, Tornado, aiohttp, FastAPI). See [BENCHMARKS.md](BENCHMARKS.md) for detailed comparison.
+For build flags, memory notes, and other lower-level details, see [DEV_NOTES.md](docs/DEV_NOTES.md).
