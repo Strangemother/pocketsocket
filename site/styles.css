@@ -1,0 +1,348 @@
+:root {
+    color-scheme: dark;
+    --background: #101318;
+    --surface: #171c24;
+    --surface-raised: #1e2631;
+    --text: #464646;
+    --muted: #aab4c0;
+    --line: #303a47;
+    --accent: #70d6c1;
+    --accent-strong: #b4f2e5;
+    --shadow: rgba(0, 0, 0, 0.28);
+}
+
+:root.light-theme {
+    color-scheme: light;
+    --background: #f4f7f6;
+    --surface: #ffffff;
+    --surface-raised: #e8f0ee;
+    --text: #17231f;
+    --muted: #5d6c67;
+    --line: #cedbd6;
+    --accent: #087f6d;
+    --accent-strong: #075b4e;
+    --shadow: rgba(23, 35, 31, 0.1);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    min-width: 320px;
+    margin: 0;
+    background: var(--background);
+    color: var(--text);
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 1.6;
+    transition: background-color 180ms ease, color 180ms ease;
+}
+
+button,
+a {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+.site-header,
+main,
+.site-footer {
+    width: min(100% - 3rem, 1080px);
+    margin-inline: auto;
+}
+
+.site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--line);
+}
+
+.brand {
+    color: var(--text);
+    font-size: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+}
+
+.theme-toggle {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.45rem 0.85rem;
+    background: transparent;
+    color: var(--text);
+    font-size: 0.9rem;
+}
+
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
+    border-color: var(--accent);
+    color: var(--accent-strong);
+}
+
+.hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(220px, 0.75fr);
+    gap: 4rem;
+    align-items: end;
+    padding: 7rem 0 6rem;
+}
+
+.eyebrow {
+    margin: 0 0 1rem;
+    color: var(--accent);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+    margin-top: 0;
+}
+
+h1 {
+    max-width: 720px;
+    margin-bottom: 1.5rem;
+    font-size: clamp(3.4rem, 9vw, 7.5rem);
+    font-weight: 400;
+    letter-spacing: -0.045em;
+    line-height: 0.92;
+}
+
+.hero-description {
+    max-width: 590px;
+    margin-bottom: 0;
+    color: var(--muted);
+    font-size: 1.2rem;
+}
+
+.download-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    border: 1px solid var(--line);
+    padding: 1rem;
+    background: var(--surface);
+    box-shadow: 0 1rem 2rem var(--shadow);
+}
+
+.download-details {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+}
+
+.download-icon {
+    display: grid;
+    flex: 0 0 2.75rem;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    background: var(--accent);
+    color: var(--background);
+    font-family: Arial, sans-serif;
+    font-size: 1.65rem;
+    line-height: 1;
+}
+
+.download-label,
+.download-platform,
+.download-size {
+    display: block;
+}
+
+.download-label {
+    color: var(--muted);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.download-platform {
+    color: var(--text);
+    font-size: 1.15rem;
+}
+
+.download-size {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.download-button {
+    flex: 0 0 auto;
+    border: 1px solid var(--accent);
+    padding: 0.65rem 0.9rem;
+    background: var(--accent);
+    color: var(--background);
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.download-button:hover,
+.download-button:focus-visible {
+    border-color: var(--accent-strong);
+    background: var(--accent-strong);
+}
+
+.python-install {
+    margin-top: 1rem;
+    border: 1px solid var(--line);
+    padding: 1rem;
+    background: var(--surface-raised);
+}
+
+.python-install-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 0.8rem;
+    color: var(--text);
+    font-size: 0.95rem;
+}
+
+.python-icon {
+    display: inline-grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    background: var(--accent);
+    color: var(--background);
+    font-family: Arial, sans-serif;
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.python-install code {
+    display: block;
+    overflow-x: auto;
+    border-left: 2px solid var(--accent);
+    padding: 0.7rem 0.8rem;
+    background: var(--background);
+    color: var(--accent-strong);
+    font-family: "Courier New", monospace;
+    font-size: 0.95rem;
+    white-space: nowrap;
+}
+
+.getting-started {
+    border-top: 1px solid var(--line);
+    padding: 4.5rem 0 6rem;
+}
+
+.section-heading {
+    display: flex;
+    justify-content: space-between;
+    gap: 2rem;
+    align-items: baseline;
+    margin-bottom: 2rem;
+}
+
+h2 {
+    margin-bottom: 0;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 400;
+    letter-spacing: -0.035em;
+    line-height: 1;
+}
+
+.section-heading p {
+    max-width: 360px;
+    margin-bottom: 0;
+    color: var(--muted);
+}
+
+.steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    background: var(--line);
+}
+
+.step {
+    min-height: 220px;
+    padding: 1.5rem;
+    background: var(--surface);
+}
+
+.step-number {
+    display: block;
+    margin-bottom: 3rem;
+    color: var(--accent);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.step h3 {
+    margin: 0 0 0.65rem;
+    font-size: 1.3rem;
+}
+
+.step p {
+    margin-bottom: 0;
+    color: var(--muted);
+}
+
+.site-footer {
+    padding: 1.5rem 0 2rem;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 700px) {
+    .site-header,
+    main,
+    .site-footer {
+        width: min(100% - 2rem, 1080px);
+    }
+
+    .hero {
+        display: block;
+        padding: 5rem 0 4.5rem;
+    }
+
+    .download-panel {
+        max-width: 360px;
+        margin-top: 3rem;
+    }
+
+    .section-heading,
+    .steps {
+        display: block;
+    }
+
+    .section-heading p {
+        margin-top: 1rem;
+    }
+
+    .step + .step {
+        border-top: 1px solid var(--line);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    body {
+        transition: none;
+    }
+}
