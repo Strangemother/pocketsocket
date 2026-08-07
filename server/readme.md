@@ -96,6 +96,26 @@ nimble build
 
 The CLI is written to `../dist/`.
 
+### Build native outputs directly
+
+The Windows batch build scripts are consolidated in `compile.py`:
+
+```bash
+cd /workspaces/pocketsocket-2/server
+python compile.py
+python compile.py exe lib
+python compile.py exe --debug
+python compile.py --all
+```
+
+With no output arguments, the script runs the prepared Nimble release tasks:
+`nimble buildPyd` followed by `nimble build`. Use `exe`, `lib`, or `pyd` to
+select outputs. `--release` is the default; `--debug` selects the debug build
+tasks where available. `lib` remains a direct `nim` build because it has no
+Nimble task. Setup recovery is enabled by default: if `nimble` is missing,
+`setup.sh` runs before the build is retried. Use `--no-setup` to let the
+missing command error normally. `--setup=True` is also accepted explicitly.
+
 ### Build a Python wheel
 
 From the repository root:

@@ -3,7 +3,7 @@
 
 # import os
 import std/locks, std/times, std/monotimes, std/cpuinfo
-import asyncdispatch
+# import asyncdispatch
 import nimpy
 #import terminal
 # import nimpy/py_lib as lib
@@ -19,10 +19,10 @@ import config
 
 var
   lock: Lock # The lock for global memory
-  router: Router
+  # router: Router
   server: Server
-  receiveThread: Thread[void]
-  pyHook: PyObject
+  # receiveThread: Thread[void]
+  # pyHook: PyObject
   wake_time: MonoTime = getMonoTime()
 
 

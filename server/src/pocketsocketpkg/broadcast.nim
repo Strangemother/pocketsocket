@@ -1,5 +1,5 @@
 import std/locks, std/sets
-import std/hashes, std/locks, std/tables
+import std/hashes, std/tables
 import mummy
 
 import hook
@@ -70,7 +70,8 @@ proc websocketHandler_broadcast*(
     {.gcsafe.}:
       withLock lock:
         clientSheet[cast[uint64](hash(websocket))] = websocket
-    discard call_py_hook(websocket, event, message)
+    # return 0 to accept the connection, 1 to reject it.
+    infoInt = hook.call_py_hook(websocket, event, message)
 
   of MessageEvent:
     if config.print_mode:
@@ -79,7 +80,7 @@ proc websocketHandler_broadcast*(
     if config.echo_mode:
       websocket.send(message.data, message.kind)
     # A python hook returning 1 requests that the socket be dropped.
-    infoInt = call_py_hook(websocket, event, message)
+    infoInt = hook.call_py_hook(websocket, event, message)
     # Tested before taking the lock: the common case is broadcast_mode off,
     # and this runs on every inbound message.
     if config.broadcast_mode:
@@ -91,17 +92,17 @@ proc websocketHandler_broadcast*(
   of ErrorEvent:
     if config.print_mode:
       echo "Error event: ", message
-    discard call_py_hook(websocket, event, message)
+    discard hook.call_py_hook(websocket, event, message)
 
   of CloseEvent:
     if config.print_mode:
       echo websocket, ": close"
     remove_client(websocket)
-    discard call_py_hook(websocket, event, message)
+    discard hook.call_py_hook(websocket, event, message)
 
   if infoInt == 1:
     if config.print_mode:
       echo "Drop socket ", websocket
     websocket.close()
     remove_client(websocket)
-    discard call_py_hook(websocket, event, message)
+    discard hook.call_py_hook(websocket, event, message)

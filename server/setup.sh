@@ -15,6 +15,12 @@ cd "$SERVER_ROOT"
 
 export PATH="$HOME/.local/share/grabnim/nim-$NIM_VERSION/bin:$HOME/.nimble/bin:$PATH"
 
+SHELL_CONFIG="$HOME/.bashrc"
+PATH_EXPORT="export PATH=\"\$HOME/.local/share/grabnim/nim-$NIM_VERSION/bin:\$HOME/.nimble/bin:\$PATH\""
+if ! grep -Fqx "$PATH_EXPORT" "$SHELL_CONFIG" 2>/dev/null; then
+  printf '\n# PocketSocket Nim toolchain\n%s\n' "$PATH_EXPORT" >> "$SHELL_CONFIG"
+fi
+
 echo "==> host: $(nproc) vCPU"
 
 if ! command -v nim >/dev/null 2>&1; then

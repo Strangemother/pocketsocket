@@ -2,9 +2,9 @@
 # Run with: nimble test
 
 import unittest
-import std/hashes
-import mummy
-import nimpy
+# import std/hashes
+# import mummy
+# import nimpy
 
 import pocketsocketpkg/hook
 
