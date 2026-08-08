@@ -28,3 +28,27 @@ suite "broadcast tests":
         let ws = WebSocket()  # Create a dummy WebSocket instance
         websocketHandler_broadcast(ws, OpenEvent, message)
         check true
+    
+    # test "locked_has_client returns false for non-existent WebSocket":
+    #     let ws = WebSocket() 
+    #     # Assert the websocket is not recorded.
+    #     check not locked_has_client(ws)
+
+    test "locked_has_client returns true for recorded WebSocket":
+        let ws = WebSocket()  # Create a dummy WebSocket instance
+        # Record the client
+        locked_record_client(ws)  
+        # Assert record exists
+        check locked_has_client(ws)
+
+    test "locked_remove_client removes client from clientSheet and context":
+        let ws = WebSocket()
+        # Create a new socket and ensure it is recorded
+        locked_record_client(ws) 
+        check locked_has_client(ws)
+        
+        # Actuate the removal
+        locked_remove_client(ws)  # Remove the client
+
+        # assert the client is removed.
+        check not locked_has_client(ws) 

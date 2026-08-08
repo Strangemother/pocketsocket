@@ -6,6 +6,7 @@ import mummy
 import hook
 import websocket_dispatch
 import config
+import connection_context
 ## Connection registry and the WebSocket event handler.
 ##
 ## This module owns the authoritative `clientSheet`: it is the only writer,
@@ -52,10 +53,25 @@ proc locked_close_remove_client*(uuid: uint64): void =
         clientSheet.del(uuid)
 
 
-proc remove_client*(websocket: WebSocket): void =
+proc locked_record_client*(websocket: WebSocket, uuid: uint64 = 0'u64): void =
   {.gcsafe.}:
     withLock lock:
-      clientSheet.del(getWebSocketUUID(websocket))
+      let clientUUID = if uuid == 0'u64: getWebSocketUUID(websocket) else: uuid
+      clientSheet[clientUUID] = websocket
+
+
+proc locked_remove_client*(websocket: WebSocket): void =
+  {.gcsafe.}:
+    withLock lock:
+      let uuid = getWebSocketUUID(websocket)
+      clientSheet.del(uuid)
+      removeContext(uuid)
+
+proc locked_has_client*(websocket: WebSocket): bool =
+  {.gcsafe.}:
+    withLock lock:
+      let uuid = getWebSocketUUID(websocket)
+      result = clientSheet.hasKey(uuid)
 
 
 proc websocketHandler_broadcast*(
@@ -68,9 +84,7 @@ proc websocketHandler_broadcast*(
   of OpenEvent:
     if config.print_mode:
       echo websocket, ": connected"
-    {.gcsafe.}:
-      withLock lock:
-        clientSheet[getWebSocketUUID(websocket)] = websocket
+    locked_record_client(websocket)
     # return 0 to accept the connection, 1 to reject it.
     infoInt = hook.call_py_hook(websocket, event, message)
 
@@ -98,12 +112,12 @@ proc websocketHandler_broadcast*(
   of CloseEvent:
     if config.print_mode:
       echo websocket, ": close"
-    remove_client(websocket)
+    locked_remove_client(websocket)
     discard hook.call_py_hook(websocket, event, message)
 
   if infoInt == 1:
     if config.print_mode:
       echo "Drop socket ", websocket
     websocket.close()
-    remove_client(websocket)
+    locked_remove_client(websocket)
     discard hook.call_py_hook(websocket, event, message)

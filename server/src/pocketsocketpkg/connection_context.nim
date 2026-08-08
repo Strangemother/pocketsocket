@@ -19,6 +19,15 @@ proc registerContext*(uuid: uint64, context: ConnectionContext) =
       contexts[uuid] = context
 
 
+proc hasContext*(uuid: uint64): bool =
+  {.gcsafe.}:
+    #[ 
+      Given a UUID, check if a context is registered for it. 
+    ]#
+    withLock lock:
+      result = contexts.hasKey(uuid)
+
+
 proc getContext*(uuid: uint64): ConnectionContext =
   {.gcsafe.}:
     withLock lock:

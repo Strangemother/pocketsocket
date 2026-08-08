@@ -8,19 +8,27 @@ var
   # lock: Lock # The lock for global memory
   router*: Router
 
-proc upgradeHandler(request: Request) =
+proc registerWebSocket*(request: Request, websocket: WebSocket): uint64 =
   #[
-    Given a new request, assume a websocket and upgrade.
+    Register a new websocket connection.
   ]#
-  let websocket = request.upgradeToWebSocket()
-  # Send the headers back down the pipe.
   let uuid = getWebSocketUUID(websocket)
   registerContext(uuid, ConnectionContext(
     headers: request.headers,
     remoteAddress: request.remoteAddress,
     path: request.path
   ))
+  result = uuid
+
+proc upgradeHandler(request: Request) =
+  #[
+    Given a new request, assume a websocket and upgrade.
+  ]#
+  let websocket: WebSocket = request.upgradeToWebSocket()
+  let uuid: uint64 = registerWebSocket(request, websocket)
+  # Send the headers back down the pipe.
   websocket.send($request.headers)
+
 
 proc indexHandler(request: Request) =
   # print_headers(request.headers)

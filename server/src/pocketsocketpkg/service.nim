@@ -96,7 +96,7 @@ proc run_blocking_server*(
     else: max(countProcessors() * 10, 1)
   server = newServer(
       ingress.router,
-      broadcast.websocketHandler_broadcast,
+      websocketHandler = broadcast.websocketHandler_broadcast,
       workerThreads = workers,
       maxMessageLen = max_message_len,
       maxBodyLen = max_body_len,
