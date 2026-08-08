@@ -15,3 +15,15 @@ setTheme(savedTheme === "light" ? "light" : "dark");
 themeToggle.addEventListener("click", () => {
     setTheme(root.classList.contains("light-theme") ? "dark" : "light");
 });
+
+
+const { createApp, ref } = Vue
+
+createApp({
+    setup() {
+      const message = ref('Hello vue!')
+      return {
+        message
+      }
+    }
+}).mount('#app')
