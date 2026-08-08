@@ -4,7 +4,7 @@
 # import os
 import std/locks, std/times, std/monotimes, std/cpuinfo
 # import asyncdispatch
-import nimpy
+# import nimpy
 #import terminal
 # import nimpy/py_lib as lib
 import mummy, mummy/routers

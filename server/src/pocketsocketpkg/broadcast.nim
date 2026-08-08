@@ -1,5 +1,6 @@
 import std/locks, std/sets
 import std/hashes, std/tables
+import socket_tools
 import mummy
 
 import hook
@@ -54,7 +55,7 @@ proc locked_close_remove_client*(uuid: uint64): void =
 proc remove_client*(websocket: WebSocket): void =
   {.gcsafe.}:
     withLock lock:
-      clientSheet.del(cast[uint64](websocket.hash()))
+      clientSheet.del(getWebSocketUUID(websocket))
 
 
 proc websocketHandler_broadcast*(
@@ -69,7 +70,7 @@ proc websocketHandler_broadcast*(
       echo websocket, ": connected"
     {.gcsafe.}:
       withLock lock:
-        clientSheet[cast[uint64](hash(websocket))] = websocket
+        clientSheet[getWebSocketUUID(websocket)] = websocket
     # return 0 to accept the connection, 1 to reject it.
     infoInt = hook.call_py_hook(websocket, event, message)
 
@@ -87,7 +88,7 @@ proc websocketHandler_broadcast*(
       {.gcsafe.}:
         withLock lock:
           discard send_all(message.kind, message.data,
-                           cast[uint64](hash(websocket)))
+                           getWebSocketUUID(websocket))
 
   of ErrorEvent:
     if config.print_mode:

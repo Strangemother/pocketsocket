@@ -1,9 +1,9 @@
-import std/hashes
+# import std/hashes
 
 import mummy
 import nimpy
 import nimpy/py_lib as lib
-
+import socket_tools
 import gil
 
 var
@@ -35,7 +35,7 @@ proc call_py_hook*(
       #   headersDict[header.key] = header.value
       # messageDict["headers"] = headersDict
       let info: PyObject = pyHook.callObject(
-          cast[uint64](hash(websocket)),
+          getWebSocketUUID(websocket),
           event.ord,
           messageDict,
           

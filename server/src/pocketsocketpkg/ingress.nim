@@ -1,11 +1,12 @@
 import mummy, mummy/routers
 import std/strutils
+import pocketsocketpkg/socket_tools
 import submodule
+import connection_context
 
 var
   # lock: Lock # The lock for global memory
   router*: Router
-
 
 proc upgradeHandler(request: Request) =
   #[
@@ -13,8 +14,13 @@ proc upgradeHandler(request: Request) =
   ]#
   let websocket = request.upgradeToWebSocket()
   # Send the headers back down the pipe.
+  let uuid = getWebSocketUUID(websocket)
+  registerContext(uuid, ConnectionContext(
+    headers: request.headers,
+    remoteAddress: request.remoteAddress,
+    path: request.path
+  ))
   websocket.send($request.headers)
-
 
 proc indexHandler(request: Request) =
   # print_headers(request.headers)
