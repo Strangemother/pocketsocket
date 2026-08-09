@@ -36,7 +36,7 @@
                     
                 <div class="hero-keys">
                     <p class="hero-description">
-                        Websockets without thinking about it. {{ message }}
+                        Websockets without thinking about it. 
                     </p>
 
                     <div class="keypoints">
@@ -46,6 +46,15 @@
                                 <li>Lightweight</li>
                                 <li>Zero Config</li>
                                 <li>Standalone or Python</li>
+                            </ul>
+                            <ul>
+                                <li>
+                                    <a target="_blank" rel="noopener noreferrer"
+                                     ref="github-link"
+                                     :href="host">
+                                        Github
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                     </div>
@@ -61,14 +70,23 @@
                             <div class="download-icon" aria-hidden="true">L</div>
                             <div>
                                 <span class="download-label">standalone</span>
-                                <strong class="download-platform">Linux</strong>
+                                <div>    
+                                    <strong class="download-platform">{{ os }}</strong>
+                                </div>
+
                                 <span class="download-size">1.01 MB</span>
                             </div>
                         </div>
                         
-                        <a class="download-button" href="#" download aria-label="Download PocketSocket for Linux">
-                            <span class="material-symbols-outlined">download</span>
-                        </a>
+                        <div>
+                            <a class="download-button" 
+                            :href="downloadLink" 
+                            @click="downloadClicked()"
+                            download>
+                                <span class="material-symbols-outlined">download</span>
+                            </a>
+                            <span class="download-version">{{ nameMap.tag }}</span>
+                        </div>
 
                     </div>
 
@@ -102,7 +120,7 @@
             </div>
 
             <div class="steps">
-                <article class="step">
+                <article class="step" @click="downloadClicked()">
                     <span class="step-number">01</span>
                     <h3>Download</h3>
                     <p>
@@ -115,7 +133,8 @@
                         -->
                     </p>
                 </article>
-                <article class="step">
+                <article class="step"
+                    @click="runClicked()">
                     <span class="step-number">02</span>
                     <h3>Run</h3>
                     <p>
@@ -138,6 +157,32 @@
                         -->
                     </div>
                 </article>
+            </div>
+            <div class="continue-panels">
+                <div class="download-clicked-panel" 
+                    :class="{'not-download-clicked': !isDownloadClicked, 'download-clicked': isDownloadClicked}">
+                    <p>Download and store it somewhere safe.</p>
+                    <div class="antivirus-notice">
+                        <p>You may see an antivirus false positive.</p>
+                        <details>
+                            <summary>More info</summary>
+                            <p>This is a known false positive. 
+                                Your antivirus may flag the binary incorrectly.</p>
+                        </details>
+                        <details>
+                            <summary>Verification</summary>
+                            <p>You can verify the binary using the provided checksums.
+                                <br>or download the 
+                                    <a :href="host">source code</a>
+                                and build it yourself.
+                            </p>
+                        </details>
+                    </div>
+                </div>
+                <div class="run-clicked-panel" 
+                    :class="{'not-run-clicked': !isRunClicked, 'run-clicked': isRunClicked}">
+                    <p>Run button clicked. You can add additional logic here.</p>
+                </div>
             </div>
         </section>
     </main>
