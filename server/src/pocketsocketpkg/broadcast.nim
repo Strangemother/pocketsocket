@@ -1,4 +1,4 @@
-import std/locks#, std/sets
+import std/locks
 import std/hashes, std/tables
 import socket_tools
 import mummy
@@ -17,7 +17,7 @@ import connection_context
 var
   lock: Lock
   clientSheet: Table[uint64, WebSocket]
-  # clients: HashSet[WebSocket]
+
 
 initLock(lock)
 

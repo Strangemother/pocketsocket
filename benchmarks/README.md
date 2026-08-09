@@ -6,6 +6,7 @@ benchmarks/
   bench_message_path.py  the steady-state message path, with cost decomposition
   bench_compare.py       pocketsocket vs websockets / tornado / aiohttp / uvicorn
   run_all.py             runs all three, writes dated reports to results/
+  create_diff.py         compares two result directories and writes JSON
   lib/                   shared client, harness, server definitions, workloads
   results/               generated reports
   archive/               the pre-2026-08 suite, kept for historical reference
@@ -21,6 +22,8 @@ python3 benchmarks/run_all.py --dir /tmp/ps-run --strip-prefix
 
 python3 benchmarks/bench_message_path.py      # or run one suite directly
 python3 benchmarks/bench_compare.py -o /tmp/compare.txt
+python3 benchmarks/create_diff.py              # previous vs latest -> ./diff.json
+python3 benchmarks/create_diff.py results/before results/after -o /tmp/diff.json
 ```
 
 Each `run_all.py` invocation gets its own directory under

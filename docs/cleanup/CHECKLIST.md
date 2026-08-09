@@ -11,7 +11,7 @@ the repository root unless a command says otherwise.
   **Verify:** `test ! -e server/src/pocketsocketpkg/service_orig.nim` and
   `! rg -n "service_orig" server/src server/tests` both succeed.
 
-- [ ] **A2. Remove duplicate hook invocation on socket drop.** Keep the close
+- [x] **A2. Remove duplicate hook invocation on socket drop.** Keep the close
   and registry-removal path, but do not call the Python hook again after a hook
   returns `1`.
   **Verify:** inspect the drop branch in
@@ -19,7 +19,7 @@ the repository root unless a command says otherwise.
   `hook.call_py_hook` call; run the regression test proving a drop event invokes
   the hook exactly once.
 
-- [ ] **A3. Fix the benchmark package path and make local imports explicit.**
+- [x] **A3. Fix the benchmark package path and make local imports explicit.**
   Point the harness at `package/` and fail if benchmarks import another
   `pocketsocket` installation.
   **Verify:** `rg -n 'PYTHON_PKG|assert_local_module' benchmarks/lib/harness.py`
@@ -46,7 +46,7 @@ the repository root unless a command says otherwise.
   `! rg -n '(^|[[:space:]])import.*imp|imp\.nim' server/src server/tests` both
   succeed.
 
-- [ ] **B3. Remove the unused `clients` HashSet.** Delete the declaration and
+- [x] **B3. Remove the unused `clients` HashSet.** Delete the declaration and
   the now-unneeded `std/sets` import from `broadcast.nim`.
   **Verify:** `! rg -n '\bclients\b|std/sets' server/src/pocketsocketpkg/broadcast.nim`
   succeeds, and `cd server && nimble test` passes.
@@ -85,7 +85,7 @@ the repository root unless a command says otherwise.
   the `withLock` block; run the fan-out benchmark and confirm it completes with
   multiple receivers.
 
-- [ ] **C4. Remove stale header-marshalling comments from `hook.nim`.** Keep
+- [x] **C4. Remove stale header-marshalling comments from `hook.nim`.** Keep
   header access in the connection context rather than rebuilding headers per
   message.
   **Verify:** `! rg -n 'Extract headers|headersDict|messageDict\["headers"\]' server/src/pocketsocketpkg/hook.nim`

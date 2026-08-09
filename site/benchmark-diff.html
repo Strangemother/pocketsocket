@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A quick review of benchmark differences.">
+    <title>Benchmark Diff | PocketSocket</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=SN+Pro:ital,wght@0,200..900;1,200..900&family=Staatliches&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="benchmark-diff.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+    <div id="app" class="shell">
+        <header class="site-header">
+            <a class="brand" href="./">PocketSocket</a>
+            <button class="theme-toggle" type="button" @click="toggleTheme" :aria-pressed="isLight">
+                {{ isLight ? 'Use dark mode' : 'Use light mode' }}
+            </button>
+        </header>
+
+        <main>
+            <section class="hero" aria-labelledby="page-title">
+                <p class="eyebrow">Debug review / benchmark diff</p>
+                <h1 id="page-title">What changed?</h1>
+                <p class="intro">A compact readout of the latest benchmark run against its predecessor. Positive and negative values show movement from A to B; the metric itself tells you whether that movement is desirable.</p>
+                <div v-if="diff" class="run-meta">
+                    <span>A: <code>{{ shortPath(diff.a) }}</code></span>
+                    <span>B: <code>{{ shortPath(diff.b) }}</code></span>
+                    <span>Created: <code>{{ diff.generated_at }}</code></span>
+                    <button class="refresh" type="button" @click="loadDiff">Refresh data</button>
+                </div>
+            </section>
+
+            <section v-if="diff" class="summary" aria-label="Diff summary">
+                <div class="summary-item"><span class="summary-label">Suites compared</span><span class="summary-value">{{ suiteCount }}</span></div>
+                <div class="summary-item"><span class="summary-label">Metric changes</span><span class="summary-value">{{ changedCount }}</span></div>
+                <div class="summary-item"><span class="summary-label">Largest relative change</span><span class="summary-value">{{ largestChange }}</span></div>
+            </section>
+
+            <section v-if="diff" aria-labelledby="suite-title">
+                <div class="section-heading">
+                    <h2 id="suite-title">Review data</h2>
+                    <span class="report-note">{{ activeReport && activeReport.status === 'matched' ? activeReport.b_file : 'No matching report' }}</span>
+                </div>
+                <nav class="tabs view-tabs" aria-label="Review views">
+                    <button class="tab" :class="{ active: view === 'objects' }" type="button" @click="view = 'objects'">Objects</button>
+                    <button class="tab" :class="{ active: view === 'tables' }" type="button" @click="view = 'tables'">Tables</button>
+                </nav>
+                <nav class="tabs" aria-label="Benchmark suites">
+                    <button v-for="suite in suites" :key="suite" class="tab" :class="{ active: suite === activeSuite }" type="button" @click="activeSuite = suite">{{ suite }}</button>
+                </nav>
+
+                <div v-if="activeReport && activeReport.status === 'matched' && view === 'objects'" class="table-wrap">
+                    <table>
+                        <thead><tr><th>Metric</th><th>Baseline A</th><th>Latest B</th><th>Delta (B-A)</th><th>Relative change</th></tr></thead>
+                        <tbody>
+                            <template v-for="group in rows" :key="group.name">
+                                <tr class="metric-group"><td colspan="5">{{ group.name }}</td></tr>
+                                <tr v-for="row in group.rows" :key="row.path" :class="{ 'ps-row': row.label.startsWith('ps-') }">
+                                    <td class="metric">{{ row.label }}</td>
+                                    <td>{{ formatValue(row.value.a) }}</td>
+                                    <td>{{ formatValue(row.value.b) }}</td>
+                                    <td :class="changeClass(row.value.delta)">{{ formatValue(row.value.delta) }}</td>
+                                    <td class="percent" :class="changeClass(row.value.percent_change)">{{ formatPercent(row.value.percent_change) }}</td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+                <div v-else-if="activeReport && activeReport.status === 'matched' && view === 'tables'" class="pivot-tables">
+                    <section v-for="table in pivotTables" :key="table.name" class="pivot-table table-wrap">
+                        <div class="pivot-heading">
+                            <h3>{{ table.name }}</h3>
+                            <span v-if="table.rankingColumn" class="ranking-note">Primary ordering: <strong>{{ columnLabel(table.rankingColumn) }}</strong> ({{ rankingDirection(table.rankingColumn) }})</span>
+                        </div>
+                        <p v-if="table.constantColumns.length" class="constant-note">
+                            <strong>Constant values:</strong>
+                            <span v-for="item in table.constantColumns" :key="item.column">{{ columnLabel(item.column) }} = {{ formatValue(item.value) }}</span>
+                        </p>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th><button class="sort-button" type="button" @click="sortTable(table.name, '__label')"><span class="column-label">{{ columnLabel('__label') }}<b>{{ sortIndicator(table.name, '__label') }}</b></span><small>{{ columnDescription('__label') }}</small></button></th>
+                                    <th v-for="column in table.displayColumns" :key="column"><button class="sort-button" type="button" @click="sortTable(table.name, column)"><span class="column-label">{{ columnLabel(column) }}<b>{{ sortIndicator(table.name, column) }}</b></span><small>{{ columnDescription(column) }}</small></button></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="row in sortRows(table)" :key="row.label" :class="rowClasses(row, table)">
+                                    <td class="metric">{{ row.label }}</td>
+                                    <td v-for="column in table.displayColumns" :key="column">
+                                        <template v-if="row.cells[column]">
+                                            <span class="final-value">{{ formatValue(row.cells[column].b) }}</span>
+                                            <span class="cell-delta" :class="changeClass(row.cells[column].delta)">{{ formatValue(row.cells[column].delta) }} ({{ formatPercent(row.cells[column].percent_change) }})</span>
+                                        </template>
+                                        <span v-else class="unchanged">-</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </section>
+                </div>
+                <div v-else class="empty">This suite is missing from one of the two benchmark runs.</div>
+            </section>
+
+            <div v-if="error" class="error" role="alert">{{ error }}</div>
+            <div v-else-if="!diff" class="empty">Loading <code>diff.json</code>...</div>
+        </main>
+
+        <footer class="site-footer">Small tool, honest numbers, room to grow.</footer>
+    </div>
+
+    <script src="benchmark-diff.js"></script>
+</body>
+</html>
