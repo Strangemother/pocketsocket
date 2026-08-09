@@ -17,10 +17,24 @@ benchmarks/
 python3 benchmarks/run_all.py                 # full suite -> results/
 python3 benchmarks/run_all.py --quick         # ~5x faster, indicative only
 python3 benchmarks/run_all.py --tag postfix   # label the output files
+python3 benchmarks/run_all.py --dir /tmp/ps-run --strip-prefix
 
 python3 benchmarks/bench_message_path.py      # or run one suite directly
 python3 benchmarks/bench_compare.py -o /tmp/compare.txt
 ```
+
+Each `run_all.py` invocation gets its own directory under
+`benchmarks/results/`, named `{date}-{tag}`. `--dir` selects an exact output
+directory. Every text report has a JSON sibling containing the measured values
+without descriptions or notes. Use `--strip-prefix` to remove the date and
+leading tag components while retaining the final tag label, for example
+`2026-08-09-2-0-4-1-apply-fan-sendall-message-path.json` becomes
+`sendall-message-path.json`.
+
+JSON reports use `schema_version: 1` and group values under `benchmarks` by
+test type. Payload sizes and client/receiver counts are keys within their
+groups; rates, durations, percentile values, run counts, and relative factors
+remain numeric so interactive consumers do not need to parse formatted text.
 
 Requires a built module (`nimble buildPyd`). `bench_compare.py` additionally
 needs the servers it compares against; it silently skips any that are missing:
@@ -42,6 +56,11 @@ All load is generated with raw blocking sockets and a hand-rolled RFC 6455
 framer (`lib/wsclient.py`). An asyncio client library becomes the limiting
 factor well before the server does, at which point every server under test
 looks identical -- because you are benchmarking the client.
+
+Current pocketsocket connections do not send an unsolicited greeting frame.
+The benchmark client therefore starts reading application frames immediately;
+`WSClient(..., drain_greeting=True)` remains available only for legacy servers
+that still send one.
 
 Three specific traps:
 

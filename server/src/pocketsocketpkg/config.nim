@@ -12,7 +12,7 @@ var
   broadcast_mode* = false
   echo_mode* = false
   print_mode* = false
-
+  template_dir* = ""
 
 proc set_broadcast_mode*(mode: bool = false): void =
   broadcast_mode = mode
@@ -28,3 +28,6 @@ proc set_echo_mode*(mode: bool = false): void =
 
 proc set_print_mode*(mode: bool = false): void =
   print_mode = mode
+
+proc set_template_dir*(dir: string): void =
+  template_dir = dir  

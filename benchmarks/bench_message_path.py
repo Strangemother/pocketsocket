@@ -61,6 +61,12 @@ def main():
 
     r = Report("pocketsocket - Message Path Benchmark")
     r.env()
+    r.data["options"] = {"quick": args.quick, "clients": client_counts}
+    r.data["benchmarks"] = {
+        "client_calibration": {}, "latency": {}, "throughput": {},
+        "cost_decomposition": {}, "concurrency": {}, "broadcast": {},
+        "connections": {}, "hot_path_logging": {},
+    }
     r("All client load is raw sockets with pre-built frames. Concurrent load")
     r("uses separate processes so client-side GIL contention cannot be")
     r("mistaken for server-side contention.")
@@ -81,6 +87,7 @@ def main():
     r(f"{'size':>8}{'client ceiling msg/s':>24}")
     for size in (64, 1024, 16384):
         res = W.client_parse_ceiling(size, n(20000) if size < 16384 else n(5000))
+        r.data["benchmarks"]["client_calibration"][str(size)] = res
         r(f"{human_size(size):>8}{res['rate']:>24,.0f}")
 
     # -- 1 ---------------------------------------------------------------
@@ -93,6 +100,7 @@ def main():
             port = free_port()
             with server(mode, port):
                 res = W.latency(port, n(3000), size)
+            r.data["benchmarks"]["latency"].setdefault(mode, {})[str(size)] = res
             r(f"{mode:<18}{human_size(size):>7}{res['min']:>9.1f}"
               f"{res['p50']:>9.1f}{res['p90']:>9.1f}{res['p99']:>9.1f}"
               f"{res['max']:>10.1f}{res['rate']:>11,.0f}")
@@ -109,6 +117,7 @@ def main():
             port = free_port()
             with server(mode, port):
                 res = W.batched(port, cnt, size, 256)
+            r.data["benchmarks"]["throughput"].setdefault(mode, {})[str(size)] = res
             r(f"{mode:<18}{human_size(size):>8}{res['count']:>9,}"
               f"{res['duration']:>8.3f}{res['rate']:>12,.0f}"
               f"{res['mb_per_sec']:>10.1f}")
@@ -146,6 +155,8 @@ def main():
             grew = srv.log_bytes() - before
         if floor is None:
             floor = res["rate"]
+        r.data["benchmarks"]["cost_decomposition"][mode] = dict(
+            res, stdout_bytes=grew, vs_floor=(res["rate"] / floor * 100))
         r(f"{mode:<18}{res['count']:>9,}{res['duration']:>8.3f}"
           f"{res['rate']:>12,.0f}{res['mb_per_sec']:>8.1f}"
           f"{res['rate'] / floor * 100:>9.0f}%{grew:>11,}")
@@ -189,6 +200,8 @@ def main():
                 continue
             if base is None:
                 base = res["rate"]
+            r.data["benchmarks"]["concurrency"].setdefault(mode, {})[str(clients)] = res
+            r.data["benchmarks"]["concurrency"][mode][str(clients)]["scaling"] = res["rate"] / base
             r(f"{mode:<18}{clients:>8}{res['count']:>9,}{res['duration']:>8.3f}"
               f"{res['rate']:>13,.0f}{res['per_client']:>12,.0f}"
               f"{res['rate'] / base:>8.2f}x")
@@ -205,6 +218,7 @@ def main():
             port = free_port()
             with server(mode, port):
                 res = W.fanout(port, receivers, n(3000), 64)
+            r.data["benchmarks"]["broadcast"].setdefault(mode, {})[str(receivers)] = res
             ok = f"{res['delivered']:,}/{res['expected']:,}"
             r(f"{mode:<18}{receivers:>6}{res['in_rate']:>11,.0f}"
               f"{res['out_rate']:>12,.0f}{res['mb_per_sec']:>9.1f}{ok:>15}")
@@ -217,6 +231,7 @@ def main():
         port = free_port()
         with server(mode, port):
             res = W.connections(port, n(500))
+        r.data["benchmarks"]["connections"][mode] = res
         r(f"{mode:<18}{res['count']:>7,}{res['duration']:>8.3f}"
           f"{res['rate']:>11,.0f}{res['ms_each']:>10.3f}")
 
@@ -236,6 +251,9 @@ def main():
             else:
                 W.pipelined(port, cnt, 64, 64)
             grew = srv.log_bytes() - before
+        r.data["benchmarks"]["hot_path_logging"][mode] = {
+            "messages": cnt, "stdout_bytes": grew, "bytes_per_message": grew / cnt,
+        }
         r(f"{mode:<18}{cnt:>9,}{grew:>15,}{grew / cnt:>12.2f}")
 
     r("")

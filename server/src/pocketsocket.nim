@@ -14,6 +14,7 @@ Options:
   --run                 Run the server.
   -a --address=<addr>   Bind address [default: 127.0.0.1].
   -p --port=<port>      Bind port [default: 8090].
+  -t --template-dir=<dir>  Template directory [default: ""].
   --echo                Reflect every message back to its sender.
   --broadcast           Relay every message to all other clients.
   --print               Log connections and messages to stdout.
@@ -29,6 +30,8 @@ Examples:
 import std/strutils
 import docopt
 import pocketsocketpkg/service
+import std/dirs 
+import std/paths
 
 let args = docopt(doc, version = "PocketSocket 2.0.4")
 
@@ -41,6 +44,15 @@ if args["--run"]:
     service.set_broadcast_mode(true)
   if args["--echo"]:
     service.set_echo_mode(true)
+  if args["--template-dir"]:
+    let dir = $args["--template-dir"]
+    let path = Path(dir)
+    if dir.len != 0 and dirExists(path):
+      service.set_template_dir(dir)
+    else:
+      echo "Template directory does not exist: ", dir
+      quit(1)
+    
 
   service.run_blocking_server(
       address = $args["--address"],

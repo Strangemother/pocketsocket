@@ -27,7 +27,7 @@ proc upgradeHandler(request: Request) =
   let websocket: WebSocket = request.upgradeToWebSocket()
   let uuid: uint64 = registerWebSocket(request, websocket)
   # Send the headers back down the pipe.
-  websocket.send($request.headers)
+  # websocket.send($request.headers)
 
 
 proc indexHandler(request: Request) =

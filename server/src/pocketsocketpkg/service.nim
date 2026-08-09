@@ -1,33 +1,19 @@
-# This is just an example to get you started. A typical hybrid package
-# uses this file as the main entry point of the application.
-
-# import os
-import std/locks, std/times, std/monotimes, std/cpuinfo
-# import asyncdispatch
-# import nimpy
-#import terminal
-# import nimpy/py_lib as lib
+#[
+  server lifecycle and the Python-facing surface
+]# 
+import std/times, std/monotimes, std/cpuinfo
 import mummy, mummy/routers
 import submodule
-
-from broadcast import websocketHandler_broadcast
 import broadcast
 import ingress
 import gil
 import config
 
 
+
 var
-  lock: Lock # The lock for global memory
-  # router: Router
   server: Server
-  # receiveThread: Thread[void]
-  # pyHook: PyObject
   wake_time: MonoTime = getMonoTime()
-
-
-# Remember to initialize the lock.
-initLock(lock)
 
 
 proc send_all*(message_kind: MessageKind, message_data: string, exclude_uuid: uint64): int =
@@ -76,6 +62,9 @@ proc set_echo_mode*(mode:bool): void =
 
 proc set_print_mode*(mode:bool = false): void =
   config.set_print_mode(mode)
+
+proc set_template_dir*(dir: string): void =
+  config.set_template_dir(dir)
 
 
 proc run_blocking_server*(

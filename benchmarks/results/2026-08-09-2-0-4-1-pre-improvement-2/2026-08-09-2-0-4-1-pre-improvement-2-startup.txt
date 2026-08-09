@@ -1,0 +1,47 @@
+==============================================================================
+pocketsocket - Startup Benchmark
+==============================================================================
+Date       : 2026-08-09T05:12:53
+Python     : 3.12.1
+Platform   : Linux-6.8.0-1052-azure-x86_64-with-glibc2.39
+CPU count  : 2
+
+Iterations : 20
+
+------------------------------------------------------------------------------
+1. NIM TIME-TO-LAUNCH (ms)
+------------------------------------------------------------------------------
+
+Reported by the server itself: template load, router and socket bind.
+Excludes interpreter startup and module import.
+
+mode                    runs       min     median      mean       max     stdev
+ps-ingest                 20    0.7947     1.0102    1.1565    4.7061    0.8227
+ps-nim-echo               20    0.9308     1.0223    1.1418    3.1178    0.4630
+ps-hook-echo              20    0.8748     0.9978    1.0073    1.1525    0.0626
+
+------------------------------------------------------------------------------
+2. SPAWN -> ACCEPTING CONNECTIONS (ms)
+------------------------------------------------------------------------------
+
+Wall clock from fork/exec to the first successful connect. Dominated
+by CPython interpreter startup and the extension module import.
+
+mode                    runs       min     median      mean       max     stdev
+ps-ingest                 20   13.7578    13.8261   14.2391   20.2196    1.3996
+ps-nim-echo               20   13.7692    13.8840   15.1946   30.7905    3.8301
+ps-hook-echo              20   13.6574    13.8424   15.9988   31.7769    4.6282
+
+------------------------------------------------------------------------------
+3. STANDALONE CLI BINARY
+------------------------------------------------------------------------------
+
+Binary present: /workspaces/pocketsocket-2/dist/pocketsocket-cli
+Size          : 852,720 bytes
+Build with: nimble buildCliCI -d:release -d:lto -d:strip
+
+==============================================================================
+Registering a python hook should not affect startup: the callback is
+stored, not invoked, until the first event arrives. Any difference
+between the three modes above is noise.
+
