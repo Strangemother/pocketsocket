@@ -16,6 +16,9 @@ docker run --rm \
   wstest --mode fuzzingclient --spec /config/fuzzingclient.json
 ```
 
+The runner allocates a TTY and enables unbuffered Python output so Autobahn
+progress is shown while the suite is running rather than only when it exits.
+
 Inside the container, `host.docker.internal` points back to the machine
 running Pocketsocket. The server must bind to `0.0.0.0` so Docker can reach it.
 

@@ -42,8 +42,9 @@ if [[ "$listening" != true ]]; then
     exit 1
 fi
 
-docker run --rm --name "$CONTAINER_NAME" \
+docker run --rm --tty --name "$CONTAINER_NAME" \
     --add-host host.docker.internal:host-gateway \
+    --env PYTHONUNBUFFERED=1 \
     -v "$CONFIG_DIR:/config:ro" \
     -v "$OUTPUT_DIR:/reports" \
     "$IMAGE" \

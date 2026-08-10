@@ -25,8 +25,9 @@ if errorlevel 1 (
 )
 
 docker rm -f "%AUTOBAHN_CONTAINER_NAME%" >nul 2>nul
-docker run --rm --name "%AUTOBAHN_CONTAINER_NAME%" ^
+docker run --rm --tty --name "%AUTOBAHN_CONTAINER_NAME%" ^
   --add-host host.docker.internal:host-gateway ^
+  --env PYTHONUNBUFFERED=1 ^
   -v "%OUTPUT_DIR%\config:/config:ro" ^
   -v "%OUTPUT_DIR%:/reports" ^
   "%AUTOBAHN_IMAGE%" wstest --mode fuzzingclient --spec /config/fuzzingclient.json

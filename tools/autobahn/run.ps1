@@ -29,8 +29,9 @@ try {
     }
 
     & docker rm -f $ContainerName 2>$null | Out-Null
-    & docker run --rm --name $ContainerName `
+    & docker run --rm --tty --name $ContainerName `
         --add-host "host.docker.internal:host-gateway" `
+        --env "PYTHONUNBUFFERED=1" `
         -v "${ConfigDir}:/config:ro" `
         -v "${OutputDir}:/reports" `
         $Image `
