@@ -37,6 +37,14 @@ try {
         $Image `
         wstest --mode fuzzingclient --spec /config/fuzzingclient.json
     if ($LASTEXITCODE -ne 0) { throw "Autobahn testsuite failed with exit code $LASTEXITCODE" }
+
+    $ReportPath = Join-Path $OutputDir "index.html"
+    if (Test-Path $ReportPath -PathType Leaf) {
+        Write-Host "Opening report: $ReportPath"
+        Start-Process -FilePath $ReportPath
+    } else {
+        Write-Warning "Autobahn report not found: $ReportPath"
+    }
 }
 finally {
     & docker rm -f $ContainerName 2>$null | Out-Null

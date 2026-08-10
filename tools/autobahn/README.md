@@ -71,4 +71,6 @@ tests are excluded by default. Remove those entries from the generated config
 if the implementation is ready to evaluate those areas.
 
 Reports are written below `tools/autobahn/reports/` and are kept in Git. The
-config under `reports/config/` is generated for the selected port.
+config under `reports/config/` is generated for the selected port. After the
+tests finish, each runner opens `reports/index.html` in the system browser.
+Set `BROWSER` on Unix-like systems to choose a specific browser command.

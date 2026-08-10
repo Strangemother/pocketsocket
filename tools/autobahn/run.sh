@@ -42,10 +42,34 @@ if [[ "$listening" != true ]]; then
     exit 1
 fi
 
-docker run --rm --tty --name "$CONTAINER_NAME" \
+REPORT="$OUTPUT_DIR/index.html"
+if docker run --rm --tty --name "$CONTAINER_NAME" \
     --add-host host.docker.internal:host-gateway \
     --env PYTHONUNBUFFERED=1 \
     -v "$CONFIG_DIR:/config:ro" \
     -v "$OUTPUT_DIR:/reports" \
     "$IMAGE" \
-    wstest --mode fuzzingclient --spec /config/fuzzingclient.json
+    wstest --mode fuzzingclient --spec /config/fuzzingclient.json; then
+    STATUS=0
+else
+    STATUS=$?
+fi
+
+if [[ -f "$REPORT" ]]; then
+    printf 'Opening report: %s\n' "$REPORT"
+    if [[ -n "${BROWSER:-}" ]]; then
+        "$BROWSER" "$REPORT" >/dev/null 2>&1 &
+    elif command -v xdg-open >/dev/null 2>&1; then
+        xdg-open "$REPORT" >/dev/null 2>&1 &
+    elif command -v open >/dev/null 2>&1; then
+        open "$REPORT" >/dev/null 2>&1 &
+    elif command -v explorer.exe >/dev/null 2>&1; then
+        explorer.exe "$REPORT" >/dev/null 2>&1 &
+    else
+        printf 'No desktop browser opener found. Open the report manually: %s\n' "$REPORT"
+    fi
+else
+    printf 'Autobahn report not found: %s\n' "$REPORT" >&2
+fi
+
+exit "$STATUS"

@@ -32,4 +32,10 @@ docker run --rm --tty --name "%AUTOBAHN_CONTAINER_NAME%" ^
   -v "%OUTPUT_DIR%:/reports" ^
   "%AUTOBAHN_IMAGE%" wstest --mode fuzzingclient --spec /config/fuzzingclient.json
 set "STATUS=%ERRORLEVEL%"
+if exist "%OUTPUT_DIR%\index.html" (
+  echo Opening report: "%OUTPUT_DIR%\index.html"
+  start "" "%OUTPUT_DIR%\index.html"
+) else (
+  echo Autobahn report not found: "%OUTPUT_DIR%\index.html"
+)
 exit /b %STATUS%
