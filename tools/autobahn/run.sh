@@ -6,7 +6,7 @@ SUITE_DIR="$ROOT_DIR/tools/autobahn"
 OUTPUT_DIR=${OUTPUT_DIR:-"$SUITE_DIR/reports"}
 CONFIG_DIR="$OUTPUT_DIR/config"
 PORT=${PORT:-18091}
-IMAGE=${AUTOBAHN_IMAGE:-crossbario/autobahn-testsuite:25.10.1}
+IMAGE=${AUTOBAHN_IMAGE:-crossbario/autobahn-testsuite:latest}
 CONTAINER_NAME=${AUTOBAHN_CONTAINER_NAME:-pocketsocket-autobahn}
 
 mkdir -p "$CONFIG_DIR" "$OUTPUT_DIR"

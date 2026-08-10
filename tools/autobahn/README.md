@@ -12,7 +12,7 @@ docker run --rm \
   --add-host host.docker.internal:host-gateway \
   -v <output>/config:/config:ro \
   -v <output>:/reports \
-  crossbario/autobahn-testsuite:25.10.1 \
+  crossbario/autobahn-testsuite:latest \
   wstest --mode fuzzingclient --spec /config/fuzzingclient.json
 ```
 
@@ -58,7 +58,7 @@ stop Pocketsocket; stop the manually started process yourself after testing.
 | --- | --- | --- |
 | `PORT` | `18091` | Host Pocketsocket port |
 | `OUTPUT_DIR` | `tools/autobahn/reports` | Autobahn reports and server log |
-| `AUTOBAHN_IMAGE` | `crossbario/autobahn-testsuite:25.10.1` | Docker image/tag |
+| `AUTOBAHN_IMAGE` | `crossbario/autobahn-testsuite:latest` | Docker image/tag |
 | `AUTOBAHN_CONTAINER_NAME` | `pocketsocket-autobahn` | Temporary container name |
 | `POCKETSOCKET_CLI` | `dist/pocketsocket-cli*` | Compiled server path |
 

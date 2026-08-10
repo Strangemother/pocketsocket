@@ -5,7 +5,7 @@ set "ROOT_DIR=%~dp0..\.."
 set "SUITE_DIR=%~dp0"
 if "%OUTPUT_DIR%"=="" set "OUTPUT_DIR=%SUITE_DIR%reports"
 if "%PORT%"=="" set "PORT=18091"
-if "%AUTOBAHN_IMAGE%"=="" set "AUTOBAHN_IMAGE=crossbario/autobahn-testsuite:25.10.1"
+if "%AUTOBAHN_IMAGE%"=="" set "AUTOBAHN_IMAGE=crossbario/autobahn-testsuite:latest"
 if "%AUTOBAHN_CONTAINER_NAME%"=="" set "AUTOBAHN_CONTAINER_NAME=pocketsocket-autobahn"
 where docker >nul 2>nul || (
   echo Docker is required to run the Autobahn testsuite.

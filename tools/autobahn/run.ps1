@@ -5,7 +5,7 @@ $SuiteDir = Join-Path $RootDir "tools/autobahn"
 $OutputDir = if ($env:OUTPUT_DIR) { $env:OUTPUT_DIR } else { Join-Path $SuiteDir "reports" }
 $ConfigDir = Join-Path $OutputDir "config"
 $Port = if ($env:PORT) { $env:PORT } else { "18091" }
-$Image = if ($env:AUTOBAHN_IMAGE) { $env:AUTOBAHN_IMAGE } else { "crossbario/autobahn-testsuite:25.10.1" }
+$Image = if ($env:AUTOBAHN_IMAGE) { $env:AUTOBAHN_IMAGE } else { "crossbario/autobahn-testsuite:latest" }
 $ContainerName = if ($env:AUTOBAHN_CONTAINER_NAME) { $env:AUTOBAHN_CONTAINER_NAME } else { "pocketsocket-autobahn" }
 
 New-Item -ItemType Directory -Force -Path $ConfigDir, $OutputDir | Out-Null
