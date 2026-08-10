@@ -1,0 +1,24 @@
+═══════════════════════════════════════════════════════
+  Fingerprint Report
+═══════════════════════════════════════════════════════
+  Target:    ws://127.0.0.1:18090/ws/
+  Mode:      fingerprint
+  Duration:  0s
+  Generated: 2026-08-10 17:27:49
+  Version:   dev (unknown)
+───────────────────────────────────────────────────────
+
+SUMMARY
+  Total findings: 0
+
+No security issues found.
+
+FINGERPRINT DETAILS
+  Detected server: unknown
+
+  Behavioral Probes:
+    oversized_ping               rejected: ws.Conn: io: websocket: invalid control frame
+    reserved_opcode_3            rejected: ws.Conn: io: websocket: bad write message type
+    empty_text_frame             accepted
+    subprotocol_negotiation      no subprotocol selected
+

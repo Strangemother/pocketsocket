@@ -1,0 +1,30 @@
+═══════════════════════════════════════════════════════
+  Script Report: pocketsocket-echo-smoke
+═══════════════════════════════════════════════════════
+  Target:    ws://127.0.0.1:18090/ws/
+  Mode:      script
+  Duration:  1ms
+  Generated: 2026-08-10 17:27:49
+───────────────────────────────────────────────────────
+
+SUMMARY
+  Total findings: 0
+
+No security issues found.
+
+SCRIPT DETAILS
+  Script: pocketsocket-echo-smoke
+  Status: failed
+  Steps:  3 total, 0 passed, 3 failed, 0 errors
+
+  [!!] 1. Echo JSON message (0ms)
+       [FAIL] $.action: expected , got 
+       [FAIL] $.data: expected , got 
+  [!!] 2. Echo repeated message [1/2] (0ms)
+       [FAIL] $.action: expected , got 
+  [!!] 3. Echo repeated message [2/2] (0ms)
+       [FAIL] $.action: expected , got 
+
+  Variables:
+    _index = 1
+

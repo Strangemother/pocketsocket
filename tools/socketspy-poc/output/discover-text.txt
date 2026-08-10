@@ -1,0 +1,7 @@
+{
+  "base_url": "http://127.0.0.1:18090",
+  "endpoints": [],
+  "pages_visited": 1,
+  "js_files_scanned": 0,
+  "duration": 1327858
+}

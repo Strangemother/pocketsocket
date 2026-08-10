@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="socketspy" tests="3" failures="3" errors="0" time="0" timestamp="2026-08-10T17:27:49Z">
+  <testsuite name="Script Report: pocketsocket-echo-smoke" tests="3" failures="3" errors="0" time="0" timestamp="2026-08-10T17:27:49Z">
+    <properties>
+      <property name="target" value="ws://127.0.0.1:18090/ws/"></property>
+      <property name="mode" value="script"></property>
+      <property name="tool" value="socketspy"></property>
+      <property name="version" value=""></property>
+    </properties>
+    <testcase name="Echo JSON message" classname="socketspy.script.pocketsocket-echo-smoke" time="0">
+      <failure message="step failed" type="assertion"></failure>
+    </testcase>
+    <testcase name="Echo repeated message [1/2]" classname="socketspy.script.pocketsocket-echo-smoke" time="0">
+      <failure message="step failed" type="assertion"></failure>
+    </testcase>
+    <testcase name="Echo repeated message [2/2]" classname="socketspy.script.pocketsocket-echo-smoke" time="0">
+      <failure message="step failed" type="assertion"></failure>
+    </testcase>
+  </testsuite>
+</testsuites>

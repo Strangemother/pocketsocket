@@ -1,0 +1,321 @@
+{
+  "title": "Security Scan Report",
+  "target": "ws://127.0.0.1:18090/ws/",
+  "mode": "scan",
+  "metadata": {
+    "tool_name": "",
+    "version": "",
+    "commit": "",
+    "run_at": ""
+  },
+  "session": {
+    "id": "ab882c1d-a91b-4c19-908f-092aedf8c5fb",
+    "name": "",
+    "target_url": "ws://127.0.0.1:18090/ws/",
+    "state": 2,
+    "connections": [
+      "b706eab7-d971-4925-b729-cf7df2a953f9"
+    ],
+    "finding_ids": [
+      "0c86935a-908f-4453-8a69-899812105539",
+      "a4ee103d-206b-4b4c-949e-f6702b4355d0",
+      "62c60161-99cc-4fd5-a614-95f959882565",
+      "da1ee451-fee8-4a30-8d42-db8b33147e25",
+      "d3801c4d-00ca-435d-b178-78ec7d3d31ab",
+      "444a653b-7581-4627-9de1-3ae75879dba9",
+      "5b7e367a-d6d8-47c8-8c47-070241495152"
+    ],
+    "message_count": 1,
+    "finding_count": 7,
+    "started_at": 1786382870984,
+    "ended_at": 1786382871588,
+    "duration": 604,
+    "metadata": {}
+  },
+  "findings": [
+    {
+      "id": "0c86935a-908f-4453-8a69-899812105539",
+      "check_name": "schema_bypass",
+      "severity": "medium",
+      "title": "Server accepted message with missing required field",
+      "description": "Removing field \"action\" from the message did not cause rejection, suggesting the server does not validate required fields.",
+      "connection_id": "b706eab7-d971-4925-b729-cf7df2a953f9",
+      "message_id": "poc-message-1",
+      "evidence": [
+        {
+          "type": "missing_field",
+          "label": "removed field",
+          "value": "action"
+        }
+      ],
+      "remediation": "Implement strict schema validation for all incoming messages; reject messages with missing required fields.",
+      "timestamp": 1786382871135
+    },
+    {
+      "id": "a4ee103d-206b-4b4c-949e-f6702b4355d0",
+      "check_name": "schema_bypass",
+      "severity": "medium",
+      "title": "Server accepted message with wrong field type",
+      "description": "Changing the type of field \"action\" did not cause rejection, suggesting weak type validation.",
+      "connection_id": "b706eab7-d971-4925-b729-cf7df2a953f9",
+      "message_id": "poc-message-1",
+      "evidence": [
+        {
+          "type": "field",
+          "label": "type-confused field",
+          "value": "action"
+        },
+        {
+          "type": "original_type",
+          "label": "original type",
+          "value": "string"
+        }
+      ],
+      "remediation": "Validate field types strictly; reject messages where field types don't match the expected schema.",
+      "timestamp": 1786382871286
+    },
+    {
+      "id": "62c60161-99cc-4fd5-a614-95f959882565",
+      "check_name": "schema_bypass",
+      "severity": "low",
+      "title": "Server accepts messages with unexpected extra fields",
+      "description": "Adding unexpected fields (__admin, __debug, __internal_role) did not cause rejection.",
+      "connection_id": "b706eab7-d971-4925-b729-cf7df2a953f9",
+      "message_id": "poc-message-1",
+      "evidence": [
+        {
+          "type": "extra_fields",
+          "label": "injected fields",
+          "value": "__admin, __debug, __internal_role"
+        }
+      ],
+      "remediation": "Reject messages containing unexpected fields; use strict schema validation with allowlisted field names.",
+      "timestamp": 1786382871436
+    },
+    {
+      "id": "da1ee451-fee8-4a30-8d42-db8b33147e25",
+      "check_name": "origin_bypass",
+      "severity": "high",
+      "title": "Cross-Site WebSocket Hijacking (CSWSH): Origin not validated",
+      "description": "The server accepted a WebSocket connection with a spoofed Origin header. Connection with Origin 'https://evil.com' was accepted. An attacker could exploit this to connect from a malicious website.",
+      "connection_id": "b706eab7-d971-4925-b729-cf7df2a953f9",
+      "evidence": [
+        {
+          "type": "origin",
+          "label": "spoofed origin",
+          "value": "https://evil.com"
+        }
+      ],
+      "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
+      "timestamp": 1786382871135
+    },
+    {
+      "id": "d3801c4d-00ca-435d-b178-78ec7d3d31ab",
+      "check_name": "origin_bypass",
+      "severity": "high",
+      "title": "Cross-Site WebSocket Hijacking (CSWSH): Origin not validated",
+      "description": "The server accepted a WebSocket connection with a spoofed Origin header. Connection with Origin 'https://attacker.example.com' was accepted. An attacker could exploit this to connect from a malicious website.",
+      "connection_id": "b706eab7-d971-4925-b729-cf7df2a953f9",
+      "evidence": [
+        {
+          "type": "origin",
+          "label": "spoofed origin",
+          "value": "https://attacker.example.com"
+        }
+      ],
+      "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
+      "timestamp": 1786382871286
+    },
+    {
+      "id": "444a653b-7581-4627-9de1-3ae75879dba9",
+      "check_name": "origin_bypass",
+      "severity": "high",
+      "title": "Cross-Site WebSocket Hijacking (CSWSH): Origin not validated",
+      "description": "The server accepted a WebSocket connection with a spoofed Origin header. Connection with Origin 'null' was accepted. An attacker could exploit this to connect from a malicious website.",
+      "connection_id": "b706eab7-d971-4925-b729-cf7df2a953f9",
+      "evidence": [
+        {
+          "type": "origin",
+          "label": "spoofed origin",
+          "value": "null"
+        }
+      ],
+      "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
+      "timestamp": 1786382871437
+    },
+    {
+      "id": "5b7e367a-d6d8-47c8-8c47-070241495152",
+      "check_name": "origin_bypass",
+      "severity": "high",
+      "title": "Cross-Site WebSocket Hijacking (CSWSH): Origin not validated",
+      "description": "The server accepted a WebSocket connection with a spoofed Origin header. Connection with empty Origin header was accepted. An attacker could exploit this to connect from a malicious website.",
+      "connection_id": "b706eab7-d971-4925-b729-cf7df2a953f9",
+      "evidence": [
+        {
+          "type": "origin",
+          "label": "spoofed origin",
+          "value": ""
+        }
+      ],
+      "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
+      "timestamp": 1786382871588
+    }
+  ],
+  "summary": {
+    "total_findings": 7,
+    "by_severity": {
+      "high": 4,
+      "low": 1,
+      "medium": 2
+    },
+    "duration_ms": 604000000
+  },
+  "scan_data": {
+    "check_results": [
+      {
+        "check_name": "auth_bypass",
+        "findings": null
+      },
+      {
+        "check_name": "schema_bypass",
+        "findings": [
+          {
+            "id": "0c86935a-908f-4453-8a69-899812105539",
+            "check_name": "schema_bypass",
+            "severity": "medium",
+            "title": "Server accepted message with missing required field",
+            "description": "Removing field \"action\" from the message did not cause rejection, suggesting the server does not validate required fields.",
+            "connection_id": "b706eab7-d971-4925-b729-cf7df2a953f9",
+            "message_id": "poc-message-1",
+            "evidence": [
+              {
+                "type": "missing_field",
+                "label": "removed field",
+                "value": "action"
+              }
+            ],
+            "remediation": "Implement strict schema validation for all incoming messages; reject messages with missing required fields.",
+            "timestamp": 1786382871135
+          },
+          {
+            "id": "a4ee103d-206b-4b4c-949e-f6702b4355d0",
+            "check_name": "schema_bypass",
+            "severity": "medium",
+            "title": "Server accepted message with wrong field type",
+            "description": "Changing the type of field \"action\" did not cause rejection, suggesting weak type validation.",
+            "connection_id": "b706eab7-d971-4925-b729-cf7df2a953f9",
+            "message_id": "poc-message-1",
+            "evidence": [
+              {
+                "type": "field",
+                "label": "type-confused field",
+                "value": "action"
+              },
+              {
+                "type": "original_type",
+                "label": "original type",
+                "value": "string"
+              }
+            ],
+            "remediation": "Validate field types strictly; reject messages where field types don't match the expected schema.",
+            "timestamp": 1786382871286
+          },
+          {
+            "id": "62c60161-99cc-4fd5-a614-95f959882565",
+            "check_name": "schema_bypass",
+            "severity": "low",
+            "title": "Server accepts messages with unexpected extra fields",
+            "description": "Adding unexpected fields (__admin, __debug, __internal_role) did not cause rejection.",
+            "connection_id": "b706eab7-d971-4925-b729-cf7df2a953f9",
+            "message_id": "poc-message-1",
+            "evidence": [
+              {
+                "type": "extra_fields",
+                "label": "injected fields",
+                "value": "__admin, __debug, __internal_role"
+              }
+            ],
+            "remediation": "Reject messages containing unexpected fields; use strict schema validation with allowlisted field names.",
+            "timestamp": 1786382871436
+          }
+        ]
+      },
+      {
+        "check_name": "origin_bypass",
+        "findings": [
+          {
+            "id": "da1ee451-fee8-4a30-8d42-db8b33147e25",
+            "check_name": "origin_bypass",
+            "severity": "high",
+            "title": "Cross-Site WebSocket Hijacking (CSWSH): Origin not validated",
+            "description": "The server accepted a WebSocket connection with a spoofed Origin header. Connection with Origin 'https://evil.com' was accepted. An attacker could exploit this to connect from a malicious website.",
+            "connection_id": "b706eab7-d971-4925-b729-cf7df2a953f9",
+            "evidence": [
+              {
+                "type": "origin",
+                "label": "spoofed origin",
+                "value": "https://evil.com"
+              }
+            ],
+            "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
+            "timestamp": 1786382871135
+          },
+          {
+            "id": "d3801c4d-00ca-435d-b178-78ec7d3d31ab",
+            "check_name": "origin_bypass",
+            "severity": "high",
+            "title": "Cross-Site WebSocket Hijacking (CSWSH): Origin not validated",
+            "description": "The server accepted a WebSocket connection with a spoofed Origin header. Connection with Origin 'https://attacker.example.com' was accepted. An attacker could exploit this to connect from a malicious website.",
+            "connection_id": "b706eab7-d971-4925-b729-cf7df2a953f9",
+            "evidence": [
+              {
+                "type": "origin",
+                "label": "spoofed origin",
+                "value": "https://attacker.example.com"
+              }
+            ],
+            "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
+            "timestamp": 1786382871286
+          },
+          {
+            "id": "444a653b-7581-4627-9de1-3ae75879dba9",
+            "check_name": "origin_bypass",
+            "severity": "high",
+            "title": "Cross-Site WebSocket Hijacking (CSWSH): Origin not validated",
+            "description": "The server accepted a WebSocket connection with a spoofed Origin header. Connection with Origin 'null' was accepted. An attacker could exploit this to connect from a malicious website.",
+            "connection_id": "b706eab7-d971-4925-b729-cf7df2a953f9",
+            "evidence": [
+              {
+                "type": "origin",
+                "label": "spoofed origin",
+                "value": "null"
+              }
+            ],
+            "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
+            "timestamp": 1786382871437
+          },
+          {
+            "id": "5b7e367a-d6d8-47c8-8c47-070241495152",
+            "check_name": "origin_bypass",
+            "severity": "high",
+            "title": "Cross-Site WebSocket Hijacking (CSWSH): Origin not validated",
+            "description": "The server accepted a WebSocket connection with a spoofed Origin header. Connection with empty Origin header was accepted. An attacker could exploit this to connect from a malicious website.",
+            "connection_id": "b706eab7-d971-4925-b729-cf7df2a953f9",
+            "evidence": [
+              {
+                "type": "origin",
+                "label": "spoofed origin",
+                "value": ""
+              }
+            ],
+            "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
+            "timestamp": 1786382871588
+          }
+        ]
+      }
+    ],
+    "total_checks": 3,
+    "message_count": 1
+  },
+  "generated_at": "2026-08-10T17:27:51.588577801Z"
+}

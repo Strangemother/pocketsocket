@@ -1,0 +1,102 @@
+{
+  "title": "Script Report: pocketsocket-echo-smoke",
+  "target": "ws://127.0.0.1:18090/ws/",
+  "mode": "script",
+  "metadata": {
+    "tool_name": "",
+    "version": "",
+    "commit": "",
+    "run_at": ""
+  },
+  "session": {
+    "id": "fb5682a9-672c-4acd-9ed4-90e4b0b14a56",
+    "name": "pocketsocket-echo-smoke",
+    "target_url": "ws://127.0.0.1:18090/ws/",
+    "state": 2,
+    "connections": [
+      "dd7a9d4b-c755-4c72-8446-d689d7ff455f"
+    ],
+    "finding_ids": [],
+    "message_count": 6,
+    "finding_count": 0,
+    "started_at": 1786382869551,
+    "ended_at": 1786382869553,
+    "duration": 2,
+    "metadata": {}
+  },
+  "findings": [],
+  "summary": {
+    "total_findings": 0,
+    "by_severity": {},
+    "duration_ms": 1000000
+  },
+  "script_data": {
+    "script_name": "pocketsocket-echo-smoke",
+    "steps": [
+      {
+        "name": "Echo JSON message",
+        "status": "failed",
+        "sent": "eyJhY3Rpb24iOiJzb2NrZXRzcHlfcG9jIiwiZGF0YSI6ImhlbGxvIn0=",
+        "received": "eyJhY3Rpb24iOiJzb2NrZXRzcHlfcG9jIiwiZGF0YSI6ImhlbGxvIn0=",
+        "assertions": [
+          {
+            "path": "$.action",
+            "passed": false,
+            "expected": "",
+            "actual": "",
+            "error": "path \"$.action\": json: not found: path segment $: key not found"
+          },
+          {
+            "path": "$.data",
+            "passed": false,
+            "expected": "",
+            "actual": "",
+            "error": "path \"$.data\": json: not found: path segment $: key not found"
+          }
+        ],
+        "duration_ms": 0
+      },
+      {
+        "name": "Echo repeated message [1/2]",
+        "status": "failed",
+        "sent": "eyJhY3Rpb24iOiJyZXBlYXRlZCIsImRhdGEiOjB9",
+        "received": "eyJhY3Rpb24iOiJyZXBlYXRlZCIsImRhdGEiOjB9",
+        "assertions": [
+          {
+            "path": "$.action",
+            "passed": false,
+            "expected": "",
+            "actual": "",
+            "error": "path \"$.action\": json: not found: path segment $: key not found"
+          }
+        ],
+        "duration_ms": 0
+      },
+      {
+        "name": "Echo repeated message [2/2]",
+        "status": "failed",
+        "sent": "eyJhY3Rpb24iOiJyZXBlYXRlZCIsImRhdGEiOjF9",
+        "received": "eyJhY3Rpb24iOiJyZXBlYXRlZCIsImRhdGEiOjF9",
+        "assertions": [
+          {
+            "path": "$.action",
+            "passed": false,
+            "expected": "",
+            "actual": "",
+            "error": "path \"$.action\": json: not found: path segment $: key not found"
+          }
+        ],
+        "duration_ms": 0
+      }
+    ],
+    "total_steps": 3,
+    "passed_steps": 0,
+    "failed_steps": 3,
+    "error_steps": 0,
+    "status": "failed",
+    "vars": {
+      "_index": 1
+    }
+  },
+  "generated_at": "2026-08-10T17:27:49.553084561Z"
+}

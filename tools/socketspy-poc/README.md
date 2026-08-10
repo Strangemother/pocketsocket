@@ -1,6 +1,7 @@
 # SocketSpy Pocketsocket PoC
 
-This is a one-shot smoke and fuzz test against the compiled Pocketsocket CLI.
+This is a one-shot smoke, fingerprint, script, replay, scan, discovery, and
+fuzz test against the compiled Pocketsocket CLI.
 It does not import the Python package. The target is started with `--echo`, so
 SocketSpy can connect, send finite mutations, and receive responses.
 
@@ -40,11 +41,19 @@ Results are written to `tools/socketspy-poc/output/` by default:
 - `fuzz-html.html`
 - `fuzz-sarif.sarif`
 - `fuzz-junit.xml`
+- `fingerprint-*`, `script-*`, `replay-*`, and `scan-*` reports in the same
+	formats
+- `discover-text.txt`
 - `pocketsocket.log`
 - `run.txt`
 
 Reports and logs in the output directory are kept in Git for inspection. Only
 the locally compiled `output/socketspy-bin` is ignored.
+
+The checked-in `pocketsocket-echo.yaml` and `pocketsocket-session.jsonl` files
+provide finite inputs for script, replay, and scan modes. SocketSpy's live
+`record` and `intercept` modes remain interactive by design and are not run by
+this one-shot script.
 
 An exit status of 2 means SocketSpy found a condition at its configured
 severity threshold; the reports are still retained. Exit status 1 or a

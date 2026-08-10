@@ -1,0 +1,39 @@
+{
+  "title": "Fingerprint Report",
+  "target": "ws://127.0.0.1:18090/ws/",
+  "mode": "fingerprint",
+  "metadata": {
+    "tool_name": "socketspy",
+    "version": "dev",
+    "commit": "unknown",
+    "run_at": "2026-08-10T17:27:49Z"
+  },
+  "findings": [],
+  "summary": {
+    "total_findings": 0,
+    "by_severity": {},
+    "duration_ms": 0
+  },
+  "fingerprint_data": {
+    "detected_server": "unknown",
+    "behaviors": [
+      {
+        "probe": "oversized_ping",
+        "response": "rejected: ws.Conn: io: websocket: invalid control frame"
+      },
+      {
+        "probe": "reserved_opcode_3",
+        "response": "rejected: ws.Conn: io: websocket: bad write message type"
+      },
+      {
+        "probe": "empty_text_frame",
+        "response": "accepted"
+      },
+      {
+        "probe": "subprotocol_negotiation",
+        "response": "no subprotocol selected"
+      }
+    ]
+  },
+  "generated_at": "2026-08-10T17:27:49.52089048Z"
+}

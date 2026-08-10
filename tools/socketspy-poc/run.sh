@@ -7,6 +7,8 @@ PORT=${PORT:-18090}
 TARGET=${TARGET:-"ws://127.0.0.1:${PORT}/ws/"}
 MUTATIONS=${MUTATIONS:-4}
 RESPONSE_TIMEOUT_MS=${RESPONSE_TIMEOUT_MS:-150}
+SCRIPT_FILE="$ROOT_DIR/tools/socketspy-poc/pocketsocket-echo.yaml"
+SESSION_FILE="$ROOT_DIR/tools/socketspy-poc/pocketsocket-session.jsonl"
 
 mkdir -p "$OUTPUT_DIR"
 
@@ -104,4 +106,53 @@ for format in "${formats[@]}"; do
 done
 
 printf '\nReports written to %s\n' "$OUTPUT_DIR"
+find "$OUTPUT_DIR" -maxdepth 1 -type f -printf '  %f (%s bytes)\n' | sort
+
+run_report_mode() {
+    local mode=$1
+    local extension=$2
+    shift 2
+
+    for format in text json html sarif junit; do
+        case "$format" in
+            text) extension=txt ;;
+            json) extension=json ;;
+            html) extension=html ;;
+            sarif) extension=sarif ;;
+            junit) extension=xml ;;
+        esac
+
+        local output="$OUTPUT_DIR/${mode}-${format}.${extension}"
+        printf 'Generating %s %s report: %s\n' "$mode" "$format" "$output"
+        set +e
+        timeout 90 "${SOCKETSPY_CMD[@]}" "$mode" "$@" \
+            --format "$format" --output "$output" --quiet --no-color
+        local status=$?
+        set -e
+        if (( status == 1 || status >= 124 )); then
+            printf 'SocketSpy failed for %s/%s (exit %s).\n' "$mode" "$format" "$status" >&2
+            exit "$status"
+        fi
+    done
+}
+
+run_report_mode fingerprint txt --target "$TARGET" --timeout 3000
+run_report_mode script txt --file "$SCRIPT_FILE" --target "$TARGET"
+run_report_mode replay xml --input "$SESSION_FILE" --target "$TARGET" \
+    --speed 0 --response-timeout "$RESPONSE_TIMEOUT_MS"
+run_report_mode scan txt --input "$SESSION_FILE" --target "$TARGET" \
+    --checks auth_bypass,origin_bypass,schema_bypass --response-timeout "$RESPONSE_TIMEOUT_MS"
+
+printf 'Generating discover report: %s\n' "$OUTPUT_DIR/discover-text.txt"
+set +e
+timeout 90 "${SOCKETSPY_CMD[@]}" discover --url "http://127.0.0.1:${PORT}" \
+    --output "$OUTPUT_DIR/discover-text.txt" --quiet --no-color
+status=$?
+set -e
+if (( status == 1 || status >= 124 )); then
+    printf 'SocketSpy failed for discover (exit %s).\n' "$status" >&2
+    exit "$status"
+fi
+
+printf '\nAll reports written to %s\n' "$OUTPUT_DIR"
 find "$OUTPUT_DIR" -maxdepth 1 -type f -printf '  %f (%s bytes)\n' | sort

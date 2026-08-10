@@ -1,0 +1,83 @@
+═══════════════════════════════════════════════════════
+  Security Scan Report
+═══════════════════════════════════════════════════════
+  Target:    ws://127.0.0.1:18090/ws/
+  Mode:      scan
+  Duration:  604ms
+  Generated: 2026-08-10 17:27:50
+───────────────────────────────────────────────────────
+
+SUMMARY
+  Total findings: 7
+    HIGH       4
+    MEDIUM     2
+    LOW        1
+
+FINDINGS
+
+  1. [MEDIUM] Server accepted message with missing required field
+     Check: schema_bypass
+     CWE: CWE-20
+     Removing field "action" from the message did not cause rejection, suggesting the server does not validate required fields.
+     Fix: Implement strict schema validation for all incoming messages; reject messages with missing required fields.
+     Evidence:
+       - removed field: action
+
+  2. [MEDIUM] Server accepted message with wrong field type
+     Check: schema_bypass
+     CWE: CWE-20
+     Changing the type of field "action" did not cause rejection, suggesting weak type validation.
+     Fix: Validate field types strictly; reject messages where field types don't match the expected schema.
+     Evidence:
+       - type-confused field: action
+       - original type: string
+
+  3. [LOW] Server accepts messages with unexpected extra fields
+     Check: schema_bypass
+     CWE: CWE-20
+     Adding unexpected fields (__admin, __debug, __internal_role) did not cause rejection.
+     Fix: Reject messages containing unexpected fields; use strict schema validation with allowlisted field names.
+     Evidence:
+       - injected fields: __admin, __debug, __internal_role
+
+  4. [HIGH] Cross-Site WebSocket Hijacking (CSWSH): Origin not validated
+     Check: origin_bypass
+     CWE: CWE-346
+     The server accepted a WebSocket connection with a spoofed Origin header. Connection with Origin 'https://evil.com' was accepted. An attacker could exploit this to connect from a malicious website.
+     Fix: Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.
+     Evidence:
+       - spoofed origin: https://evil.com
+
+  5. [HIGH] Cross-Site WebSocket Hijacking (CSWSH): Origin not validated
+     Check: origin_bypass
+     CWE: CWE-346
+     The server accepted a WebSocket connection with a spoofed Origin header. Connection with Origin 'https://attacker.example.com' was accepted. An attacker could exploit this to connect from a malicious website.
+     Fix: Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.
+     Evidence:
+       - spoofed origin: https://attacker.example.com
+
+  6. [HIGH] Cross-Site WebSocket Hijacking (CSWSH): Origin not validated
+     Check: origin_bypass
+     CWE: CWE-346
+     The server accepted a WebSocket connection with a spoofed Origin header. Connection with Origin 'null' was accepted. An attacker could exploit this to connect from a malicious website.
+     Fix: Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.
+     Evidence:
+       - spoofed origin: null
+
+  7. [HIGH] Cross-Site WebSocket Hijacking (CSWSH): Origin not validated
+     Check: origin_bypass
+     CWE: CWE-346
+     The server accepted a WebSocket connection with a spoofed Origin header. Connection with empty Origin header was accepted. An attacker could exploit this to connect from a malicious website.
+     Fix: Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.
+     Evidence:
+       - spoofed origin: 
+
+SCAN DETAILS
+  Checks run:      3
+  Messages scanned: 1
+
+  Check Results:
+    auth_bypass          PASS
+    schema_bypass        3 finding(s)
+    origin_bypass        4 finding(s)
+

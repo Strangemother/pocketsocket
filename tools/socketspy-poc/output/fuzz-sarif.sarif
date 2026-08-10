@@ -29,6 +29,46 @@
         {
           "ruleId": "socketspy/fuzzer",
           "ruleIndex": 0,
+          "level": "note",
+          "message": {
+            "text": "Unusually large response to fuzz payload: Mutation 'overflow' at path 'action' produced a response of 10028 bytes."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "ws://127.0.0.1:18090/ws/"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "name": "ws://127.0.0.1:18090/ws/",
+                  "kind": "endpoint"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "checkName": "fuzzer",
+            "severity": "low",
+            "connectionId": "99f33164-c7c0-4e07-a33a-f5ee6c87999c",
+            "evidence": [
+              {
+                "type": "mutation",
+                "label": "mutation name",
+                "value": "overflow"
+              },
+              {
+                "type": "size",
+                "label": "response size bytes",
+                "value": "10028"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "socketspy/fuzzer",
+          "ruleIndex": 0,
           "level": "warning",
           "message": {
             "text": "Error response to fuzz payload: Mutation 'xss_img@action' at path 'action' triggered an error containing 'error'."
@@ -51,7 +91,7 @@
           "properties": {
             "checkName": "fuzzer",
             "severity": "medium",
-            "connectionId": "e81b9356-7ecd-4bd1-80b7-66c7b934b1cc",
+            "connectionId": "99f33164-c7c0-4e07-a33a-f5ee6c87999c",
             "remediation": "Ensure proper input validation and error handling for all WebSocket message fields.",
             "evidence": [
               {
@@ -92,7 +132,7 @@
           "properties": {
             "checkName": "fuzzer",
             "severity": "medium",
-            "connectionId": "e81b9356-7ecd-4bd1-80b7-66c7b934b1cc",
+            "connectionId": "99f33164-c7c0-4e07-a33a-f5ee6c87999c",
             "remediation": "Ensure proper input validation and error handling for all WebSocket message fields.",
             "evidence": [
               {
