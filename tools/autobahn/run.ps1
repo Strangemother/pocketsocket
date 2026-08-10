@@ -7,15 +7,8 @@ $ConfigDir = Join-Path $OutputDir "config"
 $Port = if ($env:PORT) { $env:PORT } else { "18091" }
 $Image = if ($env:AUTOBAHN_IMAGE) { $env:AUTOBAHN_IMAGE } else { "crossbario/autobahn-testsuite:25.10.1" }
 $ContainerName = if ($env:AUTOBAHN_CONTAINER_NAME) { $env:AUTOBAHN_CONTAINER_NAME } else { "pocketsocket-autobahn" }
-$Cli = if ($env:POCKETSOCKET_CLI) { $env:POCKETSOCKET_CLI } else { Join-Path $RootDir "dist/pocketsocket-cli.exe" }
-$ServerLog = Join-Path $OutputDir "pocketsocket.log"
-$ServerErrorLog = Join-Path $OutputDir "pocketsocket.stderr.log"
-$ServerProcess = $null
 
 New-Item -ItemType Directory -Force -Path $ConfigDir, $OutputDir | Out-Null
-if (-not (Test-Path $Cli -PathType Leaf)) {
-    throw "Compiled Pocketsocket CLI not found: $Cli. Build it with: cd server; nimble build"
-}
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
     throw "Docker is required to run the Autobahn testsuite."
 }
@@ -26,16 +19,13 @@ $Utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 [System.IO.File]::WriteAllText($ConfigPath, $Template.Replace("__PORT__", [string]$Port), $Utf8NoBom)
 
 try {
-    $Arguments = @("--run", "--print", "--template-dir", (Join-Path $RootDir "server/templates"), "--address", "0.0.0.0", "--port", [string]$Port, "--max-message", "65536")
-    $ServerProcess = Start-Process -FilePath $Cli -ArgumentList $Arguments -RedirectStandardOutput $ServerLog -RedirectStandardError $ServerErrorLog -PassThru
-
     $Deadline = (Get-Date).AddSeconds(15)
     do {
         Start-Sleep -Milliseconds 100
         $Listening = Test-NetConnection -ComputerName 127.0.0.1 -Port $Port -InformationLevel Quiet
-    } while (-not $Listening -and (Get-Date) -lt $Deadline -and -not $ServerProcess.HasExited)
-    if ($ServerProcess.HasExited) {
-        throw "Pocketsocket exited before listening. See $ServerLog"
+    } while (-not $Listening -and (Get-Date) -lt $Deadline)
+    if (-not $Listening) {
+        throw "Pocketsocket is not listening on 127.0.0.1:$Port. Start it manually before running this suite."
     }
 
     & docker rm -f $ContainerName 2>$null | Out-Null
@@ -49,5 +39,4 @@ try {
 }
 finally {
     & docker rm -f $ContainerName 2>$null | Out-Null
-    if ($ServerProcess -and -not $ServerProcess.HasExited) { Stop-Process -Id $ServerProcess.Id -Force }
 }

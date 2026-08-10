@@ -1,10 +1,11 @@
 # Autobahn WebSocket Conformance Suite
 
-This suite runs the compiled `pocketsocket-cli` as the WebSocket server and
-uses the official Autobahn Testsuite Docker image in `fuzzingclient` mode. That
-is the mode Autobahn documents for testing WebSocket servers.
+This suite tests an already-running Pocketsocket WebSocket server with the
+official Autobahn Testsuite Docker image in `fuzzingclient` mode. That is the
+mode Autobahn documents for testing WebSocket servers.
 
-The runner starts Pocketsocket, waits for its TCP port, then runs:
+Start Pocketsocket by hand on `0.0.0.0`, then run the suite. The runner checks
+the TCP port before starting:
 
 ```text
 docker run --rm \
@@ -16,11 +17,19 @@ docker run --rm \
 ```
 
 Inside the container, `host.docker.internal` points back to the machine
-running the compiled CLI. The server binds to `0.0.0.0` so Docker can reach it.
+running Pocketsocket. The server must bind to `0.0.0.0` so Docker can reach it.
 
 ## Run
 
 Linux/macOS/WSL:
+
+```bash
+dist/pocketsocket-cli --run --print \
+  --template-dir server/templates --address 0.0.0.0 --port 18091 \
+  --max-message 65536
+```
+
+In another terminal:
 
 ```bash
 ./tools/autobahn/run.sh
@@ -35,12 +44,13 @@ PowerShell:
 Command Prompt:
 
 ```bat
+tools\autobahn\start-pocketsocket.cmd
 tools\autobahn\run.cmd
 ```
 
-The scripts expect `dist/pocketsocket-cli` on Unix or
-`dist/pocketsocket-cli.exe` on Windows. Override it with
-`POCKETSOCKET_CLI=/path/to/binary` or `$env:POCKETSOCKET_CLI`.
+The Windows helper starts `dist\pocketsocket-cli.exe` in a separate window.
+Override its path with `POCKETSOCKET_CLI`. The test runners do not start or
+stop Pocketsocket; stop the manually started process yourself after testing.
 
 ## Options
 
