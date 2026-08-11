@@ -13,7 +13,6 @@ namedBin      = {"pocketsocket": "pocketsocket-cli-release"}.toTable
 requires "nim >= 2.0.2"
 requires "nimpy"
 requires "ws"
-requires "mummy"
 requires "docopt"
 requires "zippy >= 0.10.9"
 requires "webby >= 0.2.1"
