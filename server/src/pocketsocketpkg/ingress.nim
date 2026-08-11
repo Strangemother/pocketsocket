@@ -42,6 +42,7 @@ proc indexHandler(request: Request) =
   # headers["Content-Type"] = "text/plain"
   # let index_html_content:string =
   # request.respond(200, headers, $request.headers)
+  echo "Responding with index.html"
   request.respond(200, headers, getCachedLocalFileContents("./index.html"))
 
 

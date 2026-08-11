@@ -55,7 +55,9 @@ proc getLocalFileContents*(filepath_str: string): string =
           return readFile(cast[string](filepath))
           # result = readAll(filepath_str)
       else:
-          echo "File not found: ", cast[string](filepath)   
+          echo "File not found: ", cast[string](filepath)  
+    else:
+      echo "Template directory not set. Using default template." 
     
     let default_template_value: string = """<body onload="ws=new WebSocket('ws://'+location.host).onmessage=e=>document.body.innerHTML=e.data" style="background:#111;color:#ccc">builtin</body>"""
     return default_template_value
