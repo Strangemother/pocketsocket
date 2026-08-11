@@ -6,7 +6,7 @@ license       = "MIT"
 srcDir        = "src"
 binDir        = "../dist"
 installExt    = @["nim"]
-namedBin      = {"pocketsocket": "pocketsocket-cli"}.toTable
+namedBin      = {"pocketsocket": "pocketsocket-cli-release"}.toTable
 
 # Dependencies
 
@@ -20,6 +20,10 @@ requires "webby >= 0.2.1"
 requires "crunchy >= 0.1.11"
 
 import std/[os, strutils]
+
+task buildDebug, "build debug pocketsocket-cli":
+  switch("out", toExe(binDir / "pocketsocket-cli-debug"))
+  setCommand "c", srcDir / "pocketsocket.nim"
 
 task buildPyd, "build python extension module":
   let pythonCommand = getEnv("POCKETSOCKET_PYTHON", "python3")

@@ -8,6 +8,7 @@ import std/files
 import std/paths
 import os
 import mummy
+import config
 
 # Make a function prototype
 type
@@ -16,7 +17,7 @@ type
 var
   dll: LibHandle      # Library that's loaded
   update: updateProc  # Function to call, and reload
-  loaded_template_str: string
+  loaded_template_str: string # = "<html><body style='background:#111;color:#ccc'>Hello, World!</body></html>"
 
 
 
@@ -43,33 +44,36 @@ proc getWelcomeMessage*(): string =
           result = "Hello, World!"
 
 
-proc getLocalFileContents*(filepath_str:string, base_dir=os.getCurrentDir()): string =
+proc getLocalFileContents*(filepath_str: string): string =
     # let filepath_str = "banner.txt"
     # let base_dir = os.getCurrentDir()
-
-    let filepath = Path(base_dir) / Path(filepath_str)
-    echo "Discovering: ", cast[string](filepath)
-    if fileExists(filepath):
-        return readFile(cast[string](filepath))
-        # result = readAll(filepath_str)
-    let default_template_value: string = """<body onload="ws=new WebSocket('ws://'+location.host).onmessage=e=>document.body.innerHTML=e.data" style="background:#111;color:#ccc"></body>"""
+    if config.template_dir.len != 0:
+      let base_dir: string = config.template_dir 
+      let filepath = Path(base_dir) / Path(filepath_str)
+      echo "Fetching local file: ", cast[string](filepath)
+      if fileExists(filepath):
+          return readFile(cast[string](filepath))
+          # result = readAll(filepath_str)
+      else:
+          echo "File not found: ", cast[string](filepath)   
+    
+    let default_template_value: string = """<body onload="ws=new WebSocket('ws://'+location.host).onmessage=e=>document.body.innerHTML=e.data" style="background:#111;color:#ccc">builtin</body>"""
     return default_template_value
 
 
-proc getCachedLocalFileContents*(filepath_str:string, base_dir=os.getCurrentDir()): string =
-
+proc getCachedLocalFileContents*(filepath_str:string): string =
   #https://forum.nim-lang.org/t/9379
   {.cast(gcsafe).}:
     if cstring(loaded_template_str) != nil:
       return loaded_template_str
     else:
       echo "Template String is nil: ", loaded_template_str ,". Discovering: ", filepath_str
-      return getLocalFileContents(filepath_str, base_dir)
+      return getLocalFileContents(filepath_str)
 
 
 proc setLoadedTemplate*(filepath_str:string): void =
   loaded_template_str = getLocalFileContents(filepath_str)
-  echo "Template Set. Length: ", $loaded_template_str.len
+  echo "Template Set: ", filepath_str, " Len: ", $loaded_template_str.len
 
 
 proc load_lib*() =

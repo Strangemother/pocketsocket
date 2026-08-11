@@ -14,7 +14,7 @@ Options:
   --run                 Run the server.
   -a --address=<addr>   Bind address [default: 127.0.0.1].
   -p --port=<port>      Bind port [default: 8090].
-  -t --template-dir=<dir>  Template directory [default: ""].
+  -t --template-dir=<dir>  Template directory [default: ].
   --echo                Reflect every message back to its sender.
   --broadcast           Relay every message to all other clients.
   --print               Log connections and messages to stdout.
@@ -48,10 +48,13 @@ if args["--run"]:
     let dir = $args["--template-dir"]
     let path = Path(dir)
     if dir.len != 0 and dirExists(path):
+      echo "Setting template directory: ", dir
       service.set_template_dir(dir)
     else:
-      echo "Template directory does not exist: ", dir
+      echo "Template directory does not exist: ", dir, " l: ", dir.len
       quit(1)
+  else:
+    echo "No template directory specified; using default templates."
     
 
   service.run_blocking_server(

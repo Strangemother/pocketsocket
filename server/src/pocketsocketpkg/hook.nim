@@ -29,6 +29,8 @@ proc call_py_hook*(
       messageDict["kind"] = message.kind.ord
       messageDict["data"] = message.data
       ## TODO: Add headers to the python hook call.
+      if message.kind.ord == 0:
+        echo "open"
       # messageDict["headers"] = headersDict
 
       let info: PyObject = pyHook.callObject(

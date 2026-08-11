@@ -77,7 +77,10 @@ proc run_blocking_server*(
   ): void =
   when isMainModule:
     echo(getWelcomeMessage())
-  submodule.setLoadedTemplate("./server/templates/index.html")
+  
+  if config.template_dir.len != 0:
+    echo "Using template directory: ", config.template_dir
+    submodule.setLoadedTemplate("index.html")
   # mummy defaults to countProcessors() * 10 workers, which oversubscribes
   # small hosts badly. 0 keeps that default, anything else is taken literally.
   let workers =

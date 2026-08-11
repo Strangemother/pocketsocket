@@ -48,20 +48,7 @@ def run_build(command, setup, environment):
 def build_command(output, debug):
     """Return the Nim command for an output kind."""
     if output == "exe":
-        if not debug:
-            return ["nimble", "build"]
-        return [
-            "nimble", "c", "--app:console",
-            "--out:../dist/pocketsocket-cli.exe",
-            "--threads:on",
-            "--tlsEmulation:off",
-            "-d:lto",
-            "--mm:arc",
-            "-d:useMalloc",
-            "--excessiveStackTrace:on",
-            "--passL:-static",
-            "src/pocketsocket.nim",
-        ]
+        return ["nimble", "buildDebug" if debug else "build"]
 
     if output == "pyd":
         return ["nimble", "buildPydDebug" if debug else "buildPyd"]
