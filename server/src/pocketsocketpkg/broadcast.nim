@@ -1,4 +1,4 @@
-import std/locks, std/sets
+import std/locks
 import std/hashes, std/tables
 import socket_tools
 import mummy
@@ -17,7 +17,7 @@ import connection_context
 var
   lock: Lock
   clientSheet: Table[uint64, WebSocket]
-  clients: HashSet[WebSocket]
+
 
 initLock(lock)
 
@@ -32,10 +32,23 @@ proc send_all*(message_kind: MessageKind, message_data: string, exclude_uuid: ui
   return 0
 
 
-proc locked_send_all*(message_kind: MessageKind, message_data: string, exclude_uuid: uint64): int =
+proc lane_locked_send_all*(message_kind: MessageKind, message_data: string, exclude_uuid: uint64): int =
   {.gcsafe.}:
     withLock lock:
       result = send_all(message_kind, message_data, exclude_uuid)
+
+
+proc locked_send_all*(kind: MessageKind, data: string, exclude_uuid: uint64): int =
+  var targets: seq[WebSocket]
+  {.gcsafe.}:
+    withLock lock:
+      targets = newSeqOfCap[WebSocket](clientSheet.len)
+      for uuid, ws in clientSheet:
+        if uuid != exclude_uuid:
+          targets.add(ws)
+  for ws in targets:
+    ws.send(data, kind)
+  return 0
 
 
 proc locked_send*(uuid: uint64, message_kind: MessageKind, message_data: string): int =
@@ -99,9 +112,7 @@ proc websocketHandler_broadcast*(
     # Tested before taking the lock: the common case is broadcast_mode off,
     # and this runs on every inbound message.
     if config.broadcast_mode:
-      {.gcsafe.}:
-        withLock lock:
-          discard send_all(message.kind, message.data,
+      discard locked_send_all(message.kind, message.data,
                            getWebSocketUUID(websocket))
 
   of ErrorEvent:
@@ -120,4 +131,5 @@ proc websocketHandler_broadcast*(
       echo "Drop socket ", websocket
     websocket.close()
     locked_remove_client(websocket)
-    discard hook.call_py_hook(websocket, event, message)
+    ## BUG: INVENTORY::A2 - remove dup hook call. 
+    # discard hook.call_py_hook(websocket, event, message)

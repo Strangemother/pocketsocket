@@ -1,0 +1,20 @@
+═══════════════════════════════════════════════════════
+  Replay Report
+═══════════════════════════════════════════════════════
+  Target:    ws://127.0.0.1:18090/ws/
+  Mode:      replay
+  Duration:  150ms
+  Generated: 2026-08-10 17:27:49
+───────────────────────────────────────────────────────
+
+SUMMARY
+  Total findings: 0
+
+No security issues found.
+
+REPLAY DETAILS
+  Total entries:   1
+  Sent:            1
+  Errors:          0
+  Duration:        150ms
+

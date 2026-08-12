@@ -1,0 +1,1 @@
+{"message_id":"poc-message-1","connection_id":"poc-connection","direction":"client_to_server","type":1,"payload":{"action":"socketspy_poc","data":"hello"},"size":44,"timestamp":0,"target_url":"ws://127.0.0.1:18090/ws/","sequence":1,"relative_ms":0}

@@ -1,0 +1,309 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/errata01/os/schemas/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "socketspy",
+          "semanticVersion": "dev",
+          "informationUri": "https://github.com/0xsj/socketspy",
+          "rules": [
+            {
+              "id": "socketspy/schema_bypass",
+              "name": "SchemaBypass",
+              "shortDescription": {
+                "text": "schema_bypass security check"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/20.html",
+              "properties": {
+                "tags": [
+                  "security",
+                  "websocket",
+                  "CWE-20"
+                ]
+              }
+            },
+            {
+              "id": "socketspy/origin_bypass",
+              "name": "OriginBypass",
+              "shortDescription": {
+                "text": "origin_bypass security check"
+              },
+              "helpUri": "https://cwe.mitre.org/data/definitions/346.html",
+              "properties": {
+                "tags": [
+                  "security",
+                  "websocket",
+                  "CWE-346"
+                ]
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "socketspy/schema_bypass",
+          "ruleIndex": 0,
+          "level": "warning",
+          "message": {
+            "text": "Server accepted message with missing required field: Removing field \"data\" from the message did not cause rejection, suggesting the server does not validate required fields."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "ws://127.0.0.1:18090/ws/"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "name": "ws://127.0.0.1:18090/ws/",
+                  "kind": "endpoint"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "checkName": "schema_bypass",
+            "severity": "medium",
+            "connectionId": "75f013ae-c1c7-4b31-86b8-d33990f5406b",
+            "messageId": "poc-message-1",
+            "remediation": "Implement strict schema validation for all incoming messages; reject messages with missing required fields.",
+            "evidence": [
+              {
+                "type": "missing_field",
+                "label": "removed field",
+                "value": "data"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "socketspy/schema_bypass",
+          "ruleIndex": 0,
+          "level": "warning",
+          "message": {
+            "text": "Server accepted message with wrong field type: Changing the type of field \"action\" did not cause rejection, suggesting weak type validation."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "ws://127.0.0.1:18090/ws/"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "name": "ws://127.0.0.1:18090/ws/",
+                  "kind": "endpoint"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "checkName": "schema_bypass",
+            "severity": "medium",
+            "connectionId": "75f013ae-c1c7-4b31-86b8-d33990f5406b",
+            "messageId": "poc-message-1",
+            "remediation": "Validate field types strictly; reject messages where field types don't match the expected schema.",
+            "evidence": [
+              {
+                "type": "field",
+                "label": "type-confused field",
+                "value": "action"
+              },
+              {
+                "type": "original_type",
+                "label": "original type",
+                "value": "string"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "socketspy/schema_bypass",
+          "ruleIndex": 0,
+          "level": "note",
+          "message": {
+            "text": "Server accepts messages with unexpected extra fields: Adding unexpected fields (__admin, __debug, __internal_role) did not cause rejection."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "ws://127.0.0.1:18090/ws/"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "name": "ws://127.0.0.1:18090/ws/",
+                  "kind": "endpoint"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "checkName": "schema_bypass",
+            "severity": "low",
+            "connectionId": "75f013ae-c1c7-4b31-86b8-d33990f5406b",
+            "messageId": "poc-message-1",
+            "remediation": "Reject messages containing unexpected fields; use strict schema validation with allowlisted field names.",
+            "evidence": [
+              {
+                "type": "extra_fields",
+                "label": "injected fields",
+                "value": "__admin, __debug, __internal_role"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "socketspy/origin_bypass",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Cross-Site WebSocket Hijacking (CSWSH): Origin not validated: The server accepted a WebSocket connection with a spoofed Origin header. Connection with Origin 'https://evil.com' was accepted. An attacker could exploit this to connect from a malicious website."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "ws://127.0.0.1:18090/ws/"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "name": "ws://127.0.0.1:18090/ws/",
+                  "kind": "endpoint"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "checkName": "origin_bypass",
+            "severity": "high",
+            "connectionId": "75f013ae-c1c7-4b31-86b8-d33990f5406b",
+            "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
+            "evidence": [
+              {
+                "type": "origin",
+                "label": "spoofed origin",
+                "value": "https://evil.com"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "socketspy/origin_bypass",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Cross-Site WebSocket Hijacking (CSWSH): Origin not validated: The server accepted a WebSocket connection with a spoofed Origin header. Connection with Origin 'https://attacker.example.com' was accepted. An attacker could exploit this to connect from a malicious website."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "ws://127.0.0.1:18090/ws/"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "name": "ws://127.0.0.1:18090/ws/",
+                  "kind": "endpoint"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "checkName": "origin_bypass",
+            "severity": "high",
+            "connectionId": "75f013ae-c1c7-4b31-86b8-d33990f5406b",
+            "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
+            "evidence": [
+              {
+                "type": "origin",
+                "label": "spoofed origin",
+                "value": "https://attacker.example.com"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "socketspy/origin_bypass",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Cross-Site WebSocket Hijacking (CSWSH): Origin not validated: The server accepted a WebSocket connection with a spoofed Origin header. Connection with Origin 'null' was accepted. An attacker could exploit this to connect from a malicious website."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "ws://127.0.0.1:18090/ws/"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "name": "ws://127.0.0.1:18090/ws/",
+                  "kind": "endpoint"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "checkName": "origin_bypass",
+            "severity": "high",
+            "connectionId": "75f013ae-c1c7-4b31-86b8-d33990f5406b",
+            "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
+            "evidence": [
+              {
+                "type": "origin",
+                "label": "spoofed origin",
+                "value": "null"
+              }
+            ]
+          }
+        },
+        {
+          "ruleId": "socketspy/origin_bypass",
+          "ruleIndex": 1,
+          "level": "error",
+          "message": {
+            "text": "Cross-Site WebSocket Hijacking (CSWSH): Origin not validated: The server accepted a WebSocket connection with a spoofed Origin header. Connection with empty Origin header was accepted. An attacker could exploit this to connect from a malicious website."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "ws://127.0.0.1:18090/ws/"
+                }
+              },
+              "logicalLocations": [
+                {
+                  "name": "ws://127.0.0.1:18090/ws/",
+                  "kind": "endpoint"
+                }
+              ]
+            }
+          ],
+          "properties": {
+            "checkName": "origin_bypass",
+            "severity": "high",
+            "connectionId": "75f013ae-c1c7-4b31-86b8-d33990f5406b",
+            "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
+            "evidence": [
+              {
+                "type": "origin",
+                "label": "spoofed origin",
+                "value": ""
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

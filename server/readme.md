@@ -94,7 +94,14 @@ cd /workspaces/pocketsocket-2/server
 nimble build
 ```
 
-The CLI is written to `../dist/`.
+The release CLI is written to `../dist/pocketsocket-cli-release`.
+For a debug build, use:
+
+```bash
+nimble buildDebug
+```
+
+This writes `../dist/pocketsocket-cli-debug`.
 
 ### Build native outputs directly
 

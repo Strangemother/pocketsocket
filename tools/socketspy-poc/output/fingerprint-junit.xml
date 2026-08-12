@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="socketspy" tests="1" failures="0" errors="0" time="0" timestamp="2026-08-10T17:27:49Z">
+  <testsuite name="Fingerprint Report" tests="1" failures="0" errors="0" time="0" timestamp="2026-08-10T17:27:49Z">
+    <properties>
+      <property name="target" value="ws://127.0.0.1:18090/ws/"></property>
+      <property name="mode" value="fingerprint"></property>
+      <property name="tool" value="socketspy"></property>
+      <property name="version" value="dev"></property>
+    </properties>
+    <testcase name="security_scan" classname="socketspy.fingerprint" time="0"></testcase>
+  </testsuite>
+</testsuites>

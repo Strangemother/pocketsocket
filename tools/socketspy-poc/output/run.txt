@@ -1,0 +1,5 @@
+Pocketsocket CLI: /workspaces/pocketsocket-2/dist/pocketsocket-cli
+SocketSpy command: /workspaces/pocketsocket-2/tools/socketspy-poc/output/socketspy-bin 
+Target: ws://127.0.0.1:18090/ws/
+Mutations: 4
+

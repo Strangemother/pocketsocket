@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home</title>
+</head>
+<body>
+    <h1>r_Template version</h1>
+    <script>
+    ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host)
+    ws.onmessage=e=>{
+        console.log("Received message: ", e.data)
+    }
+    ws.onopen = e=>{
+        // window.location = window.location.href
+    }
+    </script>
+
+</body>
+</html>

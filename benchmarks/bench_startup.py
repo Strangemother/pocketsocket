@@ -20,7 +20,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from lib.harness import (PYTHON_PKG, HOST, REPO_ROOT, Report,   # noqa: E402
-                         ServerProcess, free_port)
+                         ServerProcess, free_port, summarise)
 from lib.servers import pocketsocket_code                       # noqa: E402
 
 TTL_RE = re.compile(
@@ -73,12 +73,17 @@ def main():
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("-n", "--iterations", type=int, default=20)
+    ap.add_argument("--quick", action="store_true", help="fewer iterations")
     ap.add_argument("-o", "--output")
     args = ap.parse_args()
+    iterations = max(5, int(args.iterations * 0.25)) if args.quick else args.iterations
 
     r = Report("pocketsocket - Startup Benchmark")
     r.env()
-    r(f"Iterations : {args.iterations}")
+    r(f"Iterations : {iterations}")
+    r.data["options"] = {"iterations": iterations, "quick": args.quick}
+    r.data["benchmarks"] = {"nim_time_to_launch_ms": {},
+                             "spawn_to_ready_ms": {}, "standalone_cli": {}}
 
     r.section("1. NIM TIME-TO-LAUNCH (ms)")
     r("Reported by the server itself: template load, router and socket bind.")
@@ -87,8 +92,9 @@ def main():
     r(f"{'mode':<22}{'runs':>6}{'min':>10}{'median':>11}{'mean':>10}"
       f"{'max':>10}{'stdev':>10}")
     for mode in ("ps-ingest", "ps-nim-echo", "ps-hook-echo"):
-        ttls, _ = run(mode, args.iterations)
+        ttls, _ = run(mode, iterations)
         r(row(mode, ttls))
+        r.data["benchmarks"]["nim_time_to_launch_ms"][mode] = summarise(ttls) if ttls else {"n": 0}
 
     r.section("2. SPAWN -> ACCEPTING CONNECTIONS (ms)")
     r("Wall clock from fork/exec to the first successful connect. Dominated")
@@ -97,8 +103,9 @@ def main():
     r(f"{'mode':<22}{'runs':>6}{'min':>10}{'median':>11}{'mean':>10}"
       f"{'max':>10}{'stdev':>10}")
     for mode in ("ps-ingest", "ps-nim-echo", "ps-hook-echo"):
-        _, readys = run(mode, args.iterations)
+        _, readys = run(mode, iterations)
         r(row(mode, readys))
+        r.data["benchmarks"]["spawn_to_ready_ms"][mode] = summarise(readys) if readys else {"n": 0}
 
     r.section("3. STANDALONE CLI BINARY")
     cli = os.path.join(REPO_ROOT, "dist", "pocketsocket-cli")
@@ -106,8 +113,13 @@ def main():
         r(f"Binary present: {cli}")
         r(f"Size          : {os.path.getsize(cli):,} bytes")
         r("Build with: nimble buildCliCI -d:release -d:lto -d:strip")
+        r.data["benchmarks"]["standalone_cli"] = {
+            "present": True, "path": cli, "size_bytes": os.path.getsize(cli),
+            "build_command": "nimble buildCliCI -d:release -d:lto -d:strip",
+        }
     else:
         r("Not built. Run `nimble build` to produce dist/pocketsocket-cli.")
+        r.data["benchmarks"]["standalone_cli"] = {"present": False}
 
     r("")
     r.rule()

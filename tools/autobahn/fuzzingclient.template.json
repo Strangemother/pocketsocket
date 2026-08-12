@@ -1,0 +1,18 @@
+{
+  "options": {
+    "failByDrop": false
+  },
+  "outdir": "/reports/servers",
+  "servers": [
+    {
+      "agent": "Pocketsocket CLI",
+      "url": "ws://host.docker.internal:__PORT__",
+      "options": {
+        "version": 18
+      }
+    }
+  ],
+  "cases": ["*"],
+  "exclude-cases": ["9.*", "12.*", "13.*"],
+  "exclude-agent-cases": {}
+}

@@ -36,14 +36,14 @@ from lib.harness import (PYTHON_PKG, HOST, Report, ServerProcess,  # noqa: E402
 from lib.servers import (available_comparisons, comparison_code,   # noqa: E402
                          pocketsocket_code)
 
-# pocketsocket sends the request headers back as a greeting frame; the others
-# do not. The client needs to know so it does not eat a real message.
+# Current pocketsocket connections begin with application frames, like the
+# comparison servers. The workload default does not drain a greeting.
 PS_MODES = ("ps-nim-echo", "ps-hook-echo")
 
 
 def build(name, port):
     if name in PS_MODES:
-        return pocketsocket_code(name, PYTHON_PKG, HOST, port), True
+        return pocketsocket_code(name, PYTHON_PKG, HOST, port), False
     return comparison_code(name, HOST, port), False
 
 
@@ -84,6 +84,10 @@ def main():
 
     r = Report("pocketsocket vs Python WebSocket servers")
     r.env()
+    r.data["options"] = {"quick": args.quick}
+    r.data["benchmarks"] = {
+        "startup": {}, "latency": {}, "throughput": {}, "connections": {},
+    }
     r("All servers echo text frames. Same raw-socket client for all of them.")
     r("")
     r("Contenders:")
@@ -104,10 +108,16 @@ def main():
             r(f"{name:<18}{'-':>6}   failed to start")
             continue
         startup[name] = statistics.median(s)
+        r.data["benchmarks"]["startup"][name] = {
+            "runs": len(s), "min_ms": min(s), "median_ms": statistics.median(s),
+            "mean_ms": statistics.fmean(s), "max_ms": max(s),
+        }
         r(f"{name:<18}{len(s):>6}{min(s):>10.1f}{statistics.median(s):>10.1f}"
           f"{statistics.fmean(s):>10.1f}{max(s):>10.1f}")
     if startup:
         best = min(startup.values())
+        for name, value in startup.items():
+            r.data["benchmarks"]["startup"][name]["relative_to_fastest"] = value / best
         r("")
         r("relative to fastest:")
         for name, v in sorted(startup.items(), key=lambda kv: kv[1]):
@@ -130,6 +140,7 @@ def main():
             try:
                 res = W.latency(port, n(3000), size, greeting=greeting)
                 rows.append((name, res))
+                r.data["benchmarks"]["latency"].setdefault(str(size), {})[name] = res
             except Exception as e:  # noqa: BLE001
                 r(f"  {name:<18}  error: {e!r}")
             finally:
@@ -159,6 +170,7 @@ def main():
             try:
                 rows.append((name, W.batched(port, cnt, size, 256,
                                              greeting=greeting)))
+                r.data["benchmarks"]["throughput"].setdefault(str(size), {})[name] = rows[-1][1]
             except Exception as e:  # noqa: BLE001
                 r(f"  {name:<18}  error: {e!r}")
             finally:
@@ -166,6 +178,8 @@ def main():
                 srv.cleanup()
         rows.sort(key=lambda kv: -kv[1]["rate"])
         best = rows[0][1]["rate"] if rows else 1
+        for name, res in rows:
+            r.data["benchmarks"]["throughput"][str(size)][name]["vs_best"] = res["rate"] / best
         for name, res in rows:
             r(f"  {name:<18}{res['count']:>9,}{res['duration']:>8.3f}"
               f"{res['rate']:>12,.0f}{res['mb_per_sec']:>10.1f}"
@@ -185,6 +199,7 @@ def main():
             continue
         try:
             rows.append((name, W.connections(port, n(400), greeting=greeting)))
+            r.data["benchmarks"]["connections"][name] = rows[-1][1]
         except Exception as e:  # noqa: BLE001
             r(f"{name:<18}  error: {e!r}")
         finally:

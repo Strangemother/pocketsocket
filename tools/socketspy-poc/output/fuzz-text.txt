@@ -1,0 +1,44 @@
+═══════════════════════════════════════════════════════
+  Fuzz Report
+═══════════════════════════════════════════════════════
+  Target:    ws://127.0.0.1:18090/ws/
+  Mode:      fuzz
+  Duration:  5.121s
+  Generated: 2026-08-10 17:27:28
+───────────────────────────────────────────────────────
+
+SUMMARY
+  Total findings: 3
+    MEDIUM     2
+    LOW        1
+
+FINDINGS
+
+  1. [LOW] Unusually large response to fuzz payload
+     Check: fuzzer
+     Mutation 'overflow' at path 'action' produced a response of 10028 bytes.
+     Evidence:
+       - mutation name: overflow
+       - response size bytes: 10028
+
+  2. [MEDIUM] Error response to fuzz payload
+     Check: fuzzer
+     Mutation 'xss_img@action' at path 'action' triggered an error containing 'error'.
+     Fix: Ensure proper input validation and error handling for all WebSocket message fields.
+     Evidence:
+       - mutation name: xss_img@action
+       - error indicator: error
+
+  3. [MEDIUM] Error response to fuzz payload
+     Check: fuzzer
+     Mutation 'xss_img@data' at path 'data' triggered an error containing 'error'.
+     Fix: Ensure proper input validation and error handling for all WebSocket message fields.
+     Evidence:
+       - mutation name: xss_img@data
+       - error indicator: error
+
+FUZZ DETAILS
+  Total payloads:  34
+  Errors:          0
+  Interesting:     3
+

@@ -28,12 +28,11 @@ proc call_py_hook*(
       let messageDict = pyDict()
       messageDict["kind"] = message.kind.ord
       messageDict["data"] = message.data
-      
-      # Extract headers from the websocket and pass them to the hook as a dict.
-      # let headersDict = pyDict()
-      # for header in websocket.headers:
-      #   headersDict[header.key] = header.value
+      ## TODO: Add headers to the python hook call.
+      if message.kind.ord == 0:
+        echo "open"
       # messageDict["headers"] = headersDict
+
       let info: PyObject = pyHook.callObject(
           getWebSocketUUID(websocket),
           event.ord,

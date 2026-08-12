@@ -27,7 +27,7 @@ proc upgradeHandler(request: Request) =
   let websocket: WebSocket = request.upgradeToWebSocket()
   let uuid: uint64 = registerWebSocket(request, websocket)
   # Send the headers back down the pipe.
-  websocket.send($request.headers)
+  # websocket.send($request.headers)
 
 
 proc indexHandler(request: Request) =
@@ -42,7 +42,8 @@ proc indexHandler(request: Request) =
   # headers["Content-Type"] = "text/plain"
   # let index_html_content:string =
   # request.respond(200, headers, $request.headers)
-  request.respond(200, headers, getCachedLocalFileContents("./server/templates/index.html"))
+  echo "Responding with index.html"
+  request.respond(200, headers, getCachedLocalFileContents("./index.html"))
 
 
 router.get("/**", indexHandler)

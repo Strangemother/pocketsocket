@@ -1,0 +1,28 @@
+name: pocketsocket-echo-smoke
+description: Verify that the compiled CLI echoes representative WebSocket messages.
+target: ws://127.0.0.1:18090/ws/
+timeout:
+  connect_ms: 3000
+  response_ms: 1000
+steps:
+  - name: Echo JSON message
+    send:
+      action: socketspy_poc
+      data: hello
+    expect:
+      timeout_ms: 1000
+      assert:
+        - path: $.action
+          equals: socketspy_poc
+        - path: $.data
+          equals: hello
+  - name: Echo repeated message
+    repeat: 2
+    send:
+      action: repeated
+      data: "{{ _index }}"
+    expect:
+      timeout_ms: 1000
+      assert:
+        - path: $.action
+          equals: repeated
