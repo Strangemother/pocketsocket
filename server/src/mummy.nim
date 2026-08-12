@@ -178,6 +178,9 @@ proc `$`*(request: Request): string {.gcsafe.} =
 proc `$`*(websocket: WebSocket): string =
   "WebSocket " & $cast[uint](hash(websocket))
 
+proc uuid*(websocket: WebSocket): uint64 =
+  result = websocket.clientId
+
 proc log(server: Server, level: LogLevel, args: varargs[string]) =
   if server.logHandler == nil:
     return
