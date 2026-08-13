@@ -1,5 +1,5 @@
 import std/[locks, tables]
-import mummy
+import ../mummy
 
 type
   ConnectionContext* = object

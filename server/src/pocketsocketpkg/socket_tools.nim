@@ -1,5 +1,5 @@
 # import std/hashes
-import mummy
+import ../mummy
 
 proc getWebSocketUUID*(websocket: WebSocket): uint64 =
     result = websocket.uuid

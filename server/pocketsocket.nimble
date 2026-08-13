@@ -38,6 +38,7 @@ print(sysconfig.get_config_var("EXT_SUFFIX"))
   # `nimble build` injects -d:release, but a custom task does not: without this
   # the extension ships as an unoptimised debug build (measured ~2x slower).
   switch("define", "release")
+  switch("path", srcDir)
   switch("out", ".." / "package" / "pocketsocket_server" & extSuffix)
   setCommand "c", srcDir / "pocketsocketpkg" / "pocketsocket_server.nim"
 

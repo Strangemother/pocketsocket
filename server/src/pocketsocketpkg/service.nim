@@ -2,7 +2,7 @@
   server lifecycle and the Python-facing surface
 ]# 
 import std/times, std/monotimes, std/cpuinfo
-import mummy, mummy/routers
+import ../mummy, ../mummy/routers
 import submodule
 import broadcast
 import ingress

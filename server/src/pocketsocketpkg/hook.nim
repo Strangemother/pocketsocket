@@ -1,6 +1,6 @@
 # import std/hashes
 
-import mummy
+import ../mummy
 import nimpy
 import nimpy/py_lib as lib
 import socket_tools

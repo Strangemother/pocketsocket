@@ -1,7 +1,7 @@
 import std/locks
 import std/hashes, std/tables
 import socket_tools
-import mummy
+import ../mummy
 
 import hook
 import websocket_dispatch

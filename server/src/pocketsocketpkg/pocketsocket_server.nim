@@ -10,7 +10,7 @@ import nimpy
 import nimpy/py_lib as lib
 import service
 import hook
-import mummy
+import ../mummy
 
 
 proc hook*(p: PyObject): int {.exportpy.} =
