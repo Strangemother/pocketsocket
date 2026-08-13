@@ -79,6 +79,22 @@ proc run_blocking_server*(
   service.run_blocking_server(address, port, worker_threads,
                               max_message_len, max_body_len, tcp_no_delay)
 
+proc run_nonblocking_server*(
+    address: string = "127.0.0.1",
+    port: int = 8090,
+    worker_threads: int = 0,
+    max_message_len: int = 64 * 1024,
+    max_body_len: int = 1024 * 1024,
+    tcp_no_delay: bool = true
+  ): void {.exportpy.} =
+  service.run_nonblocking_server(
+    address,
+    port,
+    worker_threads,
+    max_message_len,
+    max_body_len,
+    tcp_no_delay,
+  )
 
 proc shutdown_server*(): void {.exportpy.} =
   service.shutdown_server()

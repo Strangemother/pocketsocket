@@ -1,5 +1,5 @@
 # Package
-version       = "2.0.4"
+version       = "2.0.7"
 author        = "Strangemother"
 description   = "websocket server"
 license       = "MIT"
@@ -19,6 +19,9 @@ requires "webby >= 0.2.1"
 requires "crunchy >= 0.1.11"
 
 import std/[os, strutils]
+
+# Temporary suppression for a Nim 2.2 stdlib ProveInit warning instantiated by Mummy.
+switch("warning", "ProveInit:off")
 
 task buildDebug, "build debug pocketsocket-cli":
   switch("out", toExe(binDir / "pocketsocket-cli-debug"))
@@ -55,6 +58,15 @@ print(sysconfig.get_config_var("EXT_SUFFIX"))
 
   switch("out", ".." / "package" / "pocketsocket_server" & extSuffix)
   setCommand "c", srcDir / "pocketsocketpkg" / "pocketsocket_server.nim"
+
+after build:
+  let artifact = toExe(binDir / "pocketsocket-cli-release")
+  if fileExists(artifact):
+    let (size, exitCode) = gorgeEx("stat -c %s " & quoteShell(artifact))
+    echo("Produced file: ", artifact)
+    if exitCode == 0:
+      let sizeKiB = parseInt(size.strip()) / 1024
+      echo("File size: ", formatFloat(sizeKiB, ffDecimal, 1), " KiB")
 
 task buildCliCI, "build pocketsocket-cli for CI":
   # For simpler logic in CI, tag binary name with target OS and CPU

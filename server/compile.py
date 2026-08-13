@@ -7,6 +7,9 @@ from pathlib import Path
 
 
 SERVER_DIR = Path(__file__).parent
+ROOT_DIR = SERVER_DIR.parent
+DIST_DIR = ROOT_DIR / "dist"
+PACKAGE_DIR = ROOT_DIR / "package"
 
 
 def build_environment():
@@ -71,6 +74,24 @@ def build_command(output, debug):
         )
 
 
+def report_artifacts(output, debug):
+    """Print the files produced by one completed build step."""
+    if output == "exe":
+        artifacts = [
+            DIST_DIR / f"pocketsocket-cli-{'debug' if debug else 'release'}"
+        ]
+    elif output == "lib":
+        artifacts = [DIST_DIR / "lib" / "imp.dll"]
+    else:
+        artifacts = sorted(PACKAGE_DIR.glob("pocketsocket_server*"))
+
+    for artifact in artifacts:
+        if artifact.is_file():
+            size_kib = artifact.stat().st_size / 1024
+            print(f"Produced file: {artifact}")
+            print(f"File size: {size_kib:,.1f} KiB")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -107,6 +128,8 @@ def main():
     for output in outputs:
         print(f"Building {output}...")
         run_build(build_command(output, args.debug), args.setup, build_environment())
+        if not (output == "exe" and not args.debug):
+            report_artifacts(output, args.debug)
 
 
 if __name__ == "__main__":

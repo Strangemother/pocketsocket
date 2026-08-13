@@ -1,3 +1,5 @@
+{.push warning[ProveInit]: off.}
+
 when not defined(nimdoc):
   when not defined(gcArc) and not defined(gcOrc) and not defined(gcAtomicArc):
     {.error: "Using --mm:arc, --mm:orc or --mm:atomicArc is required by Mummy.".}
@@ -5,11 +7,13 @@ when not defined(nimdoc):
 when not compileOption("threads"):
   {.error: "Using --threads:on is required by Mummy.".}
 
+{.push warning[UnusedImport]: off.}
 import mummy/common, mummy/internal, std/atomics, std/base64,
     std/cpuinfo, std/deques, std/hashes, std/nativesockets, std/os,
     std/parseutils, std/random, std/selectors, std/sets, crunchy,
     std/tables, std/times, webby/httpheaders, webby/queryparams, webby/urls,
     zippy, std/options
+{.pop.}
 
 from std/strutils import find, cmpIgnoreCase, toLowerAscii
 
@@ -1562,3 +1566,8 @@ proc waitUntilReady*(server: Server, timeout: float = 10) =
     if delta > timeout:
       raise newException(MummyError, "Timeout while waiting for server")
     sleep(100)
+
+proc isReady*(server: Server): bool =
+  server.serving.load(moRelaxed)
+
+{.pop.}

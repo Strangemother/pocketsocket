@@ -2,6 +2,8 @@
 Run:
 
 python tool.py --test
+python tool.py --bump [major|minor|patch]
+python tool.py --set-version <version>
 python tool.py --test --compile
 python tool.py --test --compile --benchmark --tag 2-0-4-2-cleanup --strip-prefix
 python tool.py --test --compile --benchmark --tag 2-0-4-2-cleanup --strip-prefix --coverage-nim --coverage-c
@@ -22,6 +24,7 @@ python tool.py --test --compile --benchmark --tag 2-0-4-2-cleanup --strip-prefix
 
 import argparse
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -29,12 +32,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 DIST = ROOT / "dist"
-
-
-def run(command, cwd=ROOT):
-    """Run a command and stop if it fails."""
-    print(f"==> {' '.join(command)}", flush=True)
-    subprocess.run(command, cwd=cwd, check=True)
+VERSION_FILE = ROOT / "server" / "VERSION"
+VERSION_PATTERN = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 
 
 def main():
@@ -72,7 +71,22 @@ def main():
         action="store_true",
         help="strip the date and tag prefix from benchmark reports",
     )
+    version_group = parser.add_mutually_exclusive_group()
+    version_group.add_argument(
+        "--bump",
+        nargs="?",
+        const="patch",
+        choices=("major", "minor", "patch"),
+        help="bump VERSION by component (default: patch)",
+    )
+    version_group.add_argument(
+        "--set-version",
+        metavar="VERSION",
+        help="set VERSION explicitly, for example 2.1.0",
+    )
     args, server_args = parser.parse_known_args()
+
+    version_changed = update_version(args.bump, args.set_version)
 
     tasks = (
         args.test,
@@ -82,7 +96,7 @@ def main():
         args.coverage_c,
         args.run,
     )
-    if not any(tasks):
+    if not any(tasks) and not version_changed:
         parser.error("choose at least one task")
     if (args.tag or args.strip_prefix) and not args.benchmark:
         parser.error("--tag and --strip-prefix require --benchmark")
@@ -120,6 +134,71 @@ def main():
                 command.append("--debug")
             run(command)
         run([str(executable), "--run", *server_args], DIST)
+
+
+def run(command, cwd=ROOT):
+    """Run a command and stop if it fails."""
+    print(f"==> {' '.join(command)}", flush=True)
+    subprocess.run(command, cwd=cwd, check=True)
+
+
+def read_version():
+    """Read and validate the project version from the source-of-truth file."""
+    version = VERSION_FILE.read_text(encoding="ascii").strip()
+    if VERSION_PATTERN.fullmatch(version) is None:
+        raise ValueError(f"Invalid version in {VERSION_FILE}: {version!r}")
+    return version
+
+
+def write_version(version):
+    """Write VERSION and keep existing package metadata synchronized."""
+    if VERSION_PATTERN.fullmatch(version) is None:
+        raise ValueError(f"Invalid version: {version!r}")
+
+    VERSION_FILE.write_text(f"{version}\n", encoding="ascii")
+
+    pyproject = ROOT / "pyproject.toml"
+    pyproject_text = pyproject.read_text(encoding="ascii")
+    pyproject_text = re.sub(
+        r'(?m)^version = "[^"]+"$',
+        f'version = "{version}"',
+        pyproject_text,
+        count=1,
+    )
+    pyproject.write_text(pyproject_text, encoding="ascii")
+
+    nimble = ROOT / "server" / "pocketsocket.nimble"
+    nimble_text = nimble.read_text(encoding="ascii")
+    nimble_text = re.sub(
+        r"(?m)^version\s*=\s*\S+$",
+        f"version       = \"{version}\"",
+        nimble_text,
+        count=1,
+    )
+    nimble.write_text(nimble_text, encoding="ascii")
+
+    print(f"Version set to {version}")
+
+
+def update_version(bump, explicit_version):
+    """Apply a requested version change and return whether one was requested."""
+    if bump is None and explicit_version is None:
+        return False
+
+    current = read_version()
+    if explicit_version is not None:
+        new_version = explicit_version
+    else:
+        major, minor, patch = (int(part) for part in current.split("."))
+        if bump == "major":
+            new_version = f"{major + 1}.0.0"
+        elif bump == "minor":
+            new_version = f"{major}.{minor + 1}.0"
+        else:
+            new_version = f"{major}.{minor}.{patch + 1}"
+
+    write_version(new_version)
+    return True 
 
 
 if __name__ == "__main__":
