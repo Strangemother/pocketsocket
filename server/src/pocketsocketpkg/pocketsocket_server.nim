@@ -6,11 +6,14 @@
 # This is just an example to get you started. A typical hybrid package
 # uses this file as the main entry point of the application.
 
+import std/strutils
 import nimpy
 import nimpy/py_lib as lib
 import service
 import hook
 import ../mummy
+
+const packageVersion = staticRead("../../VERSION").strip()
 
 
 proc hook*(p: PyObject): int {.exportpy.} =
@@ -79,6 +82,7 @@ proc run_blocking_server*(
   service.run_blocking_server(address, port, worker_threads,
                               max_message_len, max_body_len, tcp_no_delay)
 
+
 proc run_nonblocking_server*(
     address: string = "127.0.0.1",
     port: int = 8090,
@@ -96,5 +100,10 @@ proc run_nonblocking_server*(
     tcp_no_delay,
   )
 
+
 proc shutdown_server*(): void {.exportpy.} =
   service.shutdown_server()
+
+
+proc version*(): string {.exportpy.} =
+  result = "v" & packageVersion

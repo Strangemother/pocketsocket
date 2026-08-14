@@ -13,7 +13,7 @@ callback hook.
     pocketsocket.run_blocking_server('127.0.0.1', 8090)
 """
 
-import pocketsocket_server
+import pocketsocket_server 
 
 # Event types passed to the hook as `etype`.
 CONNECT = 0
@@ -35,13 +35,14 @@ set_broadcast_mode = pocketsocket_server.set_broadcast_mode
 set_echo_mode = pocketsocket_server.set_echo_mode
 set_print_mode = pocketsocket_server.set_print_mode
 run_blocking_server = pocketsocket_server.run_blocking_server
+run_nonblocking_server = pocketsocket_server.run_nonblocking_server
 shutdown_server = pocketsocket_server.shutdown_server
 
 __all__ = [
     "pocketsocket_server",
     "hook", "send", "send_all", "close_client",
     "set_broadcast_mode", "set_echo_mode", "set_print_mode",
-    "run_blocking_server", "shutdown_server",
+    "run_blocking_server", "run_nonblocking_server", "shutdown_server",
     "CONNECT", "MESSAGE", "ERROR", "CLOSE",
     "TEXT", "BINARY", "PING", "PONG",
 ]
