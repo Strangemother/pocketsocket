@@ -7,7 +7,7 @@ Measures cold start: process spawn to accepting connections, plus the Nim-side
 excluding interpreter boot).
 
     python3 benchmarks/bench_startup.py -n 20
-    python3 benchmarks/bench_startup.py -o benchmarks/results/startup.txt
+    python3 benchmarks/bench_startup.py -o results/benchmarks/startup.txt
 """
 
 import argparse

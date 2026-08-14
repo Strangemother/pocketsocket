@@ -19,7 +19,7 @@ through the pure-Nim path (ps-nim-echo, which the others have no equivalent
 for).
 
     python3 benchmarks/bench_compare.py
-    python3 benchmarks/bench_compare.py --quick -o benchmarks/results/compare.txt
+    python3 benchmarks/bench_compare.py --quick -o results/benchmarks/compare.txt
 """
 
 import argparse

@@ -25,13 +25,15 @@ server = []
 # Development dependencies
 dev = [
     "hatch",
+    "pytest",
+    "pytest-cov",
 ]
 
 [project.urls]
-Documentation = "https://github.com/Strangemother/pocketsocket-2#readme"
-Homepage = "https://github.com/Strangemother/pocketsocket-2"
-Repository = "https://github.com/Strangemother/pocketsocket-2"
-Issues = "https://github.com/Strangemother/pocketsocket-2/issues"
+Documentation = "https://github.com/Strangemother/pocketsocket#readme"
+Homepage = "https://github.com/Strangemother/pocketsocket"
+Repository = "https://github.com/Strangemother/pocketsocket"
+Issues = "https://github.com/Strangemother/pocketsocket/issues"
 
 [build-system]
 requires = ["hatchling"]

@@ -3,8 +3,8 @@
 Examples:
 
     python3 benchmarks/create_diff.py
-    python3 benchmarks/create_diff.py results/before results/after
-    python3 benchmarks/create_diff.py results/before results/after -o /tmp/diff.json
+    python3 benchmarks/create_diff.py results/benchmarks/before results/benchmarks/after
+    python3 benchmarks/create_diff.py results/benchmarks/before results/benchmarks/after -o /tmp/diff.json
 
 Reports are paired by their stable suite suffix (``startup``,
 ``message-path`` or ``compare``), so the directories may use different run
@@ -22,7 +22,7 @@ from pathlib import Path
 
 
 KNOWN_SUITES = ("startup", "message-path", "compare")
-RESULTS_DIR = Path(__file__).resolve().parent / "results"
+RESULTS_DIR = Path(__file__).resolve().parent.parent / "results" / "benchmarks"
 DEFAULT_OUTPUT = Path.cwd() / "diff.json"
 
 

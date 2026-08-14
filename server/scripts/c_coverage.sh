@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 
 SERVER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-COVERAGE_DIR="$SERVER_DIR/c_coverage"
+COVERAGE_DIR="$SERVER_DIR/../results/coverage/c"
 
 cd "$SERVER_DIR"
 

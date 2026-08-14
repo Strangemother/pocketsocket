@@ -5,17 +5,18 @@ benchmarks/
   bench_startup.py       cold start: spawn -> accepting, and Nim-side TTL
   bench_message_path.py  the steady-state message path, with cost decomposition
   bench_compare.py       pocketsocket vs websockets / tornado / aiohttp / uvicorn
-  run_all.py             runs all three, writes dated reports to results/
+  run_all.py             runs all three, writes dated reports to results/benchmarks/
   create_diff.py         compares two result directories and writes JSON
   lib/                   shared client, harness, server definitions, workloads
-  results/               generated reports
   archive/               the pre-2026-08 suite, kept for historical reference
+
+results/benchmarks/       generated reports
 ```
 
 ## Running
 
 ```bash
-python3 benchmarks/run_all.py                 # full suite -> results/
+python3 benchmarks/run_all.py                 # full suite -> results/benchmarks/
 python3 benchmarks/run_all.py --quick         # ~5x faster, indicative only
 python3 benchmarks/run_all.py --tag postfix   # label the output files
 python3 benchmarks/run_all.py --dir /tmp/ps-run --strip-prefix
@@ -23,11 +24,11 @@ python3 benchmarks/run_all.py --dir /tmp/ps-run --strip-prefix
 python3 benchmarks/bench_message_path.py      # or run one suite directly
 python3 benchmarks/bench_compare.py -o /tmp/compare.txt
 python3 benchmarks/create_diff.py              # previous vs latest -> ./diff.json
-python3 benchmarks/create_diff.py results/before results/after -o /tmp/diff.json
+python3 benchmarks/create_diff.py results/benchmarks/before results/benchmarks/after -o /tmp/diff.json
 ```
 
 Each `run_all.py` invocation gets its own directory under
-`benchmarks/results/`, named `{date}-{tag}`. `--dir` selects an exact output
+`results/benchmarks/`, named `{date}-{tag}`. `--dir` selects an exact output
 directory. Every text report has a JSON sibling containing the measured values
 without descriptions or notes. Use `--strip-prefix` to remove the date and
 leading tag components while retaining the final tag label, for example

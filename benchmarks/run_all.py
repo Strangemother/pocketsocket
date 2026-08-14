@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Run the whole benchmark suite and write dated reports into results/.
+Run the whole benchmark suite and write dated reports into results/benchmarks/.
 
     python3 benchmarks/run_all.py
     python3 benchmarks/run_all.py --quick
@@ -15,7 +15,7 @@ from datetime import date
 from pathlib import Path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-RESULTS = os.path.join(HERE, "results")
+RESULTS = os.path.join(HERE, "..", "results", "benchmarks")
 
 SUITES = [
     ("startup", "bench_startup.py", []),

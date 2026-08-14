@@ -1,0 +1,45 @@
+==============================================================================
+pocketsocket - Startup Benchmark
+==============================================================================
+Date       : 2026-08-14T00:09:44
+Python     : 3.12.1
+Platform   : Linux-6.8.0-1052-azure-x86_64-with-glibc2.39
+CPU count  : 2
+
+Iterations : 20
+
+------------------------------------------------------------------------------
+1. NIM TIME-TO-LAUNCH (ms)
+------------------------------------------------------------------------------
+
+Reported by the server itself: template load, router and socket bind.
+Excludes interpreter startup and module import.
+
+mode                    runs       min     median      mean       max     stdev
+ps-ingest                 20    0.7418     0.9730    1.0392    2.7236    0.3946
+ps-nim-echo               20    0.7218     0.9957    1.0205    1.5908    0.1773
+ps-hook-echo              20    0.8847     0.9654    0.9689    1.1201    0.0560
+
+------------------------------------------------------------------------------
+2. SPAWN -> ACCEPTING CONNECTIONS (ms)
+------------------------------------------------------------------------------
+
+Wall clock from fork/exec to the first successful connect. Dominated
+by CPython interpreter startup and the extension module import.
+
+mode                    runs       min     median      mean       max     stdev
+ps-ingest                 20   12.2611    13.8230   14.8060   20.9780    2.2080
+ps-nim-echo               20   13.6558    13.8107   14.2061   20.3192    1.4365
+ps-hook-echo              20   13.6836    13.7951   13.9823   16.9351    0.6945
+
+------------------------------------------------------------------------------
+3. STANDALONE CLI BINARY
+------------------------------------------------------------------------------
+
+Not built. Run `nimble build` to produce dist/pocketsocket-cli.
+
+==============================================================================
+Registering a python hook should not affect startup: the callback is
+stored, not invoked, until the first event arrives. Any difference
+between the three modes above is noise.
+

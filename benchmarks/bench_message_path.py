@@ -12,7 +12,7 @@ isolated rather than inferred.
 
     python3 benchmarks/bench_message_path.py
     python3 benchmarks/bench_message_path.py --quick
-    python3 benchmarks/bench_message_path.py -o benchmarks/results/latest.txt
+    python3 benchmarks/bench_message_path.py -o results/benchmarks/latest.txt
 """
 
 import argparse
