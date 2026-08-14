@@ -15,7 +15,8 @@ from datetime import date
 from pathlib import Path
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-RESULTS = os.path.join(HERE, "..", "results", "benchmarks")
+REPO_ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
+RESULTS = os.path.join(REPO_ROOT, "results", "benchmarks")
 
 SUITES = [
     ("startup", "bench_startup.py", []),

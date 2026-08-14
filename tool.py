@@ -20,7 +20,7 @@ python tool.py --test --compile --benchmark --tag 2-0-4-2-cleanup --strip-prefix
     python server/compile.py
 
 3. benchmark is run the full suite
-    python benchmarks/run_all.py --tag 2-0-4-2-cleanup --strip-prefix
+    python utils/benchmarks/run_all.py --tag 2-0-4-2-cleanup --strip-prefix
 
 4. coverage is run the coverage suite
     server/scripts/coverage.sh #nim
@@ -141,7 +141,7 @@ def main():
             command.append("--release")
         run(command)
     if args.benchmark:
-        command = [sys.executable, "benchmarks/run_all.py"]
+        command = [sys.executable, "utils/benchmarks/run_all.py"]
         if args.tag:
             command += ["--tag", args.tag]
         if args.strip_prefix:

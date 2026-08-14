@@ -22,7 +22,7 @@ from pathlib import Path
 
 
 KNOWN_SUITES = ("startup", "message-path", "compare")
-RESULTS_DIR = Path(__file__).resolve().parent.parent / "results" / "benchmarks"
+RESULTS_DIR = Path(__file__).resolve().parents[2] / "results" / "benchmarks"
 DEFAULT_OUTPUT = Path.cwd() / "diff.json"
 
 

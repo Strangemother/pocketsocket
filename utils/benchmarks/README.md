@@ -1,7 +1,7 @@
 # pocketsocket benchmarks
 
 ```
-benchmarks/
+utils/benchmarks/
   bench_startup.py       cold start: spawn -> accepting, and Nim-side TTL
   bench_message_path.py  the steady-state message path, with cost decomposition
   bench_compare.py       pocketsocket vs websockets / tornado / aiohttp / uvicorn
@@ -16,15 +16,15 @@ results/benchmarks/       generated reports
 ## Running
 
 ```bash
-python3 benchmarks/run_all.py                 # full suite -> results/benchmarks/
-python3 benchmarks/run_all.py --quick         # ~5x faster, indicative only
-python3 benchmarks/run_all.py --tag postfix   # label the output files
-python3 benchmarks/run_all.py --dir /tmp/ps-run --strip-prefix
+python3 utils/benchmarks/run_all.py                 # full suite -> results/benchmarks/
+python3 utils/benchmarks/run_all.py --quick         # ~5x faster, indicative only
+python3 utils/benchmarks/run_all.py --tag postfix   # label the output files
+python3 utils/benchmarks/run_all.py --dir /tmp/ps-run --strip-prefix
 
-python3 benchmarks/bench_message_path.py      # or run one suite directly
-python3 benchmarks/bench_compare.py -o /tmp/compare.txt
-python3 benchmarks/create_diff.py              # previous vs latest -> ./diff.json
-python3 benchmarks/create_diff.py results/benchmarks/before results/benchmarks/after -o /tmp/diff.json
+python3 utils/benchmarks/bench_message_path.py      # or run one suite directly
+python3 utils/benchmarks/bench_compare.py -o /tmp/compare.txt
+python3 utils/benchmarks/create_diff.py              # previous vs latest -> ./diff.json
+python3 utils/benchmarks/create_diff.py results/benchmarks/before results/benchmarks/after -o /tmp/diff.json
 ```
 
 Each `run_all.py` invocation gets its own directory under
