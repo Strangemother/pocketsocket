@@ -185,6 +185,10 @@ proc `$`*(websocket: WebSocket): string =
 proc uuid*(websocket: WebSocket): uint64 =
   result = websocket.clientId
 
+proc getBoundPort*(server: Server): Port {.gcsafe.} =
+  if server.socket != osInvalidSocket:
+    result = server.socket.getSockName()
+
 proc log(server: Server, level: LogLevel, args: varargs[string]) =
   if server.logHandler == nil:
     return

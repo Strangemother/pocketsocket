@@ -32,6 +32,7 @@ var
   lifecycleState = ServerIdle
   startupError = ""
   servingThreadId = 0
+  
 
 # Always remember to init the lock and cond before using them
 initLock(lifecycleLock)
@@ -69,7 +70,11 @@ proc closeActiveServer() =
 
   if activeServer != nil:
     activeServer.close()
+    echo "Closed active server"
 
+proc isServerRunning*(): bool =
+  withLock lifecycleLock:
+    result = server != nil and lifecycleState == ServerRunning
 
 proc ctrlc() {.noconv.} =
   echo "Ctrl+C fired!"
@@ -116,6 +121,13 @@ proc set_template_dir*(dir: string): void =
   config.set_template_dir(dir)
 
 
+proc get_port*(): int =
+  withLock lifecycleLock:
+    if server == nil:
+      return 0
+    return int(server.getBoundPort())
+
+
 proc buildServer(
     worker_threads: int,
     max_message_len: int,
@@ -146,7 +158,6 @@ proc prepareServer(address: string, port: int) =
     echo "Using template directory: ", config.template_dir
     submodule.setLoadedTemplate("index.html")
 
-  echo "Serving on http://", address, ":", port
   setControlCHook(ctrlc)
 
 
@@ -248,6 +259,9 @@ proc run_nonblocking_server*(
       withLock lifecycleLock:
         if lifecycleState == ServerStarting:
           lifecycleState = ServerRunning
+          let boundPort = $int(newServer.getBoundPort())
+          let serverAddress = "Starting server on: " & address & ":" & boundPort
+          echo serverAddress
           signal(lifecycleCond)
           return
         if lifecycleState == ServerFailed:

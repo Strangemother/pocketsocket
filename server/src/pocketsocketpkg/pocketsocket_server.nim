@@ -105,5 +105,13 @@ proc shutdown_server*(): void {.exportpy.} =
   service.shutdown_server()
 
 
+proc is_server_running*(): bool {.exportpy.} =
+  service.isServerRunning()
+
+
+proc get_port*(): int {.exportpy.} =
+  service.get_port()
+
+
 proc version*(): string {.exportpy.} =
   result = "v" & packageVersion

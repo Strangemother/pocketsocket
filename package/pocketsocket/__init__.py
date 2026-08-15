@@ -27,22 +27,11 @@ BINARY = 1
 PING = 2
 PONG = 3
 
-hook = pocketsocket_server.hook
-send = pocketsocket_server.send
-send_all = pocketsocket_server.send_all
-close_client = pocketsocket_server.close_client
-set_broadcast_mode = pocketsocket_server.set_broadcast_mode
-set_echo_mode = pocketsocket_server.set_echo_mode
-set_print_mode = pocketsocket_server.set_print_mode
-run_blocking_server = pocketsocket_server.run_blocking_server
-run_nonblocking_server = pocketsocket_server.run_nonblocking_server
-shutdown_server = pocketsocket_server.shutdown_server
 
-__all__ = [
-    "pocketsocket_server",
-    "hook", "send", "send_all", "close_client",
-    "set_broadcast_mode", "set_echo_mode", "set_print_mode",
-    "run_blocking_server", "run_nonblocking_server", "shutdown_server",
-    "CONNECT", "MESSAGE", "ERROR", "CLOSE",
-    "TEXT", "BINARY", "PING", "PONG",
-]
+def _load_globals():
+    _globals = globals()
+    for _k in dir(pocketsocket_server):
+        if not _k.startswith("_"):
+            _globals[_k] = getattr(pocketsocket_server, _k)
+
+_load_globals()
