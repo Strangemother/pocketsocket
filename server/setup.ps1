@@ -36,7 +36,7 @@ if (-not (Get-Command nim -ErrorAction SilentlyContinue)) {
     Write-Host "==> nim not found, installing $NimVersion"
     $archive = Join-Path $env:TEMP "nim-$NimVersion-x64.zip"
     $extractPath = Join-Path $env:TEMP "pocketsocket-nim-$NimVersion"
-    $downloadUrl = "https://nim-lang.org/download/nim-$NimVersion_x64.zip"
+    $downloadUrl = "https://nim-lang.org/download/nim-${NimVersion}_x64.zip"
 
     Write-Host "    downloading $downloadUrl"
     Invoke-WebRequest -Uri $downloadUrl -OutFile $archive
