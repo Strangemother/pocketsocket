@@ -2,7 +2,11 @@
 
 # Pocketsocket v2
 
-A standalone dependency-free zero-configuration WebSocket server for CLI or Python.
+WebSocket server for CLI or Python.
+
++ standalone 
++ dependency-free 
++ zero-configuration 
 
 ---
 

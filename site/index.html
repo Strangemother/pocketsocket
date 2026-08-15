@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0&icon_names=download" />
-    
+
     <link href="https://fonts.googleapis.com/css2?family=SN+Pro:ital,wght@0,200..900;1,200..900&family=Staatliches&display=swap" rel="stylesheet">
 
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -26,17 +26,17 @@
 
     <main id="app">
         <section class="hero" aria-labelledby="page-title">
-            
+
             <div class="hero-title">
                 <!-- <p class="eyebrow">A quick website starter</p> -->
                 <h1 class="page-title staatliches-regular">Pocketsocket</h1>
             </div>
 
             <div class="hero-seconds">
-                    
+
                 <div class="hero-keys">
                     <p class="hero-description">
-                        Websockets without thinking about it. 
+                        Websockets without thinking about it.
                     </p>
 
                     <div class="keypoints">
@@ -63,24 +63,24 @@
                 </div>
 
                 <div class="download-links">
-                    
+
                     <div class="download-panel collect-box">
-                    
+
                         <div class="download-details">
                             <div class="download-icon" aria-hidden="true">L</div>
                             <div>
                                 <span class="download-label">standalone</span>
-                                <div>    
+                                <div>
                                     <strong class="download-platform">{{ os }}</strong>
                                 </div>
 
                                 <span class="download-size">1.01 MB</span>
                             </div>
                         </div>
-                        
+
                         <div>
-                            <a class="download-button" 
-                            :href="downloadLink" 
+                            <a class="download-button"
+                            :href="downloadLink"
                             @click="downloadClicked()"
                             download>
                                 <span class="material-symbols-outlined">download</span>
@@ -92,7 +92,7 @@
 
 
                     <div class="download-panel collect-box">
-                    
+
                         <div class="download-details">
                             <div class="download-icon" aria-hidden="true">P</div>
                             <div>
@@ -100,13 +100,12 @@
                                 <code>pip install pocketsocket</code>
                             </div>
                         </div>
-                        
+
                         <!-- <a class="download-button" href="#" download aria-label="Download PocketSocket for Linux">
                             <span class="material-symbols-outlined">download</span>
                         </a> -->
 
                     </div>
-
                 </div>
 
             </div>
@@ -116,72 +115,122 @@
         <section class="getting-started" id="getting-started" aria-labelledby="getting-started-title">
             <div class="section-heading">
                 <h2 class="getting-started-title staatliches-regular">Getting started</h2>
-                <p>Three simple steps to turn this blank canvas into your own corner of the web.</p>
+                <!-- <p>Pocketsocket is designed to be quick to use. </p> -->
             </div>
 
-            <div class="steps">
+            <div class="steps" :class="['socket-connected-' + socketConnected]">
                 <article class="step" @click="downloadClicked()">
-                    <span class="step-number">01</span>
-                    <h3>Download</h3>
+                    <div class="row">
+                        <span class="step-number">01</span>
+                        <h3>Download</h3>
+                    </div>
                     <p>
                         <a href="#">Grab the binary</a>
                         or install the  <a href="#">python package</a>
-                        
+
                         <!-- On click, change the download presentation panel.
-                            bin panel informs about location 
-                            pip shows a bash shell example 
+                            bin panel informs about location
+                            pip shows a bash shell example
                         -->
                     </p>
                 </article>
                 <article class="step"
                     @click="runClicked()">
-                    <span class="step-number">02</span>
-                    <h3>Run</h3>
+                    <div class="row">
+                        <span class="step-number">02</span>
+                        <h3>Run</h3>
+                    </div>
                     <p>
                         Run the app in your CLI, or run this code in your python.
-                        <!-- If binary was clicked, show binary, 
+                        <!-- If binary was clicked, show binary,
                             else show python code. -->
                         <!-- If binary, show the antivirus false positive. -->
                         <!-- Show running output. with a clickable link to the http default page-->
                     </p>
+                    <code>$ pocketsocket-cli --run</code>
                 </article>
-                <article class="step">
-                    <span class="step-number">03</span>
-                    <h3>Connect</h3>
-                    <p>Head to <a href="#">ws://127.0.0.1:8090/</a> using websockets.</p>
+                <article class="step"
+                     @click="connectClicked()">
+                    <div class="row">
+                        <span class="step-number">03</span>
+                        <h3>Connect</h3>
+                    </div>
+                    <p>Head to <a href="#">ws://{{ socketAddress }}</a> using websockets.</p>
+
                     <div class="demo-tool">
-                        <!-- A simple websocket client, to connect to the local address. 
+                        <!-- A simple websocket client, to connect to the local address.
                             1. Code
                             2. Connect Button
                             3. Simple display
                         -->
+                        <div class="inline-text">
+                            <!-- The user clicks, actuating test and switching the view. -->
+                            <button @click=testConnectClick>test</button>
+                            <div class="socket-indicator-container">
+                                <div class="socket-indicator"></div>
+                            </div>
+                        </div>
                     </div>
                 </article>
             </div>
             <div class="continue-panels">
-                <div class="download-clicked-panel" 
-                    :class="{'not-download-clicked': !isDownloadClicked, 'download-clicked': isDownloadClicked}">
+                <div class="download-clicked-panel"
+                    :class="{'hide': !isDownloadClicked, 'show': isDownloadClicked}">
                     <p>Download and store it somewhere safe.</p>
                     <div class="antivirus-notice">
                         <p>You may see an antivirus false positive.</p>
                         <details>
                             <summary>More info</summary>
-                            <p>This is a known false positive. 
+                            <p>This is a known false positive.
                                 Your antivirus may flag the binary incorrectly.</p>
                         </details>
                         <details>
                             <summary>Verification</summary>
                             <p>You can verify the binary using the provided checksums.
-                                <br>or download the 
+                                <br>or download the
                                     <a :href="host">source code</a>
                                 and build it yourself.
                             </p>
                         </details>
                     </div>
                 </div>
-                <div class="run-clicked-panel" 
-                    :class="{'not-run-clicked': !isRunClicked, 'run-clicked': isRunClicked}">
-                    <p>Run button clicked. You can add additional logic here.</p>
+                <div class="run-clicked-panel"
+                    :class="{'hide': !isRunClicked, 'show': isRunClicked}">
+                    <div class="run-tabs">
+                        <ul>
+                            <li><a href="#">CLI</a></li>
+                            <li><a href="#">Python</a></li>
+                        </ul>
+                    </div>
+                    <div class="run-example">
+                        <div class="cli-run-example">
+                            <pre>
+                                <code>
+                                    $ <span class="command">./pocketsocket-cli-release --run</span>
+                                    No template directory specified; using default templates.
+                                    Serving on http://{{socketAddress}}
+                                    TTL: 857 microseconds and 19 nanoseconds
+                                </code>
+                            </pre>
+                        </div>
+                    </div>
+                </div>
+                <div class="connect-panel collect-box"
+                    :class="{'hide': !isConnectedClicked, 'show': isConnectedClicked}">
+
+                    <div class="connect-details">
+                        <div class="connect-input-form">
+                            <input type="text"
+                                :value="'ws://' + socketAddress"
+                                class="address">
+                            <textarea class="message"></textarea>
+                            <div class="messages">
+                                <ul>
+                                    <li v-for='m in messages'>{{ m }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
