@@ -14,6 +14,7 @@ $nimRoot = Join-Path $env:LOCALAPPDATA "PocketSocket\nim-$NimVersion"
 $nimBin = Join-Path $nimRoot "bin"
 $nimbleBin = Join-Path $env:USERPROFILE ".nimble\bin"
 
+
 function Add-UserPathEntry([string]$PathEntry) {
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
     $entries = @($userPath -split ";" | Where-Object { $_ })
