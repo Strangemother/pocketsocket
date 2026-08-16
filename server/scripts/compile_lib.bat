@@ -1,7 +1,7 @@
 nim c --app:lib ^
-    --out:..\dist/lib/imp.dll ^
+    --out:..\dist/toy.dll ^
     -d:release ^
     --threads:on ^
     --opt:size ^
     --tlsEmulation:off ^
-    --passl:"-static -static-libgcc -static-libstdc++" src\pocketsocketpkg\imp.nim
+    --passl:"-static -static-libgcc -static-libstdc++" imp.nim
