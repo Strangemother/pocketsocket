@@ -602,6 +602,12 @@ proc sendCloseFrame(
   dataEntry.closeFrameQueuedAt = epochTime()
   server.selector.updateHandle2(clientSocket, {Read, Write})
 
+proc copyUnmaskedPayload(source: openArray[char], destination: var openArray[char],
+                         mask: array[4, uint8]) {.inline.} =
+  for payloadIndex in 0 ..< source.len:
+    destination[payloadIndex] =
+      (source[payloadIndex].uint8 xor mask[payloadIndex mod 4]).char
+
 proc afterRecvWebSocket(
   server: Server,
   clientSocket: SocketHandle,
@@ -684,12 +690,6 @@ proc afterRecvWebSocket(
     if dataEntry.bytesReceived < pos + payloadLen:
       return false # Need to receive more bytes
 
-    # Unmask the payload
-    for i in 0 ..< payloadLen:
-      let j = i mod 4
-      dataEntry.recvBuf[pos + i] =
-        (dataEntry.recvBuf[pos + i].uint8 xor mask[j]).char
-
     if dataEntry.frameState.opcode == 0:
       # This is the first fragment
       dataEntry.frameState.opcode = opcode
@@ -701,13 +701,12 @@ proc afterRecvWebSocket(
       dataEntry.frameState.buffer.setLen(newBufferLen)
 
     if payloadLen > 0:
-      # Copy the fragment into the message buffer
-      copyMem(
-        dataEntry.frameState.buffer[dataEntry.frameState.frameLen].addr,
-        dataEntry.recvBuf[pos].addr,
-        payloadLen
+      copyUnmaskedPayload(
+        dataEntry.recvBuf.toOpenArray(pos, pos + payloadLen - 1),
+        dataEntry.frameState.buffer.toOpenArray(dataEntry.frameState.frameLen, newFrameLen - 1),
+        mask,
       )
-      dataEntry.frameState.frameLen += payloadLen
+    dataEntry.frameState.frameLen = newFrameLen
 
     # Remove this frame from the receive buffer
     let frameLen = pos + payloadLen
