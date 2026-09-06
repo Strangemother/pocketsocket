@@ -146,7 +146,7 @@ included in runtime wheels.
 ### Release validation
 
 GitHub Actions uses Nim 2.2.10 on Linux x64/ARM64, macOS Intel/Apple Silicon,
-and Windows x64. Each runner builds and launches the CLI, runs the native
+and Windows x64 (with both x86 and x64 Python wheels). Each runner builds and launches the CLI, runs the native
 writer/receive regression tests, and builds wheels with cibuildwheel. Each
 installed wheel must import its native module, report the metadata version,
 and echo text and binary WebSocket messages through a Python callback.
@@ -156,6 +156,12 @@ integration segfaulted during the CPython 3.14t installed-wheel smoke test.
 Regular GIL-enabled CPython 3.10 through 3.14 remains in the build matrix.
 Free-threaded support requires a separate native compatibility fix and runtime
 validation before those wheels can be distributed.
+
+Windows Python extensions use Visual C++ Build Tools, including the C++ desktop
+workload and Windows SDK already installed on the hosted Windows runner. The
+native build selects x86 for Python's `win32` suffix and x64 for `win_amd64`,
+independently of the host Nim compiler's architecture. Both release and debug
+extension tasks use this selection; the standalone CLI build is unchanged.
 
 Run the packaging selection tests locally with Hatchling installed:
 
