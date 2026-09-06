@@ -1,6 +1,6 @@
 [project]
 name = "pocketsocket"
-version = "2.0.8"
+version = "2.0.9"
 description = "Zero config websockets"
 readme = "readme.md"
 requires-python = ">=3.10"
@@ -42,13 +42,24 @@ Issues = "https://github.com/Strangemother/pocketsocket/issues"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "/results",
+    "/server/nimcache",
+    "/utils/socketspy-poc/output",
+    "/package/*.so",
+    "/package/*.pyd",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = [
     "package/pocketsocket",
     "utils",
 ]
-artifacts = [
-    "package/*.pyd", "package/*.so"
+only-include = [
+    "package/pocketsocket",
+    "utils/__init__.py",
+    "utils/tool.py",
 ]
 
 [tool.hatch.build.targets.wheel.hooks.custom]
@@ -57,8 +68,11 @@ path = "package/hatch_build.py"
 # Build the native module inside each cibuildwheel environment so its ABI and
 # glibc symbols match the Python interpreter and manylinux image being built.
 [tool.cibuildwheel]
+skip = "cp*t-*"
 before-build = "cd server && nimble buildPyd -d:release -d:lto -d:strip"
 environment = { POCKETSOCKET_PYTHON = "python" }
+test-requires = ["websockets>=14"]
+test-command = "python {project}/package/tests/wheel_smoke.py"
 
 [tool.cibuildwheel.macos]
 environment = { MACOSX_DEPLOYMENT_TARGET = "11.0", POCKETSOCKET_PYTHON = "python" }
@@ -68,6 +82,6 @@ environment = { PATH = "$HOME/.nimble/bin:$HOME/.local/share/grabnim/current/bin
 # Install Nim into the Linux build container.
 before-all = [
     "curl https://codeberg.org/janAkali/grabnim/raw/branch/master/misc/install.sh -sSf | sh",
-    "grabnim",
+    "grabnim 2.2.10",
     "cd server && nimble install --depsOnly -y"
 ]
