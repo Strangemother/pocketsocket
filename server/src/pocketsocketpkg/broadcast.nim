@@ -80,6 +80,7 @@ proc locked_remove_client*(websocket: WebSocket): void =
       clientSheet.del(uuid)
       removeContext(uuid)
 
+
 proc locked_has_client*(websocket: WebSocket): bool =
   {.gcsafe.}:
     withLock lock:

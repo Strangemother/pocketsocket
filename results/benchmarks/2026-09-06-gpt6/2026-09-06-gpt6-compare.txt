@@ -1,0 +1,126 @@
+==============================================================================
+pocketsocket vs Python WebSocket servers
+==============================================================================
+Date       : 2026-09-06T16:13:18
+Python     : 3.12.1
+Platform   : Linux-6.8.0-1052-azure-x86_64-with-glibc2.39
+CPU count  : 2
+
+All servers echo text frames. Same raw-socket client for all of them.
+
+Contenders:
+  ps-nim-echo       pocketsocket, pure Nim path (no python per message)
+  ps-hook-echo      pocketsocket, python callback per message
+  websockets        
+  tornado           
+  aiohttp           
+  fastapi+uvicorn   
+  uvicorn-asgi      
+
+------------------------------------------------------------------------------
+1. STARTUP  (spawn -> accepting connections, ms)
+------------------------------------------------------------------------------
+
+server              runs       min    median      mean       max
+ps-nim-echo          100      13.6      13.8      14.2      21.0
+ps-hook-echo         100      13.6      13.8      14.4      20.1
+websockets           100      94.4      96.8     100.3     145.0
+tornado              100     135.3     139.0     148.8     415.3
+aiohttp              100     215.6     232.9     239.0     376.8
+fastapi+uvicorn      100     340.1     357.5     364.9     451.3
+uvicorn-asgi         100     129.3     134.3     141.4     208.7
+
+relative to fastest:
+  ps-hook-echo          1.0x
+  ps-nim-echo           1.0x
+  websockets            7.0x
+  uvicorn-asgi          9.8x
+  tornado              10.1x
+  aiohttp              16.9x
+  fastapi+uvicorn      26.0x
+
+------------------------------------------------------------------------------
+2. ROUND-TRIP LATENCY  (1 connection, 1 in flight, microseconds)
+------------------------------------------------------------------------------
+
+payload 64B
+  server                  min      p50      p90      p99       max      msg/s
+  aiohttp                27.3     45.0     67.4     84.0     109.6     20,501
+  ps-nim-echo            39.1     53.5     83.9    113.2    1938.6     16,361
+  websockets             44.6     58.5     80.4    107.2    1011.1     15,547
+  ps-hook-echo           44.4     66.3     97.7    128.8    1825.9     12,852
+  uvicorn-asgi           53.5     67.0    127.5    777.6    2785.4      9,826
+  fastapi+uvicorn        57.3     67.7     91.5    173.8    1609.8     13,002
+  tornado                34.0     71.1    100.4    139.1    1823.3     14,027
+
+payload 1KB
+  server                  min      p50      p90      p99       max      msg/s
+  aiohttp                29.9     46.3     68.4     90.3     992.2     19,670
+  ps-nim-echo            33.2     54.2     83.8    400.1    3045.1     14,569
+  websockets             46.7     63.7     83.1    129.0    1140.0     14,382
+  ps-hook-echo           40.4     68.8    105.7    518.5    3032.4     11,248
+  fastapi+uvicorn        56.0     75.0     98.6    182.8    1865.7     11,760
+  uvicorn-asgi           60.3     75.8     95.1    202.1    2312.5     11,636
+  tornado                39.5     80.5     98.2    156.6    1423.7     13,539
+
+
+------------------------------------------------------------------------------
+3. THROUGHPUT  (1 connection, 256 frames per syscall)
+------------------------------------------------------------------------------
+
+payload 64B
+  server                 msgs     sec       msg/s      MB/s   vs best
+  ps-nim-echo          20,000   0.072     277,359      16.9     1.00x
+  aiohttp              20,000   0.200      99,868       6.1     0.36x
+  uvicorn-asgi         20,000   0.307      65,197       4.0     0.24x
+  fastapi+uvicorn      20,000   0.349      57,322       3.5     0.21x
+  websockets           20,000   0.417      47,989       2.9     0.17x
+  ps-hook-echo         20,000   0.425      47,087       2.9     0.17x
+  tornado              20,000   3.245       6,163       0.4     0.02x
+
+payload 1KB
+  server                 msgs     sec       msg/s      MB/s   vs best
+  ps-nim-echo          20,000   0.200      99,800      97.5     1.00x
+  aiohttp              20,000   0.281      71,087      69.4     0.71x
+  uvicorn-asgi         20,000   0.374      53,463      52.2     0.54x
+  fastapi+uvicorn      20,000   0.415      48,151      47.0     0.48x
+  websockets           20,000   0.459      43,567      42.5     0.44x
+  ps-hook-echo         20,000   0.517      38,717      37.8     0.39x
+  tornado              20,000   3.559       5,619       5.5     0.06x
+
+payload 16KB
+  server                 msgs     sec       msg/s      MB/s   vs best
+  aiohttp               4,000   0.086      46,272     723.0     1.00x
+  uvicorn-asgi          4,000   0.152      26,244     410.1     0.57x
+  websockets            4,000   0.159      25,118     392.5     0.54x
+  fastapi+uvicorn       4,000   0.161      24,918     389.3     0.54x
+  ps-nim-echo           4,000   0.181      22,084     345.1     0.48x
+  ps-hook-echo          4,000   0.219      18,254     285.2     0.39x
+  tornado               4,000   0.732       5,466      85.4     0.12x
+
+
+------------------------------------------------------------------------------
+4. CONNECTION ESTABLISHMENT
+------------------------------------------------------------------------------
+
+server              conns     sec     conn/s   ms each
+ps-nim-echo           400   0.075      5,302     0.189
+ps-hook-echo          400   0.079      5,039     0.198
+aiohttp               400   0.146      2,743     0.365
+websockets            400   0.165      2,422     0.413
+tornado               400   0.181      2,206     0.453
+uvicorn-asgi          400   0.216      1,848     0.541
+fastapi+uvicorn       400   0.272      1,473     0.679
+
+==============================================================================
+NOTES
+==============================================================================
+* Fairness: minimal echo handler on every server, no middleware, no
+  access logging, same client, same host, run back to back.
+* The asyncio servers run a single-threaded event loop. pocketsocket
+  runs a dedicated io thread plus a worker pool, which costs a thread
+  handoff per message but scales across cores. On a small host that
+  handoff is visible; on a larger host it is what buys headroom.
+* ps-nim-echo has no equivalent among the others: the message never
+  enters Python at all.
+

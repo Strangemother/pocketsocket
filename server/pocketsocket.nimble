@@ -1,5 +1,5 @@
 # Package
-version       = "2.0.7"
+version       = "2.0.8"
 author        = "Strangemother"
 description   = "websocket server"
 license       = "MIT"

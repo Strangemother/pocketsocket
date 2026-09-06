@@ -1,31 +1,6 @@
 #!/usr/bin/env python
 
-"""
-Run:
-
-    python tool.py --test [nim|py|all]
-    python tool.py --coverage [nim|py|c|all] ...
-    python tool.py -C nim py
-    python tool.py -C all
-python tool.py --bump [major|minor|patch]
-python tool.py --set-version <version>
-python tool.py --test --compile
-python tool.py --test --compile --benchmark --tag 2-0-4-2-cleanup --strip-prefix
-python tool.py --test --compile --benchmark --tag 2-0-4-2-cleanup --strip-prefix --coverage-nim --coverage-c
-
-1. Tests are all tests
-    nimble test
-
-2. compile is 'build' all the things
-    python server/compile.py
-
-3. benchmark is run the full suite
-    python utils/benchmarks/run_all.py --tag 2-0-4-2-cleanup --strip-prefix
-
-4. coverage is run the coverage suite
-    server/scripts/coverage.sh #nim
-    server/scripts/c_coverage.sh #c
-"""
+"""Run PocketSocket development tasks from any working directory."""
 
 import argparse
 import os
@@ -35,7 +10,7 @@ import sys
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
 VERSION_FILE = ROOT / "server" / "VERSION"
 VERSION_PATTERN = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
@@ -82,9 +57,7 @@ def main():
     mode.add_argument(
         "--release", action="store_true", help="use the release server"
     )
-    parser.add_argument(
-        "--tag", default="", help="benchmark result tag"
-    )
+    parser.add_argument("--tag", default="", help="benchmark result tag")
     parser.add_argument(
         "--strip-prefix",
         action="store_true",
@@ -228,7 +201,7 @@ def update_version(bump, explicit_version):
             new_version = f"{major}.{minor}.{patch + 1}"
 
     write_version(new_version)
-    return True 
+    return True
 
 
 if __name__ == "__main__":
