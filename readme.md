@@ -19,7 +19,7 @@ Pocketsocket _acts_ like its own stack. It handles itself, and the websocket pro
 
 ### Standalone
 
-Download the latest binary release from [Releases](https://github.com/strangemother/pocketsocket-2/releases)
+Download the latest binary release from [Releases](https://github.com/strangemother/pocketsocket/releases)
 
 
 </td>
@@ -46,7 +46,7 @@ Compiled for Windows, Linux, and MacOS:
 ```bash
 $ ./pocketsocket-cli --run 
 Run
-Discovering: /workspaces/pocketsocket-2/server/templates/index.html
+Discovering: /workspaces/pocketsocket/server/templates/index.html
 Template Set. Length: 278
 Serving on http://127.0.0.1:8090
 TTL: 664 microseconds and 116 nanoseconds

@@ -1,4 +1,4 @@
-import mummy, mummy/routers
+import ../mummy, ../mummy/routers
 import std/strutils
 import pocketsocketpkg/socket_tools
 import submodule

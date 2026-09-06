@@ -61,7 +61,7 @@ cat <<EOF
 
 Ready. To run the benchmarks:
 
-    python3 benchmarks/run_all.py --tag \$(nproc)core
+    python3 utils/benchmarks/run_all.py --tag \$(nproc)core
 
 Add nim to your PATH in new shells with:
 

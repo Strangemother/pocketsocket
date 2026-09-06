@@ -1,4 +1,4 @@
-import mummy
+import ../mummy
 import std/tables
 
 import config

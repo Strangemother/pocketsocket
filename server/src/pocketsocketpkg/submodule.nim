@@ -7,7 +7,7 @@ import dynlib
 import std/files
 import std/paths
 import os
-import mummy
+import ../mummy
 import config
 
 # Make a function prototype

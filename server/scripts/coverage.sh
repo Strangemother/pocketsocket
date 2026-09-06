@@ -3,7 +3,7 @@
 set -Eeuo pipefail
 
 SERVER_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-COVERAGE_DIR="$SERVER_DIR/coverage"
+COVERAGE_DIR="$SERVER_DIR/../results/coverage/nim"
 NIMCACHE_DIR="$COVERAGE_DIR/nimcache"
 REPORT_SOURCE="$COVERAGE_DIR/lcov.info"
 TEST_TARGET_DIR="$SERVER_DIR/.coco-tests"

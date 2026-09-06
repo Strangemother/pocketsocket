@@ -34,3 +34,11 @@ The current partial mitigation is:
 --mm:arc
 -d:useMalloc
 ```
+
+## Windows
+
+For dev on windows:
+
+1. Install Nim: https://nim-lang.org/install_windows.html
+2. Install gcc (mingw-w64) https://www.msys2.org/
+    info: https://code.visualstudio.com/docs/cpp/config-mingw

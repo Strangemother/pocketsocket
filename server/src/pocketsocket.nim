@@ -33,7 +33,9 @@ import pocketsocketpkg/service
 import std/dirs 
 import std/paths
 
-let args = docopt(doc, version = "PocketSocket 2.0.4")
+const packageVersion = staticRead("../VERSION").strip()
+
+let args = docopt(doc, version = "PocketSocket " & packageVersion)
 
 if args["--run"]:
   service.poke_wake_time()

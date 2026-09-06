@@ -1,7 +1,7 @@
 import std/locks
 import std/hashes, std/tables
 import socket_tools
-import mummy
+import ../mummy
 
 import hook
 import websocket_dispatch
@@ -79,6 +79,7 @@ proc locked_remove_client*(websocket: WebSocket): void =
       let uuid = getWebSocketUUID(websocket)
       clientSheet.del(uuid)
       removeContext(uuid)
+
 
 proc locked_has_client*(websocket: WebSocket): bool =
   {.gcsafe.}:

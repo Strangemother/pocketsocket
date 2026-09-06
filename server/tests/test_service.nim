@@ -7,7 +7,6 @@ import mummy
 import pocketsocketpkg/service
 
 suite "service layer tests":
-  
   # Test the wrapper functions that use websocket_dispatch
   
   test "send_all wrapper returns 0 with no clients":
@@ -112,3 +111,16 @@ suite "service integration":
     set_broadcast_mode(false)
     set_print_mode(false)
     check true  # All functions executed successfully
+
+suite "service non-blocking server tests":
+  test "nonblocking server procedure is available":
+    check compiles(run_nonblocking_server(
+      "127.0.0.1", 18090, 1, 64 * 1024, 1024 * 1024, true
+    ))
+    
+  test "nonblocking server starts and shuts down":
+    try:
+      run_nonblocking_server("127.0.0.1", 18090, 1)
+      check true
+    finally:
+      shutdown_server()

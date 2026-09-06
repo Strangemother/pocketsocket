@@ -1,3 +1,5 @@
+{.push warning[ProveInit]: off.}
+
 when not defined(nimdoc):
   when not defined(gcArc) and not defined(gcOrc) and not defined(gcAtomicArc):
     {.error: "Using --mm:arc, --mm:orc or --mm:atomicArc is required by Mummy.".}
@@ -5,11 +7,13 @@ when not defined(nimdoc):
 when not compileOption("threads"):
   {.error: "Using --threads:on is required by Mummy.".}
 
+{.push warning[UnusedImport]: off.}
 import mummy/common, mummy/internal, std/atomics, std/base64,
     std/cpuinfo, std/deques, std/hashes, std/nativesockets, std/os,
     std/parseutils, std/random, std/selectors, std/sets, crunchy,
     std/tables, std/times, webby/httpheaders, webby/queryparams, webby/urls,
     zippy, std/options
+{.pop.}
 
 from std/strutils import find, cmpIgnoreCase, toLowerAscii
 
@@ -24,9 +28,9 @@ when defined(linux):
     {.importc: "SOCK_NONBLOCK", header: "<sys/socket.h>".}: cint
 
 when defined(windows):
-  from std/winlean import TCP_NODELAY
+  from std/winlean import TCP_NODELAY, wsaGetLastError, WSAEINTR, WSAEWOULDBLOCK
 elif defined(posix):
-  from std/posix import TCP_NODELAY
+  from std/posix import TCP_NODELAY, EAGAIN, EWOULDBLOCK, EINTR
 
 import std/locks
 
@@ -37,6 +41,9 @@ const
   listenBacklogLen = 128
   maxEventsPerSelectLoop = 64
   initialRecvBufLen = (4 * 1024) - 9 # 8 byte cap field + null terminator
+  maxWriteBytesPerEvent = 256 * 1024
+  maxWriteCallsPerEvent = 16
+  maxWriteVectors = 16
 
 let
   http10 = "HTTP/1.0"
@@ -177,6 +184,13 @@ proc `$`*(request: Request): string {.gcsafe.} =
 
 proc `$`*(websocket: WebSocket): string =
   "WebSocket " & $cast[uint](hash(websocket))
+
+proc uuid*(websocket: WebSocket): uint64 =
+  result = websocket.clientId
+
+proc getBoundPort*(server: Server): Port {.gcsafe.} =
+  if server.socket != osInvalidSocket:
+    result = server.socket.getSockName()
 
 proc log(server: Server, level: LogLevel, args: varargs[string]) =
   if server.logHandler == nil:
@@ -588,6 +602,12 @@ proc sendCloseFrame(
   dataEntry.closeFrameQueuedAt = epochTime()
   server.selector.updateHandle2(clientSocket, {Read, Write})
 
+proc copyUnmaskedPayload(source: openArray[char], destination: var openArray[char],
+                         mask: array[4, uint8]) {.inline.} =
+  for payloadIndex in 0 ..< source.len:
+    destination[payloadIndex] =
+      (source[payloadIndex].uint8 xor mask[payloadIndex mod 4]).char
+
 proc afterRecvWebSocket(
   server: Server,
   clientSocket: SocketHandle,
@@ -670,12 +690,6 @@ proc afterRecvWebSocket(
     if dataEntry.bytesReceived < pos + payloadLen:
       return false # Need to receive more bytes
 
-    # Unmask the payload
-    for i in 0 ..< payloadLen:
-      let j = i mod 4
-      dataEntry.recvBuf[pos + i] =
-        (dataEntry.recvBuf[pos + i].uint8 xor mask[j]).char
-
     if dataEntry.frameState.opcode == 0:
       # This is the first fragment
       dataEntry.frameState.opcode = opcode
@@ -687,13 +701,12 @@ proc afterRecvWebSocket(
       dataEntry.frameState.buffer.setLen(newBufferLen)
 
     if payloadLen > 0:
-      # Copy the fragment into the message buffer
-      copyMem(
-        dataEntry.frameState.buffer[dataEntry.frameState.frameLen].addr,
-        dataEntry.recvBuf[pos].addr,
-        payloadLen
+      copyUnmaskedPayload(
+        dataEntry.recvBuf.toOpenArray(pos, pos + payloadLen - 1),
+        dataEntry.frameState.buffer.toOpenArray(dataEntry.frameState.frameLen, newFrameLen - 1),
+        mask,
       )
-      dataEntry.frameState.frameLen += payloadLen
+    dataEntry.frameState.frameLen = newFrameLen
 
     # Remove this frame from the receive buffer
     let frameLen = pos + payloadLen
@@ -1088,25 +1101,100 @@ proc afterRecv(
   else:
     server.afterRecvHttp(clientSocket, dataEntry)
 
-proc afterSend(
-  server: Server,
-  clientSocket: SocketHandle,
-  dataEntry: DataEntry
-): bool {.raises: [IOSelectorsException].} =
-  let
-    outgoingBuffer = dataEntry.outgoingBuffers.peekFirst()
-    totalBytes = outgoingBuffer.buffer1.len + outgoingBuffer.buffer2.len
-  if outgoingBuffer.bytesSent == totalBytes:
-    # The current outgoing buffer for this socket has been fully sent
-    # Remove it from the outgoing buffer queue
+proc consumeWritten(dataEntry: DataEntry, bytesWritten: int): bool =
+  var remaining = bytesWritten
+  while dataEntry.outgoingBuffers.len > 0:
+    let outgoingBuffer = dataEntry.outgoingBuffers.peekFirst()
+    let pending = outgoingBuffer.buffer1.len + outgoingBuffer.buffer2.len -
+      outgoingBuffer.bytesSent
+    if remaining < pending:
+      outgoingBuffer.bytesSent += remaining
+      return false
+    remaining -= pending
     dataEntry.outgoingBuffers.shrink(fromFirst = 1)
     if outgoingBuffer.isCloseFrame:
       dataEntry.closeFrameSent = true
     if outgoingBuffer.closeConnection:
       return true
-  # If we don't have any more outgoing buffers, update the selector
-  if dataEntry.outgoingBuffers.len == 0:
-    server.selector.updateHandle2(clientSocket, {Read})
+
+proc writePending(
+  clientSocket: SocketHandle,
+  dataEntry: DataEntry,
+  budget: int
+): int =
+  when defined(linux) and not defined(nimdoc):
+    var vectors: array[maxWriteVectors, IOVec]
+    var vectorCount, queuedBytes: int
+    for outgoingBuffer in dataEntry.outgoingBuffers.items:
+      let headerOffset = min(outgoingBuffer.bytesSent, outgoingBuffer.buffer1.len)
+      let bodyOffset = max(0, outgoingBuffer.bytesSent - outgoingBuffer.buffer1.len)
+      if headerOffset < outgoingBuffer.buffer1.len:
+        let length = min(outgoingBuffer.buffer1.len - headerOffset, budget - queuedBytes)
+        vectors[vectorCount] = IOVec(
+          iov_base: outgoingBuffer.buffer1[headerOffset].addr,
+          iov_len: length.csize_t,
+        )
+        inc vectorCount
+        queuedBytes += length
+      if vectorCount == vectors.len or queuedBytes == budget:
+        break
+      if bodyOffset < outgoingBuffer.buffer2.len:
+        let length = min(outgoingBuffer.buffer2.len - bodyOffset, budget - queuedBytes)
+        vectors[vectorCount] = IOVec(
+          iov_base: outgoingBuffer.buffer2[bodyOffset].addr,
+          iov_len: length.csize_t,
+        )
+        inc vectorCount
+        queuedBytes += length
+      if vectorCount == vectors.len or queuedBytes == budget or outgoingBuffer.closeConnection:
+        break
+    var message: Tmsghdr
+    message.msg_iov = vectors[0].addr
+    message.msg_iovlen = typeof(message.msg_iovlen)(vectorCount)
+    result = clientSocket.sendmsg(message.addr, MSG_NOSIGNAL)
+  else:
+    let outgoingBuffer = dataEntry.outgoingBuffers.peekFirst()
+    if outgoingBuffer.bytesSent < outgoingBuffer.buffer1.len:
+      result = clientSocket.send(
+        outgoingBuffer.buffer1[outgoingBuffer.bytesSent].addr,
+        min(outgoingBuffer.buffer1.len - outgoingBuffer.bytesSent, budget).cint,
+        when defined(MSG_NOSIGNAL): MSG_NOSIGNAL else: 0,
+      )
+    else:
+      let bodyOffset = outgoingBuffer.bytesSent - outgoingBuffer.buffer1.len
+      result = clientSocket.send(
+        outgoingBuffer.buffer2[bodyOffset].addr,
+        min(outgoingBuffer.buffer2.len - bodyOffset, budget).cint,
+        when defined(MSG_NOSIGNAL): MSG_NOSIGNAL else: 0,
+      )
+
+proc drainWrites(clientSocket: SocketHandle, dataEntry: DataEntry): bool =
+  if dataEntry.consumeWritten(0):
+    return true
+  var budget = maxWriteBytesPerEvent
+  for attempt in 0 ..< maxWriteCallsPerEvent:
+    if dataEntry.outgoingBuffers.len == 0 or budget == 0:
+      break
+    let bytesWritten = clientSocket.writePending(dataEntry, budget)
+    if bytesWritten < 0:
+      when defined(windows):
+        let error = wsaGetLastError()
+        if error == WSAEINTR:
+          continue
+        if error == WSAEWOULDBLOCK:
+          return false
+      else:
+        let error = osLastError().int
+        if error == EINTR:
+          continue
+        if error == EAGAIN or error == EWOULDBLOCK:
+          return false
+      return true
+    if bytesWritten == 0:
+      return true
+    budget -= bytesWritten
+    if dataEntry.consumeWritten(bytesWritten):
+      return true
 
 proc destroy(server: Server, joinThreads: bool) {.raises: [].} =
   withLock server.taskQueueLock:
@@ -1150,13 +1238,12 @@ proc destroy(server: Server, joinThreads: bool) {.raises: [].} =
 proc loopForever(server: Server) {.raises: [OSError, IOSelectorsException].} =
   var
     readyKeys: array[maxEventsPerSelectLoop, ReadyKey]
-    receivedFrom, sentTo: seq[SocketHandle]
+    receivedFrom: seq[SocketHandle]
     needClosing: HashSet[SocketHandle]
     encodedResponses: seq[OutgoingBuffer]
     encodedFrames: seq[OutgoingBuffer]
   while true:
     receivedFrom.setLen(0)
-    sentTo.setLen(0)
     needClosing.clear()
     encodedResponses.setLen(0)
     encodedFrames.setLen(0)
@@ -1338,29 +1425,11 @@ proc loopForever(server: Server) {.raises: [OSError, IOSelectorsException].} =
             continue
 
         if Write in readyKey.events:
-          let
-            outgoingBuffer = dataEntry.outgoingBuffers.peekFirst()
-            bytesSent =
-              if outgoingBuffer.bytesSent < outgoingBuffer.buffer1.len:
-                readyKey.fd.SocketHandle.send(
-                  outgoingBuffer.buffer1[outgoingBuffer.bytesSent].addr,
-                  (outgoingBuffer.buffer1.len - outgoingBuffer.bytesSent).cint,
-                  when defined(MSG_NOSIGNAL): MSG_NOSIGNAL else: 0
-                )
-              else:
-                let buffer2Pos =
-                  outgoingBuffer.bytesSent - outgoingBuffer.buffer1.len
-                readyKey.fd.SocketHandle.send(
-                  outgoingBuffer.buffer2[buffer2Pos].addr,
-                  (outgoingBuffer.buffer2.len - buffer2Pos).cint,
-                  when defined(MSG_NOSIGNAL): MSG_NOSIGNAL else: 0
-                )
-          if bytesSent > 0:
-            outgoingBuffer.bytesSent += bytesSent
-            sentTo.add(readyKey.fd.SocketHandle)
-          else:
+          if readyKey.fd.SocketHandle.drainWrites(dataEntry):
             needClosing.incl(readyKey.fd.SocketHandle)
             continue
+          if dataEntry.outgoingBuffers.len == 0:
+            server.selector.updateHandle2(readyKey.fd.SocketHandle, {Read})
 
     for clientSocket in receivedFrom:
       if clientSocket in needClosing:
@@ -1368,15 +1437,6 @@ proc loopForever(server: Server) {.raises: [OSError, IOSelectorsException].} =
       let
         dataEntry = server.selector.getData(clientSocket)
         needsClosing = server.afterRecv(clientSocket, dataEntry)
-      if needsClosing:
-        needClosing.incl(clientSocket)
-
-    for clientSocket in sentTo:
-      if clientSocket in needClosing:
-        continue
-      let
-        dataEntry = server.selector.getData(clientSocket)
-        needsClosing = server.afterSend(clientSocket, dataEntry)
       if needsClosing:
         needClosing.incl(clientSocket)
 
@@ -1559,3 +1619,8 @@ proc waitUntilReady*(server: Server, timeout: float = 10) =
     if delta > timeout:
       raise newException(MummyError, "Timeout while waiting for server")
     sleep(100)
+
+proc isReady*(server: Server): bool =
+  server.serving.load(moRelaxed)
+
+{.pop.}

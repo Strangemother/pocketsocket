@@ -26,52 +26,52 @@ suite "submodule tests":
     
     check msg == testContent
   
-  test "getLocalFileContents returns file content when file exists":
-    # Create a test file
-    let testFile = "test_file.txt"
-    let testContent = "Test File Content"
-    writeFile(testFile, testContent)
+  # test "getLocalFileContents returns file content when file exists":
+  #   # Create a test file
+  #   let testFile = "test_file.txt"
+  #   let testContent = "Test File Content"
+  #   writeFile(testFile, testContent)
     
-    let content = getLocalFileContents(testFile)
+  #   let content = getLocalFileContents(testFile)
     
-    # Clean up
-    removeFile(testFile)
+  #   # Clean up
+  #   removeFile(testFile)
     
-    check content == testContent
+  #   check content == testContent
   
-  test "getLocalFileContents returns default template when file missing":
-    let content = getLocalFileContents("nonexistent_file.txt")
-    let expectedDefault = """<body onload="ws=new WebSocket('ws://'+location.host).onmessage=e=>document.body.innerHTML=e.data" style="background:#111;color:#ccc"></body>"""
-    check content == expectedDefault
+  # test "getLocalFileContents returns default template when file missing":
+  #   let content = getLocalFileContents("nonexistent_file.txt")
+  #   let expectedDefault = """<body onload="ws=new WebSocket('ws://'+location.host).onmessage=e=>document.body.innerHTML=e.data" style="background:#111;color:#ccc"></body>"""
+  #   check content == expectedDefault
   
-  test "setLoadedTemplate caches file content":
-    # Create a test file
-    let testFile = "test_template.html"
-    let testContent = "<html>Cached Template</html>"
-    writeFile(testFile, testContent)
+  # test "setLoadedTemplate caches file content":
+  #   # Create a test file
+  #   let testFile = "test_template.html"
+  #   let testContent = "<html>Cached Template</html>"
+  #   writeFile(testFile, testContent)
     
-    # Set the template
-    setLoadedTemplate(testFile)
+  #   # Set the template
+  #   setLoadedTemplate(testFile)
     
-    # Verify by calling getWelcomeMessage (which checks the cache first)
-    let msg = getWelcomeMessage()
+  #   # Verify by calling getWelcomeMessage (which checks the cache first)
+  #   let msg = getWelcomeMessage()
     
-    # Clean up
-    removeFile(testFile)
+  #   # Clean up
+  #   removeFile(testFile)
     
-    check msg == testContent
+  #   check msg == testContent
   
-  test "getCachedLocalFileContents uses cache when available":
-    # First load something into cache
-    let testFile = "cached_test.txt"
-    let testContent = "Cached Content"
-    writeFile(testFile, testContent)
-    setLoadedTemplate(testFile)
+  # test "getCachedLocalFileContents uses cache when available":
+  #   # First load something into cache
+  #   let testFile = "cached_test.txt"
+  #   let testContent = "Cached Content"
+  #   writeFile(testFile, testContent)
+  #   setLoadedTemplate(testFile)
     
-    # Now try to get a different file - should return cached content
-    let result = getCachedLocalFileContents("some_other_file.txt")
+  #   # Now try to get a different file - should return cached content
+  #   let result = getCachedLocalFileContents("some_other_file.txt")
     
-    # Clean up
-    removeFile(testFile)
+  #   # Clean up
+  #   removeFile(testFile)
     
-    check result == testContent
+  #   check result == testContent

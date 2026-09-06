@@ -1,16 +1,15 @@
-#[
-  The primary interface for the pocketsocket app, connecting to the ingress
-  and service.
+#[ 
+  Python exposed primary interface for the pocketsocket app, 
+  connecting to the ingress and service.
 ]#
-
-# This is just an example to get you started. A typical hybrid package
-# uses this file as the main entry point of the application.
-
+import std/strutils
 import nimpy
 import nimpy/py_lib as lib
 import service
 import hook
-import mummy
+import ../mummy
+
+const packageVersion = staticRead("../../VERSION").strip()
 
 
 proc hook*(p: PyObject): int {.exportpy.} =
@@ -80,5 +79,36 @@ proc run_blocking_server*(
                               max_message_len, max_body_len, tcp_no_delay)
 
 
+proc run_nonblocking_server*(
+    address: string = "127.0.0.1",
+    port: int = 8090,
+    worker_threads: int = 0,
+    max_message_len: int = 64 * 1024,
+    max_body_len: int = 1024 * 1024,
+    tcp_no_delay: bool = true
+  ): void {.exportpy.} =
+  service.run_nonblocking_server(
+    address,
+    port,
+    worker_threads,
+    max_message_len,
+    max_body_len,
+    tcp_no_delay,
+  )
+
+
 proc shutdown_server*(): void {.exportpy.} =
   service.shutdown_server()
+
+
+proc is_server_running*(): bool {.exportpy.} =
+  service.isServerRunning()
+
+
+proc get_port*(): int {.exportpy.} =
+  service.get_port()
+
+
+proc version*(): string {.exportpy.} =
+  result = "v" & packageVersion
+

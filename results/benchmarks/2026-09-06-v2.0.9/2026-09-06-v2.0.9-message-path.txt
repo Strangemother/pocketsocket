@@ -1,0 +1,159 @@
+==============================================================================
+pocketsocket - Message Path Benchmark
+==============================================================================
+Date       : 2026-09-06T17:51:29
+Python     : 3.12.1
+Platform   : Linux-6.8.0-1052-azure-x86_64-with-glibc2.39
+CPU count  : 2
+
+All client load is raw sockets with pre-built frames. Concurrent load
+uses separate processes so client-side GIL contention cannot be
+mistaken for server-side contention.
+
+Modes:
+  ps-ingest         no callback, message dropped   (framing floor)
+  ps-nim-echo       Nim reflects to sender          (no python)
+  ps-nim-broadcast  Nim fans out to others          (no python)
+  ps-hook-noop      python callback, no send        (bridge cost only)
+  ps-hook-echo      python callback + ps.send()     (real-world)
+  ps-hook-broadcast python callback + ps.send_all()
+
+------------------------------------------------------------------------------
+0. CLIENT CALIBRATION  (no server, no kernel)
+------------------------------------------------------------------------------
+
+How fast this benchmark's own client can parse frames. Any throughput
+figure approaching these numbers is measuring Python, not pocketsocket.
+
+    size    client ceiling msg/s
+     64B                 468,190
+     1KB                 525,995
+    16KB                 285,688
+
+------------------------------------------------------------------------------
+1. ROUND-TRIP LATENCY  (1 connection, 1 message in flight)
+------------------------------------------------------------------------------
+
+mode                 size      min      p50      p90      p99       max      msg/s
+                                us       us       us       us        us           
+ps-nim-echo           64B     18.3     43.9     53.5    106.8    3082.3     20,913
+ps-nim-echo           1KB     19.4     37.0     52.8     65.1    4045.1     23,224
+ps-nim-echo          16KB     32.0     52.9     59.8     81.3     575.0     18,874
+
+ps-hook-echo          64B     35.2     53.3     91.1    240.7    4349.0     14,399
+ps-hook-echo          1KB     31.2     60.8     73.3    128.5    2392.0     15,226
+ps-hook-echo         16KB     59.0     81.5     97.2    141.5    3406.2     10,785
+
+
+------------------------------------------------------------------------------
+2. THROUGHPUT  (1 connection, 256 frames per syscall)
+------------------------------------------------------------------------------
+
+Batched so client syscall cost cannot dominate; see section 0.
+
+mode                  size     msgs     sec       msg/s      MB/s
+ps-nim-echo            64B   20,000   0.065     309,008      18.9
+ps-nim-echo            1KB   20,000   0.163     122,497     119.6
+ps-nim-echo           16KB    4,000   0.154      26,018     406.5
+ps-nim-echo           64KB    4,000   0.413       9,692     605.8
+
+ps-hook-echo           64B   20,000   0.350      57,090       3.5
+ps-hook-echo           1KB   20,000   0.401      49,837      48.7
+ps-hook-echo          16KB    4,000   0.158      25,316     395.6
+ps-hook-echo          64KB    4,000   0.500       7,999     500.0
+
+
+------------------------------------------------------------------------------
+3. COST DECOMPOSITION  (64B, N messages fully handled)
+------------------------------------------------------------------------------
+
+The same workload against progressively more expensive paths. Every
+row except the first is acknowledged, so these are true 'processed N
+messages' rates.
+
+mode                   msgs     sec       msg/s    MB/s  vs floor   stdout B
+ps-ingest           300,000   1.078     278,406    17.0      100%          0
+ps-nim-echo          30,000   0.147     204,300    12.5       73%          0
+ps-hook-noop         30,000   0.303      98,983     6.0       36%          0
+ps-hook-echo         30,000   0.562      53,379     3.3       19%          0
+
+HOW TO READ THIS
+  ps-ingest and ps-hook-noop are ONE-WAY: inbound only, one thread
+  handoff per message (io thread -> worker).
+  ps-nim-echo and ps-hook-echo are ROUND TRIP: they add the outbound
+  path, which is a second handoff back to the io thread.
+
+  If ps-nim-echo and ps-hook-echo land close together, the Python
+  bridge is NOT the limiting factor -- mummy's per-message thread
+  handoff is. Optimising the GIL bridge further would then be wasted
+  effort for this workload.
+
+------------------------------------------------------------------------------
+4. CONCURRENCY SCALING  (echo, 64B, window=64)
+------------------------------------------------------------------------------
+
+mummy claims a websocket per worker thread and drains its queue in
+order, so one connection is serviced serially. Contention only appears
+across connections.
+
+  !! 2 vCPU host. Client processes compete with the server for
+     CPU, so anything past ~2 clients reflects host oversubscription
+     rather than pocketsocket. Shape only, not absolute numbers.
+
+client counts: 1, 2, 4, 8
+
+mode               clients     msgs     sec  total msg/s  per-client  scaling
+ps-nim-echo              1    8,000   0.070      114,236     114,236    1.00x
+ps-nim-echo              2   16,000   0.128      124,914      62,457    1.09x
+ps-nim-echo              4   32,000   0.229      139,850      34,962    1.22x
+ps-nim-echo              8   64,000   0.435      147,131      18,391    1.29x
+
+ps-hook-echo             1    8,000   0.129       62,024      62,024    1.00x
+ps-hook-echo             2   16,000   0.342       46,839      23,420    0.76x
+ps-hook-echo             4   32,000   0.524       61,018      15,255    0.98x
+ps-hook-echo             8   64,000   1.303       49,099       6,137    0.79x
+
+
+------------------------------------------------------------------------------
+5. BROADCAST FAN-OUT  (1 sender -> N receivers, 64B)
+------------------------------------------------------------------------------
+
+mode                recv   in msg/s   out msg/s     MB/s      delivered
+ps-nim-broadcast       2     48,225      96,450      5.9    6,000/6,000
+ps-nim-broadcast       8     24,450     195,596     11.9  24,000/24,000
+
+ps-hook-broadcast      2     49,924      99,848      6.1    6,000/6,000
+ps-hook-broadcast      8     27,270     218,161     13.3  24,000/24,000
+
+
+------------------------------------------------------------------------------
+6. CONNECTION ESTABLISHMENT  (handshake + connect callback)
+------------------------------------------------------------------------------
+
+mode                conns     sec     conn/s   ms each
+ps-ingest             500   0.073      6,880     0.145
+ps-nim-echo           500   0.082      6,134     0.163
+ps-hook-echo          500   0.084      5,987     0.167
+
+------------------------------------------------------------------------------
+7. HOT-PATH LOGGING VOLUME
+------------------------------------------------------------------------------
+
+Any per-message stdout write is a syscall on the hot path. This should
+read zero for every mode unless set_print_mode(True) is on.
+
+mode                   msgs   stdout bytes   bytes/msg
+ps-nim-echo           5,000              0        0.00
+ps-hook-echo          5,000              0        0.00
+ps-hook-broadcast     5,000              0        0.00
+
+==============================================================================
+NOTES
+==============================================================================
+* Latency includes the whole client->kernel->server->kernel->client
+  loop on loopback. Subtract roughly 20-40us to approximate the
+  server-only cost.
+* Every Python callback serialises on the GIL. That is inherent to
+  CPython, not to pocketsocket's bridge. The ps-nim-* rows show the
+  ceiling available when python is not in the message path.
+

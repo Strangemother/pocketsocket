@@ -1,6 +1,6 @@
 # import std/hashes
 
-import mummy
+import ../mummy
 import nimpy
 import nimpy/py_lib as lib
 import socket_tools
@@ -29,8 +29,8 @@ proc call_py_hook*(
       messageDict["kind"] = message.kind.ord
       messageDict["data"] = message.data
       ## TODO: Add headers to the python hook call.
-      if message.kind.ord == 0:
-        echo "open"
+      # if message.kind.ord == 0:
+      #   echo "open"
       # messageDict["headers"] = headersDict
 
       let info: PyObject = pyHook.callObject(
