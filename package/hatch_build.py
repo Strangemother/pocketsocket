@@ -1,5 +1,6 @@
 from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 from pathlib import Path
+import sysconfig
 
 
 class CustomHook(BuildHookInterface):
@@ -8,6 +9,15 @@ class CustomHook(BuildHookInterface):
         build_data["pure_python"] = False
 
         package_root = Path(self.root) / "package"
-        for pattern in ("pocketsocket_server*.so", "pocketsocket_server*.pyd"):
-            for artifact in package_root.glob(pattern):
-                build_data.setdefault("force_include", {})[str(artifact)] = artifact.name
+        suffix = sysconfig.get_config_var("EXT_SUFFIX")
+        if not suffix:
+            raise RuntimeError("Python did not provide a native extension suffix")
+        artifact = package_root / f"pocketsocket_server{suffix}"
+        if not artifact.is_file():
+            if version == "editable":
+                return
+            raise RuntimeError(
+                f"Missing native extension for this interpreter: {artifact.name}. "
+                "Run server/compile.py pyd with this Python before building the wheel."
+            )
+        build_data.setdefault("force_include", {})[str(artifact)] = artifact.name

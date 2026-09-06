@@ -137,6 +137,51 @@ hatch build -t wheel
 The wheel is written to `dist/` and contains both the `pocketsocket` wrapper
 and the top-level `pocketsocket_server` native extension.
 
+The wheel hook includes only the extension matching the build interpreter's
+`EXT_SUFFIX`. Compile and build with the same Python. A distributable wheel
+fails if that extension is missing; editable installation remains available
+before compilation. Benchmark outputs and development executables are not
+included in runtime wheels.
+
+### Release validation
+
+GitHub Actions uses Nim 2.2.10 on Linux x64/ARM64, macOS Intel/Apple Silicon,
+and Windows x64. Each runner builds and launches the CLI, runs the native
+writer/receive regression tests, and builds wheels with cibuildwheel. Each
+installed wheel must import its native module, report the metadata version,
+and echo text and binary WebSocket messages through a Python callback.
+
+Free-threaded CPython wheels (`cp*t-*`) are excluded: the current native
+integration segfaulted during the CPython 3.14t installed-wheel smoke test.
+Regular GIL-enabled CPython 3.10 through 3.14 remains in the build matrix.
+Free-threaded support requires a separate native compatibility fix and runtime
+validation before those wheels can be distributed.
+
+Run the packaging selection tests locally with Hatchling installed:
+
+```bash
+python3 -m unittest discover -s package/tests -p test_wheel_build.py
+```
+
+To reproduce one Linux wheel build, including repair and installed-wheel
+testing, install Docker and cibuildwheel 3.1.1 and run from the repository root:
+
+```bash
+CIBW_BUILD='cp312-manylinux_x86_64' python3 -m cibuildwheel --platform linux
+```
+
+Source archives contain the Nim sources but do not compile them during a normal
+`pip install`. To build from an extracted source archive, install Nim and a C
+toolchain, run `nimble install --depsOnly -y` in `server/`, then compile with
+`POCKETSOCKET_PYTHON=python nimble buildPyd -d:release` before building the wheel
+from the archive root. On Windows, set `POCKETSOCKET_PYTHON` using PowerShell's
+`$env:POCKETSOCKET_PYTHON = "python"` first.
+
+Keep Python and Nim metadata synchronized with `server/VERSION` using
+`python3 utils/tool.py --set-version VERSION` before tagging. The release
+workflow currently publishes to **TestPyPI**, not production PyPI. A successful
+local Linux check does not replace the complete hosted platform matrix.
+
 ### Check the package import
 
 ```bash

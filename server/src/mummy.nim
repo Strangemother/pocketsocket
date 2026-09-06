@@ -1150,7 +1150,7 @@ proc writePending(
         break
     var message: Tmsghdr
     message.msg_iov = vectors[0].addr
-    message.msg_iovlen = vectorCount.csize_t
+    message.msg_iovlen = typeof(message.msg_iovlen)(vectorCount)
     result = clientSocket.sendmsg(message.addr, MSG_NOSIGNAL)
   else:
     let outgoingBuffer = dataEntry.outgoingBuffers.peekFirst()
