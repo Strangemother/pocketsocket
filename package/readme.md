@@ -163,6 +163,12 @@ native build selects x86 for Python's `win32` suffix and x64 for `win_amd64`,
 independently of the host Nim compiler's architecture. Both release and debug
 extension tasks use this selection; the standalone CLI build is unchanged.
 
+Nim 2.2.10 removes the legacy `far` macro after including Windows headers.
+MSVC's Winsock `FD_*` macros still need it when expanded. Windows extension
+builds therefore force-include `server/src/pocketsocket_winsock_compat.h`, which
+wraps those operations before the macro is removed. CI tests the wrappers with
+MSVC for both x86 and x64 after reproducing Nim's macro removal.
+
 Run the packaging selection tests locally with Hatchling installed:
 
 ```bash

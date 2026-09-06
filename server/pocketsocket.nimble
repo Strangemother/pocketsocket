@@ -40,6 +40,7 @@ print(sysconfig.get_config_var("EXT_SUFFIX"))
 
   if extSuffix.endsWith(".pyd"):
     switch("cc", "vcc")
+    switch("passC", "/FI\"" & absolutePath(srcDir / "pocketsocket_winsock_compat.h") & "\"")
     if extSuffix.endsWith("-win32.pyd"):
       switch("cpu", "i386")
     elif extSuffix.endsWith("-win_amd64.pyd"):
