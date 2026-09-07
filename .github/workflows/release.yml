@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Download all built artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           merge-multiple: true
 
@@ -36,7 +36,7 @@ jobs:
       # INFO: Switch to this if you only want exes uploaded on release
       #
       # - name: Download all built binaries
-      #   uses: actions/download-artifact@v4
+      #   uses: actions/download-artifact@v8
       #   with:
       #     pattern: exe-*
       #     merge-multiple: true
@@ -61,13 +61,13 @@ jobs:
 
     steps:
       - name: Download built sdist
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: sdist
           path: dist
 
       - name: Download built wheels
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: wheels-*
           path: dist
