@@ -29,7 +29,7 @@ jobs:
           python3 -m pip install hatchling
           python3 -m unittest discover -s package/tests -p test_wheel_build.py
       - run: hatch build -t sdist
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: sdist
           path: ./dist/*.tar.gz
@@ -83,7 +83,7 @@ jobs:
           done
 
       - name: Upload CLI
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: exe-${{ matrix.runner }}
           path: dist/pocketsocket-cli*
@@ -106,7 +106,7 @@ jobs:
         uses: pypa/cibuildwheel@v3.1.1
 
       - name: Upload wheels
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wheels-${{ matrix.runner }}
           path: ./wheelhouse/*.whl
