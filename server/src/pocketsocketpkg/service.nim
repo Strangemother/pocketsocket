@@ -183,7 +183,7 @@ proc run_blocking_server*(
     server = newServer
 
   let total_time: Duration = getMonoTime() - wake_time
-  echo "TTL: ", $total_time
+  echo "TTL: ", $total_time, " Starting server on: ", address, ":", port
   # serve() blocks this (python) thread; hand the GIL back so mummy's worker
   # threads are able to acquire it when calling the python hook.
   let threadState = gil.save_thread()

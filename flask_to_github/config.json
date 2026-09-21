@@ -1,0 +1,15 @@
+{
+  "project_root": "..",
+  "base_url": "http://127.0.0.1:9050/",
+  "output_dir": "../github-pages",
+  "max_pages": 300,
+  "stylesheet_path": "/static/style.css",
+  "stylesheet_output": "style.css",
+  "manifest_file": ".generated-pages.json",
+  "ignore_patterns": [
+    ".git",
+    ".git/**",
+    "**/.git",
+    "**/.git/**"
+  ]
+}
