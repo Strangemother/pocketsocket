@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-06T21:43:48",
+  "a": "C:\\dev\\pocketsocket-2\\results\\benchmarks\\2026-09-06-unmask",
+  "b": "C:\\dev\\pocketsocket-2\\results\\benchmarks\\2026-09-06-v2.0.9",
+  "reports": {
+    "compare": {
+      "b_file": "2026-09-06-v2.0.9-compare.json",
+      "status": "missing_from_a"
+    },
+    "echo write-path benchmark: direct-unmask": {
+      "a_file": "direct-unmask.json",
+      "status": "missing_from_b"
+    },
+    "echo write-path benchmark: direct-unmask-views": {
+      "a_file": "direct-unmask-views.json",
+      "status": "missing_from_b"
+    },
+    "echo write-path benchmark: unmask-baseline": {
+      "a_file": "baseline.json",
+      "status": "missing_from_b"
+    },
+    "message-path": {
+      "b_file": "2026-09-06-v2.0.9-message-path.json",
+      "status": "missing_from_a"
+    },
+    "startup": {
+      "b_file": "2026-09-06-v2.0.9-startup.json",
+      "status": "missing_from_a"
+    }
+  }
+}

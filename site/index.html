@@ -24,216 +24,459 @@
         </button>
     </header>
 
-    <main id="app">
-        <section class="hero" aria-labelledby="page-title">
+    <main>
 
-            <div class="hero-title">
-                <!-- <p class="eyebrow">A quick website starter</p> -->
-                <h1 class="page-title staatliches-regular">Pocketsocket</h1>
-            </div>
+        <div id="app">
 
-            <div class="hero-seconds">
+            <section class="hero" aria-labelledby="page-title">
 
-                <div class="hero-keys">
-                    <p class="hero-description">
-                        Websockets without thinking about it.
-                    </p>
-
-                    <div class="keypoints">
-                        <div class="taglines">
-                            <ul>
-                                <li>No Dependencies</li>
-                                <li>Lightweight</li>
-                                <li>Zero Config</li>
-                                <li>Standalone or Python</li>
-                            </ul>
-                            <ul>
-                                <li>
-                                    <a target="_blank" rel="noopener noreferrer"
-                                     ref="github-link"
-                                     :href="host">
-                                        Github
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-
-
+                <div class="hero-title">
+                    <!-- <p class="eyebrow">A quick website starter</p> -->
+                    <h1 class="page-title staatliches-regular">Pocketsocket</h1>
                 </div>
 
-                <div class="download-links">
+                <div class="hero-seconds">
 
-                    <div class="download-panel collect-box">
+                    <div class="hero-keys">
+                        <p class="hero-description">
+                            Websockets without thinking about it.
+                        </p>
 
-                        <div class="download-details">
-                            <div class="download-icon" aria-hidden="true">L</div>
-                            <div>
-                                <span class="download-label">standalone</span>
-                                <div>
-                                    <strong class="download-platform">{{ os }}</strong>
-                                </div>
-
-                                <span class="download-size">1.01 MB</span>
-                            </div>
-                        </div>
-
-                        <div>
-                            <a class="download-button"
-                            :href="downloadLink"
-                            @click="downloadClicked()"
-                            download>
-                                <span class="material-symbols-outlined">download</span>
-                            </a>
-                            <span class="download-version">{{ nameMap.tag }}</span>
-                        </div>
-
-                    </div>
-
-
-                    <div class="download-panel collect-box">
-
-                        <div class="download-details">
-                            <div class="download-icon" aria-hidden="true">P</div>
-                            <div>
-                                <span class="download-label">Python</span>
-                                <code>pip install pocketsocket</code>
-                            </div>
-                        </div>
-
-                        <!-- <a class="download-button" href="#" download aria-label="Download PocketSocket for Linux">
-                            <span class="material-symbols-outlined">download</span>
-                        </a> -->
-
-                    </div>
-                </div>
-
-            </div>
-
-        </section>
-
-        <section class="getting-started" id="getting-started" aria-labelledby="getting-started-title">
-            <div class="section-heading">
-                <h2 class="getting-started-title staatliches-regular">Getting started</h2>
-                <!-- <p>Pocketsocket is designed to be quick to use. </p> -->
-            </div>
-
-            <div class="steps" :class="['socket-connected-' + socketConnected]">
-                <article class="step" @click="downloadClicked()">
-                    <div class="row">
-                        <span class="step-number">01</span>
-                        <h3>Download</h3>
-                    </div>
-                    <p>
-                        <a href="#">Grab the binary</a>
-                        or install the  <a href="#">python package</a>
-
-                        <!-- On click, change the download presentation panel.
-                            bin panel informs about location
-                            pip shows a bash shell example
-                        -->
-                    </p>
-                </article>
-                <article class="step"
-                    @click="runClicked()">
-                    <div class="row">
-                        <span class="step-number">02</span>
-                        <h3>Run</h3>
-                    </div>
-                    <p>
-                        Run the app in your CLI, or run this code in your python.
-                        <!-- If binary was clicked, show binary,
-                            else show python code. -->
-                        <!-- If binary, show the antivirus false positive. -->
-                        <!-- Show running output. with a clickable link to the http default page-->
-                    </p>
-                    <code>$ pocketsocket-cli --run</code>
-                </article>
-                <article class="step"
-                     @click="connectClicked()">
-                    <div class="row">
-                        <span class="step-number">03</span>
-                        <h3>Connect</h3>
-                    </div>
-                    <p>Head to <a href="#">ws://{{ socketAddress }}</a> using websockets.</p>
-
-                    <div class="demo-tool">
-                        <!-- A simple websocket client, to connect to the local address.
-                            1. Code
-                            2. Connect Button
-                            3. Simple display
-                        -->
-                        <div class="inline-text">
-                            <!-- The user clicks, actuating test and switching the view. -->
-                            <button @click=testConnectClick>test</button>
-                            <div class="socket-indicator-container">
-                                <div class="socket-indicator"></div>
-                            </div>
-                        </div>
-                    </div>
-                </article>
-            </div>
-            <div class="continue-panels">
-                <div class="download-clicked-panel"
-                    :class="{'hide': !isDownloadClicked, 'show': isDownloadClicked}">
-                    <p>Download and store it somewhere safe.</p>
-                    <div class="antivirus-notice">
-                        <p>You may see an antivirus false positive.</p>
-                        <details>
-                            <summary>More info</summary>
-                            <p>This is a known false positive.
-                                Your antivirus may flag the binary incorrectly.</p>
-                        </details>
-                        <details>
-                            <summary>Verification</summary>
-                            <p>You can verify the binary using the provided checksums.
-                                <br>or download the
-                                    <a :href="host">source code</a>
-                                and build it yourself.
-                            </p>
-                        </details>
-                    </div>
-                </div>
-                <div class="run-clicked-panel"
-                    :class="{'hide': !isRunClicked, 'show': isRunClicked}">
-                    <div class="run-tabs">
-                        <ul>
-                            <li><a href="#">CLI</a></li>
-                            <li><a href="#">Python</a></li>
-                        </ul>
-                    </div>
-                    <div class="run-example">
-                        <div class="cli-run-example">
-                            <pre>
-                                <code>
-                                    $ <span class="command">./pocketsocket-cli-release --run</span>
-                                    No template directory specified; using default templates.
-                                    Serving on http://{{socketAddress}}
-                                    TTL: 857 microseconds and 19 nanoseconds
-                                </code>
-                            </pre>
-                        </div>
-                    </div>
-                </div>
-                <div class="connect-panel collect-box"
-                    :class="{'hide': !isConnectedClicked, 'show': isConnectedClicked}">
-
-                    <div class="connect-details">
-                        <div class="connect-input-form">
-                            <input type="text"
-                                :value="'ws://' + socketAddress"
-                                class="address">
-                            <textarea class="message"></textarea>
-                            <div class="messages">
+                        <div class="keypoints">
+                            <div class="taglines">
                                 <ul>
-                                    <li v-for='m in messages'>{{ m }}</li>
+                                    <li>No Dependencies</li>
+                                    <li>Lightweight</li>
+                                    <li>Zero Config</li>
+                                    <li>Standalone or Python</li>
+                                </ul>
+                                <ul>
+                                    <li>
+
+                                        <a target="_blank" rel="noopener noreferrer"
+                                            ref="github-link"
+                                            class="github-link"
+                                            :href="host">
+                                            <svg xmlns="http://www.w3.org/2000/svg">
+                                                <path fill-rule="evenodd" clip-rule="evenodd" d="M48.854 0C21.839 0 0 22 0 49.217c0 21.756 13.993 40.172 33.405 46.69 2.427.49 3.316-1.059 3.316-2.362 0-1.141-.08-5.052-.08-9.127-13.59 2.934-16.42-5.867-16.42-5.867-2.184-5.704-5.42-7.17-5.42-7.17-4.448-3.015.324-3.015.324-3.015 4.934.326 7.523 5.052 7.523 5.052 4.367 7.496 11.404 5.378 14.235 4.074.404-3.178 1.699-5.378 3.074-6.6-10.839-1.141-22.243-5.378-22.243-24.283 0-5.378 1.94-9.778 5.014-13.2-.485-1.222-2.184-6.275.486-13.038 0 0 4.125-1.304 13.426 5.052a46.97 46.97 0 0 1 12.214-1.63c4.125 0 8.33.571 12.213 1.63 9.302-6.356 13.427-5.052 13.427-5.052 2.67 6.763.97 11.816.485 13.038 3.155 3.422 5.015 7.822 5.015 13.2 0 18.905-11.404 23.06-22.324 24.283 1.78 1.548 3.316 4.481 3.316 9.126 0 6.6-.08 11.897-.08 13.526 0 1.304.89 2.853 3.316 2.364 19.412-6.52 33.405-24.935 33.405-46.691C97.707 22 75.788 0 48.854 0z"></path></svg>
+
+                                            <span class="label">
+                                            Github
+                                            </span>
+                                        </a>
+                                    </li>
+
                                 </ul>
                             </div>
                         </div>
+
+
+                    </div>
+
+                    <div class="download-links">
+
+                        <div class="download-panel collect-box">
+
+                            <div class="download-details">
+                                <div class="download-icon" aria-hidden="true">L</div>
+                                <div>
+                                    <span class="download-label">standalone</span>
+                                    <div>
+                                        <strong class="download-platform">{{ os }}</strong>
+                                    </div>
+
+                                    <span class="download-size">1.01 MB</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <a class="download-button"
+                                :href="downloadLink"
+                                @click="downloadClicked()"
+                                download>
+                                    <span class="material-symbols-outlined">download</span>
+                                </a>
+                                <span class="download-version">{{ nameMap.tag }}</span>
+                            </div>
+
+                        </div>
+
+
+                        <div class="download-panel collect-box">
+
+                            <div class="download-details">
+                                <div class="download-icon" aria-hidden="true">P</div>
+                                <div>
+                                    <span class="download-label">Python</span>
+                                    <code>pip install pocketsocket</code>
+                                </div>
+                            </div>
+
+                            <!-- <a class="download-button" href="#" download aria-label="Download PocketSocket for Linux">
+                                <span class="material-symbols-outlined">download</span>
+                            </a> -->
+
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <section class="getting-started" id="getting-started"
+                aria-labelledby="getting-started-title">
+                <div class="section-heading">
+                    <h2 class="getting-started-title staatliches-regular">Getting started</h2>
+                    <!-- <p>Pocketsocket is designed to be quick to use. </p> -->
+                </div>
+
+                <div class="steps" :class="['socket-connected-' + socketConnected]">
+                    <article class="step" @click="downloadClicked()">
+                        <div class="row">
+                            <span class="step-number">01</span>
+                            <h3>Download</h3>
+                        </div>
+                        <p>
+                            <a href="#">Grab the binary</a>
+                            or install the  <a href="#">python package</a>
+
+                            <!-- On click, change the download presentation panel.
+                                bin panel informs about location
+                                pip shows a bash shell example
+                            -->
+                        </p>
+                    </article>
+                    <article class="step"
+                        @click="runClicked()">
+                        <div class="row">
+                            <span class="step-number">02</span>
+                            <h3>Run</h3>
+                        </div>
+                        <p>
+                            Run the app in your CLI, or run this code in your python.
+                            <!-- If binary was clicked, show binary,
+                                else show python code. -->
+                            <!-- If binary, show the antivirus false positive. -->
+                            <!-- Show running output. with a clickable link to the http default page-->
+                        </p>
+                        <code>$ pocketsocket-cli --run</code>
+                    </article>
+                    <article class="step"
+                        @click="connectClicked()">
+                        <div class="row">
+                            <span class="step-number">03</span>
+                            <h3>Connect</h3>
+                        </div>
+                        <p>Head to <a href="#">ws://{{ socketAddress }}</a> using websockets.</p>
+
+                        <div class="demo-tool">
+                            <!-- A simple websocket client, to connect to the local address.
+                                1. Code
+                                2. Connect Button
+                                3. Simple display
+                            -->
+                            <div class="inline-text">
+                                <!-- The user clicks, actuating test and switching the view. -->
+                                <button @click=testConnectClick>test</button>
+                                <div class="socket-indicator-container">
+                                    <div class="socket-indicator"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+                <div class="continue-panels">
+                    <div class="download-clicked-panel"
+                        :class="{'hide': !isDownloadClicked, 'show': isDownloadClicked}">
+                        <p>Download and store it somewhere safe.</p>
+                        <div class="antivirus-notice">
+                            <p>You may see an antivirus false positive.</p>
+                            <details>
+                                <summary>More info</summary>
+                                <p>This is a known false positive.
+                                    Your antivirus may flag the binary incorrectly.</p>
+                            </details>
+                            <details>
+                                <summary>Verification</summary>
+                                <p>You can verify the binary using the provided checksums.
+                                    <br>or download the
+                                        <a :href="host">source code</a>
+                                    and build it yourself.
+                                </p>
+                            </details>
+                        </div>
+                    </div>
+                    <div class="run-clicked-panel"
+                        :class="{'hide': !isRunClicked, 'show': isRunClicked}">
+                        <div class="run-tabs">
+                            <ul>
+                                <li><a href="#">CLI</a></li>
+                                <li><a href="#">Python</a></li>
+                            </ul>
+                        </div>
+                        <div class="run-example">
+                            <div class="cli-run-example">
+                                <pre>
+                                    <code>
+                                        $ <span class="command">./pocketsocket-cli-release --run</span>
+                                        No template directory specified; using default templates.
+                                        Serving on http://{{socketAddress}}
+                                        TTL: 857 microseconds and 19 nanoseconds
+                                    </code>
+                                </pre>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="connect-panel collect-box"
+                        :class="{'hide': !isConnectedClicked, 'show': isConnectedClicked}">
+
+                        <div class="connect-details">
+                            <div class="connect-input-form">
+                                <input type="text"
+                                    :value="'ws://' + socketAddress"
+                                    class="address">
+                                <div class="input-area">
+
+                                    <textarea class="message" v-model="userMessage"></textarea>
+                                    <div class="send-button-container">
+                                        <a href="javascript:;" @click="sendMessage">Send</a>
+                                    </div>
+                                </div>
+
+                                <div class="messages">
+                                    <ul>
+                                        <li v-for='m in messages'>{{ m }}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </section>
+
+            <section class="more">
+
+                <div class="section-heading">
+                    <h2 class="staatliches-regular">More</h2>
+                </div>
+                <div class="more-info-panel">
+                    <p>The API</p>
+                </div>
+            </section>
+        </div>
+
+        <section class="tables">
+
+            <div class="section-heading">
+                <h2 class="staatliches-regular">Tables</h2>
+            </div>
+
+            <div class="more-info-panel" id="tables_app">
+                <p>Some Tables</p>
+
+                <div class="div-table connections-table">
+                    <div class="table-header">
+                        <span>Count {{ connections.length }}</span>
+                        <div class="title">
+                            <div class="primary">Connections</div>
+                            <div class="secondary">per second</div>
+                        </div>
+                        <span>Taller is better</span>
+                    </div>
+
+                    <ul class="bar-chart">
+                        <li v-for="item in connections"
+                            class="bar-column"
+                            :class="{me: item.me==true}">
+                                <div class="name">{{ item.name }}</div>
+                            <div class="bar-container">
+                                <div class="bar"
+                                    :data-value="item.value"
+                                    :data-height="~~item.height"
+                                >
+                                </div>
+                                <div class="value">{{ ~~item.value }}</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+
+                <div class="div-table startups-table">
+                    <div class="table-header">
+                        <span></span>
+                        <div class="title">
+                            <div class="primary">startup time</div>
+                        </div>
+                        <span>
+                            <div class="secondary">Speed delta</div>
+                            <span>Shorter is better</span>
+                        </span>
+                    </div>
+
+                    <ul class="bar-chart">
+                        <li v-for="item in startups"
+                            class="bar-column"
+                            :class="{me: item.me==true}">
+                                <div class="name">{{ item.name }}</div>
+                            <div class="bar-container">
+                                <div class="bar"
+                                    :data-value="item.value"
+                                    :data-height="~~item.height"
+                                >
+                                </div>
+                                <div class="value">{{ item.label.toFixed(3) }}</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+
+                <div class="div-table throughput-64-table">
+                    <div class="table-header">
+                        <span></span>
+                        <div class="title">
+                            <div class="primary">throughput-64</div>
+                        </div>
+                        <span>
+                            <div class="secondary">Speed delta</div>
+                            <span>Taller is better</span>
+                        </span>
+                    </div>
+
+                    <ul class="bar-chart">
+                        <li v-for="item in throughput_64"
+                            class="bar-column"
+                            :class="{me: item.me==true}">
+                                <div class="name">{{ item.name }}</div>
+                            <div class="bar-container">
+                                <div class="bar"
+                                    :data-value="item.value"
+                                    :data-height="~~item.height">
+                                </div>
+                                <div class="value">{{ item.label.toFixed(2) }}</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+
+                <div class="div-table throughput-1024-table">
+                    <div class="table-header">
+                        <span></span>
+                        <div class="title">
+                            <div class="primary">throughput-1024</div>
+                        </div>
+                        <span>
+                            <div class="secondary">Speed delta</div>
+                            <span>Taller is better</span>
+                        </span>
+                    </div>
+
+                    <ul class="bar-chart">
+                        <li v-for="item in throughput_1024"
+                            class="bar-column"
+                            :class="{me: item.me==true}">
+                                <div class="name">{{ item.name }}</div>
+                            <div class="bar-container">
+                                <div class="bar"
+                                    :data-value="item.value"
+                                    :data-height="~~item.height">
+                                </div>
+                                <div class="value">{{ item.label.toFixed(2) }}</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="div-table throughput-16348-table">
+                    <div class="table-header">
+                        <span></span>
+                        <div class="title">
+                            <div class="primary">throughput-16348</div>
+                        </div>
+                        <span>
+                            <div class="secondary">Speed delta</div>
+                            <span>Taller is better</span>
+                        </span>
+                    </div>
+
+                    <ul class="bar-chart">
+                        <li v-for="item in throughput_16384"
+                            class="bar-column"
+                            :class="{me: item.me==true}">
+                                <div class="name">{{ item.name }}</div>
+                            <div class="bar-container">
+                                <div class="bar"
+                                    :data-value="item.value"
+                                    :data-height="~~item.height">
+                                </div>
+                                <div class="value">{{ item.label.toFixed(2) }}</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+
+                <div class="div-table latency-64-table">
+                    <div class="table-header">
+                        <span></span>
+                        <div class="title">
+                            <div class="primary">latency-64</div>
+                            <div class="secondary">Speed delta</div>
+                        </div>
+                        <span>Taller is better</span>
+                    </div>
+
+                    <ul class="bar-chart">
+                        <li v-for="item in latency_64"
+                            class="bar-column"
+                            :class="{me: item.me==true}">
+                                <div class="name">{{ item.name }}</div>
+                            <div class="bar-container">
+                                <div class="bar"
+                                    :data-value="item.value"
+                                    :data-height="~~item.height">
+                                </div>
+                                <div class="value">{{ item.label.toFixed(2) }}</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+
+                <div class="div-table latency-1024-table">
+                    <div class="table-header">
+                        <span></span>
+                        <div class="title">
+                            <div class="primary">latency-1024</div>
+                            <div class="secondary">Speed delta</div>
+                        </div>
+                        <span>Taller is better</span>
+                    </div>
+
+                    <ul class="bar-chart">
+                        <li v-for="item in latency_1024"
+                            class="bar-column"
+                            :class="{me: item.me==true}">
+                                <div class="name">{{ item.name }}</div>
+                            <div class="bar-container">
+                                <div class="bar"
+                                    :data-value="item.value"
+                                    :data-height="~~item.height">
+                                </div>
+                                <div class="value">{{ item.label.toFixed(2) }}</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+
+
+
+
             </div>
         </section>
+
     </main>
 
     <footer class="site-footer">
@@ -241,5 +484,8 @@
     </footer>
 
     <script src="script.js"></script>
+
+    <link rel="stylesheet" href="tables.css">
+    <script src="tables.js"></script>
 </body>
 </html>

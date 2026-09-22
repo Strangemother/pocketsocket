@@ -142,6 +142,10 @@ createApp({
         getDownloadLink() {
             return this.downloadLink;
         }
+        , sendMessage() {
+            console.log("send:", this.userMessage)
+            this.ws.send(this.userMessage)
+        }
         , testConnectClick(){
             let socket = this.ws = new WebSocket(`ws://${this.socketAddress}`)
             socket.addEventListener("open", () => {

@@ -514,3 +514,24 @@ h2 {
 .socket-connected-true .socket-indicator {
     background: #216921;
 }
+
+a.github-link {
+    /* border: solid 2px #333; */
+    display: inline-flex;
+    text-decoration: none;
+    justify-content: center;
+    align-items: center;
+    gap: 0.7em;
+    padding: 0.6em 1.1em;
+    border-radius: 0.3em;
+    color: inherit;
+    background: #313131;
+    color: #a7a7a7;
+}
+
+a.github-link svg {
+    width: 1.3em;
+    height: 1.3em;
+    /* outline: solid; */
+    /* display: inline-flex; */
+}

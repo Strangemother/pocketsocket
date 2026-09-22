@@ -184,6 +184,7 @@ pocketsocket.close_remove_client(uuid)
 pocketsocket.send(uuid, message_kind, message_data)
 pocketsocket.send_all(message_kind, message_data, origin_uuid)
 pocketsocket.run_blocking_server(address, port)
+pocketsocket.run_nonblocking_server(address, port)
 pocketsocket.shutdown_server()
 ```
 
