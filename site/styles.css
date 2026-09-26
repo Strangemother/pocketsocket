@@ -320,9 +320,13 @@ h2 {
 
 .step {
     min-height: 220px;
-    padding: 1rem 2rem 2rem;
+    padding: 1.2rem 2rem 0rem;
     background: var(--surface);
     border-radius: 0.7em;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
 }
 
 .step-number {
@@ -331,10 +335,11 @@ h2 {
     color: var(--accent);
     /* font-size: 0.85rem; */
     font-weight: 700;
+    margin: 0;
 }
 
 .step h3 {
-    margin: 0 0 0.65rem;
+    margin: 0;
     font-size: 1.3rem;
 }
 
@@ -431,6 +436,102 @@ h2 {
     color: #0d8f0d;
 }
 
+
 .hero-keys {
     font-size: 1.4em;
+}
+
+
+.continue-panels > * {
+    background: #171c24;
+    padding: 2em;
+    border-radius: 0.7em;
+    font-size: 1.2em;
+}
+
+.continue-panels {
+    gap: 1em;
+    display: flex;
+    flex-direction: column;
+}
+
+.not-download-clicked, .not-run-clicked {
+    display: none;
+}
+
+.step .row {
+    display: flex;
+    gap: 1em;
+    align-items: center;
+}
+
+.continue-panels > .hide {
+    display: none;
+}
+
+.connect-input-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+}
+
+.connect-input-form input, .connect-input-form textarea {
+    font-size: inherit;
+    font-family: inherit;
+    color: inherit;
+    background: none;
+    border: solid 2px;
+    border-radius: 0.3em;
+    padding: 0.2em 0.4em;
+}
+
+.steps  button {
+    color: var(--muted);
+    font: inherit;
+    font-size: 1.2rem;
+    background: var(--surface);
+    background: var(--background);
+    border: solid 2px;
+    padding: 0.2rem 1.7rem;
+    border-radius: .4em;
+    border-color: var(--surface-raised);
+    /* margin: 1em 0 0; */
+}
+
+.socket-indicator {
+    width: 1.5em;
+    height: 1.5em;
+    background: #101411;
+    border-radius: 4em;
+}
+
+.demo-tool .inline-text {
+    display: flex;
+    gap: 0.8em;
+    align-items: center;
+}
+
+.socket-connected-true .socket-indicator {
+    background: #216921;
+}
+
+a.github-link {
+    /* border: solid 2px #333; */
+    display: inline-flex;
+    text-decoration: none;
+    justify-content: center;
+    align-items: center;
+    gap: 0.7em;
+    padding: 0.6em 1.1em;
+    border-radius: 0.3em;
+    color: inherit;
+    background: #313131;
+    color: #a7a7a7;
+}
+
+a.github-link svg {
+    width: 1.3em;
+    height: 1.3em;
+    /* outline: solid; */
+    /* display: inline-flex; */
 }

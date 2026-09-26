@@ -85,7 +85,7 @@ const { createApp, ref } = Vue
 // pocketsocket-cli-linux_arm64
 const nameMap = {
     tag: 'v2.0.4'
-    , host: 'https://github.com/Strangemother/pocketsocket-2'
+    , host: 'https://github.com/Strangemother/pocketsocket'
     , urlFix: 'releases/download/'
     , appFix: 'pocketsocket-cli'
     , linux: {
@@ -126,31 +126,68 @@ createApp({
             os,
             downloadLink,
             host: nameMap.host,
-            
+            socketAddress: ref('127.0.0.1:8090'),
+            messages: ref([])
         };
     }
     , data() {
         return {
             isDownloadClicked: false,
             isRunClicked: false,
+            isConnectedClicked: false,
+            socketConnected: false,
         };
     }
     , methods: {
         getDownloadLink() {
             return this.downloadLink;
         }
-
+        , sendMessage() {
+            console.log("send:", this.userMessage)
+            this.ws.send(this.userMessage)
+        }
+        , testConnectClick(){
+            let socket = this.ws = new WebSocket(`ws://${this.socketAddress}`)
+            socket.addEventListener("open", () => {
+                this.setConnected(true);
+                this.addMessage("Connected to PocketSocket");
+                // messageInput.focus();
+            });
+            socket.addEventListener("message", (event) => this.addMessage(event.data));
+            socket.addEventListener("close", () => {
+                socket = null;
+                this.setConnected(false);
+                this.addMessage("Disconnected");
+            });
+            socket.addEventListener("error", () => this.addMessage("Connection error"));
+        }
+        , setConnected(c) {
+            console.log('connected', c)
+            this.socketConnected = c
+        }
+        , addMessage(m) {
+            // console.log('message', m)
+            this.messages.push(m)
+        }
         , downloadClicked() {
             this.isDownloadClicked = true;
             this.isRunClicked = false;
+            this.isConnectedClicked = false
             console.log("Download button clicked");
             // You can add additional logic here if needed
         }
         , runClicked() {
             this.isRunClicked = true;
+            this.isConnectedClicked = false
             this.isDownloadClicked = false;
             console.log("Run button clicked");
             // You can add additional logic here if needed
+        }
+        , connectClicked() {
+            this.isConnectedClicked = true;
+            this.isRunClicked = false;
+            this.isDownloadClicked = false;
+            console.log("connect button clicked");
         }
     }
 
