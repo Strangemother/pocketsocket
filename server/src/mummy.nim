@@ -90,9 +90,12 @@ type
     message: Message
   ) {.gcsafe.}
 
+  FastEchoCheck* = proc(): bool {.gcsafe, raises: [].}
+
   ServerObj = object
     handler: RequestHandler
     websocketHandler: WebSocketHandler
+    fastEchoCheck: FastEchoCheck
     logHandler: LogHandler
     maxHeadersLen, maxBodyLen, maxMessageLen: int
     tcpNoDelay: bool
@@ -112,6 +115,7 @@ type
     sendQueue: Deque[OutgoingBuffer]
     sendQueueLock: Lock
     websocketClaimed: Table[WebSocket, bool]
+    websocketFastEchoReady: Table[WebSocket, bool]
     websocketQueues: Table[WebSocket, Deque[WebSocketUpdate]]
     websocketQueuesLock: Lock
 
@@ -510,8 +514,12 @@ proc workerProc(server: Server) {.raises: [].} =
               if update.get.event == CloseEvent:
                 server.websocketQueues.del(task.websocket)
                 server.websocketClaimed.del(task.websocket)
+                if task.websocket in server.websocketFastEchoReady:
+                  server.websocketFastEchoReady.del(task.websocket)
             else:
               server.websocketClaimed[task.websocket] = false
+              if server.fastEchoCheck != nil and server.fastEchoCheck():
+                server.websocketFastEchoReady[task.websocket] = true
           except KeyError:
             discard # Not possible
 
@@ -577,6 +585,9 @@ proc postWebSocketUpdate(
       return
 
     try:
+      if update.event == MessageEvent and
+          websocket in websocket.server.websocketFastEchoReady:
+        websocket.server.websocketFastEchoReady[websocket] = false
       websocket.server.websocketQueues[websocket].addLast(move update)
       if not websocket.server.websocketClaimed[websocket]:
         needsTask = true
@@ -604,9 +615,31 @@ proc sendCloseFrame(
 
 proc copyUnmaskedPayload(source: openArray[char], destination: var openArray[char],
                          mask: array[4, uint8]) {.inline.} =
-  for payloadIndex in 0 ..< source.len:
+  if source.len < 128:
+    for payloadIndex in 0 ..< source.len:
+      destination[payloadIndex] =
+        (source[payloadIndex].uint8 xor mask[payloadIndex mod 4]).char
+    return
+
+  var repeatedMask: array[sizeof(uint64), char]
+  for payloadIndex in 0 ..< repeatedMask.len:
+    repeatedMask[payloadIndex] = mask[payloadIndex mod mask.len].char
+
+  var maskWord: uint64
+  copyMem(maskWord.addr, repeatedMask[0].unsafeAddr, sizeof(maskWord))
+
+  var payloadIndex = 0
+  while payloadIndex + sizeof(maskWord) <= source.len:
+    var payloadWord: uint64
+    copyMem(payloadWord.addr, source[payloadIndex].unsafeAddr, sizeof(payloadWord))
+    payloadWord = payloadWord xor maskWord
+    copyMem(destination[payloadIndex].addr, payloadWord.addr, sizeof(payloadWord))
+    payloadIndex += sizeof(payloadWord)
+
+  while payloadIndex < source.len:
     destination[payloadIndex] =
       (source[payloadIndex].uint8 xor mask[payloadIndex mod 4]).char
+    inc payloadIndex
 
 proc afterRecvWebSocket(
   server: Server,
@@ -752,17 +785,23 @@ proc afterRecvWebSocket(
         server.log(DebugLevel, "Dropped WebSocket, received invalid opcode")
         return true # Invalid opcode, close the connection
 
-      let
-        websocket = WebSocket(
-          server: server,
-          clientSocket: clientSocket,
-          clientId: dataEntry.clientId
-        )
-        update = WebSocketUpdate(
+      let websocket = WebSocket(
+        server: server,
+        clientSocket: clientSocket,
+        clientId: dataEntry.clientId
+      )
+      var fastEchoReady = false
+      if server.fastEchoCheck != nil and server.fastEchoCheck():
+        withLock server.websocketQueuesLock:
+          fastEchoReady = server.websocketFastEchoReady.getOrDefault(websocket, false)
+      if fastEchoReady:
+        websocket.send(move message.data, message.kind)
+      else:
+        let update = WebSocketUpdate(
           event: MessageEvent,
           message: move message
         )
-      websocket.postWebSocketUpdate(update)
+        websocket.postWebSocketUpdate(update)
 
 proc popRequest(
   server: Server,
@@ -1297,6 +1336,8 @@ proc loopForever(server: Server) {.raises: [OSError, IOSelectorsException].} =
               withLock server.websocketQueuesLock:
                 server.websocketQueues[websocket] = initDeque[WebSocketUpdate]()
                 server.websocketClaimed[websocket] = false
+                if server.fastEchoCheck != nil:
+                  server.websocketFastEchoReady[websocket] = false
               websocket.postWebSocketUpdate(WebSocketUpdate(event: OpenEvent))
               # Are there any sends that were waiting for this response?
               if clientDataEntry.sendsWaitingForUpgrade.len > 0:
@@ -1537,7 +1578,8 @@ proc newServer*(
   maxHeadersLen = 8 * 1024, # 8 KB
   maxBodyLen = 1024 * 1024, # 1 MB
   maxMessageLen = 64 * 1024, # 64 KB
-  tcpNoDelay = true
+  tcpNoDelay = true,
+  fastEchoCheck: FastEchoCheck = nil
 ): Server {.raises: [MummyError].} =
   ## Creates a new HTTP server. The request handler will be called for incoming
   ## HTTP requests. The WebSocket handler will be called for WebSocket events.
@@ -1556,6 +1598,7 @@ proc newServer*(
   result = cast[Server](allocShared0(sizeof(ServerObj)))
   result.handler = handler
   result.websocketHandler = websocketHandler
+  result.fastEchoCheck = fastEchoCheck
   result.logHandler = if logHandler != nil: logHandler else: echoLogger
   result.maxHeadersLen = maxHeadersLen
   result.maxBodyLen = maxBodyLen

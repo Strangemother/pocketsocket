@@ -148,6 +148,7 @@ proc buildServer(
       maxMessageLen = max_message_len,
       maxBodyLen = max_body_len,
       tcpNoDelay = tcp_no_delay,
+      fastEchoCheck = if config.echo_mode: broadcast.canFastEcho else: nil,
     )
 
 proc prepareServer(address: string, port: int) =
