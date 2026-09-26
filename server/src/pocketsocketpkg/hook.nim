@@ -1,13 +1,35 @@
 # import std/hashes
 
 import ../mummy
+import std/dynlib
 import nimpy
 import nimpy/py_lib as lib
+import nimpy/py_types
+import nimpy/py_utils
 import socket_tools
 import gil
+import std/atomics
+
+type PyObjectVectorcall = proc(
+  callable: PPyObject,
+  args: ptr PPyObject,
+  nargs: csize_t,
+  kwnames: PPyObject
+): PPyObject {.cdecl, gcsafe.}
 
 var
   pyHook: PyObject
+  pythonHookRegistered: Atomic[bool]
+  pyObjectVectorcall: PyObjectVectorcall
+
+proc hasPythonHook*(): bool {.gcsafe, raises: [].} =
+  pythonHookRegistered.load(moAcquire)
+
+proc loadVectorcall() {.gcsafe.} =
+  if pyObjectVectorcall.isNil and not lib.pyLib.module.isNil:
+    pyObjectVectorcall = cast[PyObjectVectorcall](
+      lib.pyLib.module.symAddr("PyObject_Vectorcall")
+    )
 
 proc call_py_hook*(
   websocket: WebSocket,
@@ -33,15 +55,37 @@ proc call_py_hook*(
       #   echo "open"
       # messageDict["headers"] = headersDict
 
-      let info: PyObject = pyHook.callObject(
+      loadVectorcall()
+      if pyObjectVectorcall.isNil:
+        let info: PyObject = pyHook.callObject(
           getWebSocketUUID(websocket),
           event.ord,
           messageDict,
-          
         )
-      if info != nil and
-          cast[pointer](info.privateRawPyObj) != cast[pointer](lib.pyLib.Py_None):
-        result = info.to(int)
+        if info != nil and
+            cast[pointer](info.privateRawPyObj) != cast[pointer](lib.pyLib.Py_None):
+          result = info.to(int)
+      else:
+        var args = [
+          nimValueToPy(getWebSocketUUID(websocket)),
+          nimValueToPy(event.ord),
+          messageDict.privateRawPyObj,
+        ]
+        let info = pyObjectVectorcall(
+          pyHook.privateRawPyObj,
+          addr args[0],
+          args.len.csize_t,
+          nil,
+        )
+        decRef args[0]
+        decRef args[1]
+        if info.isNil:
+          raisePythonError()
+        try:
+          if cast[pointer](info) != cast[pointer](lib.pyLib.Py_None):
+            pyValueToNim(info, result)
+        finally:
+          decRef info
     finally:
       gil.release_gil(gilState)
 
@@ -53,4 +97,8 @@ proc hook*(p: PyObject): void =
   ]#
   # Keep the function as the callable.
   gil.ensure_gil_procs()
+  loadVectorcall()
+  pythonHookRegistered.store(true, moRelease)
   pyHook = p
+  if p == nil:
+    pythonHookRegistered.store(false, moRelease)

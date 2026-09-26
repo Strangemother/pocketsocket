@@ -134,3 +134,8 @@ proc websocketHandler_broadcast*(
     locked_remove_client(websocket)
     ## BUG: INVENTORY::A2 - remove dup hook call. 
     # discard hook.call_py_hook(websocket, event, message)
+
+
+proc canFastEcho*(): bool {.gcsafe, raises: [].} =
+  config.echo_mode and not config.print_mode and not config.broadcast_mode and
+    not hook.hasPythonHook()

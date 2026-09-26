@@ -148,6 +148,7 @@ proc buildServer(
       maxMessageLen = max_message_len,
       maxBodyLen = max_body_len,
       tcpNoDelay = tcp_no_delay,
+      fastEchoCheck = if config.echo_mode: broadcast.canFastEcho else: nil,
     )
 
 proc prepareServer(address: string, port: int) =
@@ -183,7 +184,7 @@ proc run_blocking_server*(
     server = newServer
 
   let total_time: Duration = getMonoTime() - wake_time
-  echo "TTL: ", $total_time
+  echo "TTL: ", $total_time, " Starting server on: ", address, ":", port
   # serve() blocks this (python) thread; hand the GIL back so mummy's worker
   # threads are able to acquire it when calling the python hook.
   let threadState = gil.save_thread()

@@ -3,6 +3,8 @@
 
 import unittest
 import pocketsocketpkg/broadcast
+import pocketsocketpkg/config
+import pocketsocketpkg/hook
 from mummy import Message, TextMessage, WebSocket, OpenEvent
 
 suite "broadcast tests":
@@ -28,6 +30,31 @@ suite "broadcast tests":
         let ws = WebSocket()  # Create a dummy WebSocket instance
         websocketHandler_broadcast(ws, OpenEvent, message)
         check true
+
+    test "fast echo requires a no-hook, no-log, no-broadcast configuration":
+        let previousEcho = config.echo_mode
+        let previousPrint = config.print_mode
+        let previousBroadcast = config.broadcast_mode
+
+        config.set_echo_mode(true)
+        config.set_print_mode(false)
+        config.set_broadcast_mode(false)
+        check not hook.hasPythonHook()
+        check canFastEcho()
+
+        config.set_print_mode(true)
+        check not canFastEcho()
+        config.set_print_mode(false)
+
+        config.set_broadcast_mode(true)
+        check not canFastEcho()
+
+        config.set_echo_mode(false)
+        check not canFastEcho()
+
+        config.set_echo_mode(previousEcho)
+        config.set_print_mode(previousPrint)
+        config.set_broadcast_mode(previousBroadcast)
     
     # test "locked_has_client returns false for non-existent WebSocket":
     #     let ws = WebSocket() 

@@ -27,6 +27,9 @@ proc patternedPayload(length: int): string =
 proc ignoreUpdate(websocket: WebSocket, event: WebSocketEvent, message: Message) =
   discard
 
+proc alwaysFastEcho(): bool {.gcsafe, raises: [].} =
+  true
+
 suite "receive unmasking":
   var serverStorage: ServerObj
   var activeServer: Server
@@ -39,16 +42,20 @@ suite "receive unmasking":
     activeServer.maxMessageLen = 128 * 1024
     activeServer.websocketHandler = ignoreUpdate
     initLock(activeServer.websocketQueuesLock)
+    initLock(activeServer.sendQueueLock)
     websocket = WebSocket(server: activeServer, clientSocket: SocketHandle(42), clientId: 1)
     activeServer.websocketQueues[websocket] = initDeque[WebSocketUpdate]()
     activeServer.websocketClaimed[websocket] = true
+    activeServer.websocketFastEchoReady[websocket] = false
     entry = DataEntry(kind: ClientSocketEntry, clientId: 1)
 
   teardown:
     deinitLock(activeServer.websocketQueuesLock)
+    deinitLock(activeServer.sendQueueLock)
 
   test "binary payload boundaries and mask remainders":
-    for length in [0, 1, 2, 3, 4, 5, 125, 126, 127, 1024, 16384, 65535, 65536]:
+    for length in [0, 1, 2, 3, 4, 5, 125, 126, 127, 128, 129, 135, 1024,
+             16384, 65535, 65536]:
       let payload = patternedPayload(length)
       entry.recvBuf = maskedFrame(payload)
       entry.bytesReceived = entry.recvBuf.len
@@ -111,3 +118,27 @@ suite "receive unmasking":
     require activeServer.websocketQueues[websocket].len == 1
     check activeServer.websocketQueues[websocket].popFirst().message.data == payload
     check firstUpdate.message.data == "first"
+
+  test "ready native echo queues output without dispatching a message event":
+    activeServer.fastEchoCheck = alwaysFastEcho
+    activeServer.sendQueue.addLast(OutgoingBuffer())
+
+    let queuedPayload = "queued until ready"
+    entry.recvBuf = maskedFrame(queuedPayload, opcode = 1)
+    entry.bytesReceived = entry.recvBuf.len
+    check not activeServer.afterRecvWebSocket(websocket.clientSocket, entry)
+    check activeServer.websocketQueues[websocket].len == 1
+    check activeServer.sendQueue.len == 1
+    discard activeServer.websocketQueues[websocket].popFirst()
+
+    activeServer.websocketFastEchoReady[websocket] = true
+
+    let payload = "fast echo"
+    entry.recvBuf = maskedFrame(payload, opcode = 1)
+    entry.bytesReceived = entry.recvBuf.len
+
+    check not activeServer.afterRecvWebSocket(websocket.clientSocket, entry)
+    check activeServer.websocketQueues[websocket].len == 0
+    check activeServer.sendQueue.len == 2
+    discard activeServer.sendQueue.popFirst()
+    check activeServer.sendQueue.popFirst().buffer2 == payload
