@@ -73,12 +73,13 @@ proc locked_record_client*(websocket: WebSocket, uuid: uint64 = 0'u64): void =
       clientSheet[clientUUID] = websocket
 
 
-proc locked_remove_client*(websocket: WebSocket): void =
+proc locked_remove_client*(websocket: WebSocket, preserveContext: bool = false): void =
   {.gcsafe.}:
     withLock lock:
       let uuid = getWebSocketUUID(websocket)
       clientSheet.del(uuid)
-      removeContext(uuid)
+      if not preserveContext:
+        removeContext(uuid)
 
 
 proc locked_has_client*(websocket: WebSocket): bool =
@@ -124,14 +125,18 @@ proc websocketHandler_broadcast*(
   of CloseEvent:
     if config.print_mode:
       echo websocket, ": close"
-    locked_remove_client(websocket)
-    discard hook.call_py_hook(websocket, event, message)
+    let uuid = getWebSocketUUID(websocket)
+    locked_remove_client(websocket, preserveContext = true)
+    try:
+      discard hook.call_py_hook(websocket, event, message)
+    finally:
+      removeContext(uuid)
 
   if infoInt == 1:
     if config.print_mode:
       echo "Drop socket ", websocket
     websocket.close()
-    locked_remove_client(websocket)
+    locked_remove_client(websocket, preserveContext = true)
     ## BUG: INVENTORY::A2 - remove dup hook call. 
     # discard hook.call_py_hook(websocket, event, message)
 
