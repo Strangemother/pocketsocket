@@ -48,7 +48,7 @@
           "ruleIndex": 0,
           "level": "warning",
           "message": {
-            "text": "Server accepted message with missing required field: Removing field \"data\" from the message did not cause rejection, suggesting the server does not validate required fields."
+            "text": "Server accepted message with missing required field: Removing field \"action\" from the message did not cause rejection, suggesting the server does not validate required fields."
           },
           "locations": [
             {
@@ -68,14 +68,14 @@
           "properties": {
             "checkName": "schema_bypass",
             "severity": "medium",
-            "connectionId": "75f013ae-c1c7-4b31-86b8-d33990f5406b",
+            "connectionId": "6a32c169-b97f-4e31-b664-065def7640c0",
             "messageId": "poc-message-1",
             "remediation": "Implement strict schema validation for all incoming messages; reject messages with missing required fields.",
             "evidence": [
               {
                 "type": "missing_field",
                 "label": "removed field",
-                "value": "data"
+                "value": "action"
               }
             ]
           }
@@ -105,7 +105,7 @@
           "properties": {
             "checkName": "schema_bypass",
             "severity": "medium",
-            "connectionId": "75f013ae-c1c7-4b31-86b8-d33990f5406b",
+            "connectionId": "6a32c169-b97f-4e31-b664-065def7640c0",
             "messageId": "poc-message-1",
             "remediation": "Validate field types strictly; reject messages where field types don't match the expected schema.",
             "evidence": [
@@ -147,7 +147,7 @@
           "properties": {
             "checkName": "schema_bypass",
             "severity": "low",
-            "connectionId": "75f013ae-c1c7-4b31-86b8-d33990f5406b",
+            "connectionId": "6a32c169-b97f-4e31-b664-065def7640c0",
             "messageId": "poc-message-1",
             "remediation": "Reject messages containing unexpected fields; use strict schema validation with allowlisted field names.",
             "evidence": [
@@ -184,7 +184,7 @@
           "properties": {
             "checkName": "origin_bypass",
             "severity": "high",
-            "connectionId": "75f013ae-c1c7-4b31-86b8-d33990f5406b",
+            "connectionId": "6a32c169-b97f-4e31-b664-065def7640c0",
             "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
             "evidence": [
               {
@@ -220,7 +220,7 @@
           "properties": {
             "checkName": "origin_bypass",
             "severity": "high",
-            "connectionId": "75f013ae-c1c7-4b31-86b8-d33990f5406b",
+            "connectionId": "6a32c169-b97f-4e31-b664-065def7640c0",
             "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
             "evidence": [
               {
@@ -256,7 +256,7 @@
           "properties": {
             "checkName": "origin_bypass",
             "severity": "high",
-            "connectionId": "75f013ae-c1c7-4b31-86b8-d33990f5406b",
+            "connectionId": "6a32c169-b97f-4e31-b664-065def7640c0",
             "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
             "evidence": [
               {
@@ -292,7 +292,7 @@
           "properties": {
             "checkName": "origin_bypass",
             "severity": "high",
-            "connectionId": "75f013ae-c1c7-4b31-86b8-d33990f5406b",
+            "connectionId": "6a32c169-b97f-4e31-b664-065def7640c0",
             "remediation": "Validate the Origin header on WebSocket upgrade requests; reject connections from untrusted origins.",
             "evidence": [
               {

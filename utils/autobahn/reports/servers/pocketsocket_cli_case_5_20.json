@@ -1,0 +1,159 @@
+{
+   "agent": "Pocketsocket CLI",
+   "behavior": "FAILED",
+   "behaviorClose": "FAILED",
+   "case": 64,
+   "closedByMe": false,
+   "createStats": true,
+   "createWirelog": true,
+   "description": "Same as Case 5.19, but send all frames with SYNC = True.\n   Note, this does not change the octets sent in any way, only how the stream\n   is chopped up on the wire.",
+   "droppedByMe": false,
+   "duration": 1,
+   "expectation": "Same as Case 5.19. Implementations must be agnostic to how\n   octet stream is chopped up on wire (must be TCP clean).",
+   "expected": {
+      "OK": [
+         [
+            "pong",
+            "pongme 1!"
+         ],
+         [
+            "pong",
+            "pongme 2!"
+         ],
+         [
+            "message",
+            "fragment1fragment2fragment3fragment4fragment5",
+            false
+         ]
+      ]
+   },
+   "expectedClose": {
+      "closeCode": [
+         1000
+      ],
+      "closedByMe": true,
+      "requireClean": true
+   },
+   "failedByMe": false,
+   "httpRequest": "GET / HTTP/1.1\r\nUser-Agent: AutobahnTestSuite/25.10.1-0.10.9\r\nHost: host.docker.internal:18091\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nSec-WebSocket-Key: QGkTCecmxZ6LFTS4vUZGyA==\r\nSec-WebSocket-Version: 13\r\n\r\n",
+   "httpResponse": "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Accept: 3a2M04q3LfI6r8jjG6V0FM1H2WY=\r\n\r\n",
+   "id": "5.20",
+   "isServer": false,
+   "localCloseCode": null,
+   "localCloseReason": null,
+   "received": [],
+   "remoteCloseCode": null,
+   "remoteCloseReason": null,
+   "reportCompressionRatio": false,
+   "reportTime": false,
+   "result": "Actual events differ from any expected.",
+   "resultClose": "The connection was failed by the wrong endpoint",
+   "rxFrameStats": {},
+   "rxOctetStats": {
+      "129": 1
+   },
+   "started": "2026-09-27T20:27:17.661Z",
+   "trafficStats": null,
+   "txFrameStats": {
+      "0": 1,
+      "1": 1,
+      "9": 1
+   },
+   "txOctetStats": {
+      "15": 3,
+      "254": 1
+   },
+   "wasClean": false,
+   "wasCloseHandshakeTimeout": false,
+   "wasNotCleanReason": "peer dropped the TCP connection without previous WebSocket closing handshake",
+   "wasOpenHandshakeTimeout": false,
+   "wasServerConnectionDropTimeout": false,
+   "wirelog": [
+      [
+         "TO",
+         [
+            254,
+            "474554202f20485454502f312e310d0a557365722d4167656e743a204175746f6261686e5465737453756974652f32352e31302e312d302e31302e390d0a486f ..."
+         ],
+         false
+      ],
+      [
+         "RO",
+         [
+            129,
+            "485454502f312e312031303120537769746368696e672050726f746f636f6c730d0a436f6e6e656374696f6e3a20557067726164650d0a557067726164653a20 ..."
+         ]
+      ],
+      [
+         "TF",
+         [
+            9,
+            "fragment1"
+         ],
+         1,
+         false,
+         0,
+         "a05c9b3d",
+         null,
+         null,
+         true
+      ],
+      [
+         "TO",
+         [
+            15,
+            "0189a05c9b3dc62efa5acd39f54991"
+         ],
+         true
+      ],
+      [
+         "TF",
+         [
+            9,
+            "fragment2"
+         ],
+         0,
+         false,
+         0,
+         "941a3098",
+         null,
+         null,
+         true
+      ],
+      [
+         "TF",
+         [
+            9,
+            "pongme 1!"
+         ],
+         9,
+         true,
+         0,
+         "ae6dfd91",
+         null,
+         null,
+         true
+      ],
+      [
+         "CT",
+         1,
+         null
+      ],
+      [
+         "TO",
+         [
+            15,
+            "0089941a3098f26851fff97f5eeca6"
+         ],
+         true
+      ],
+      [
+         "TO",
+         [
+            15,
+            "8989ae6dfd91de0293f6c308dda08f"
+         ],
+         true
+      ]
+   ]
+}

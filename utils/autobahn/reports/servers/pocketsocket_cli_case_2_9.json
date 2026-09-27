@@ -1,0 +1,176 @@
+{
+   "agent": "Pocketsocket CLI",
+   "behavior": "FAILED",
+   "behaviorClose": "OK",
+   "case": 25,
+   "closedByMe": true,
+   "createStats": true,
+   "createWirelog": true,
+   "description": "Send unsolicited pong with payload. Send ping with payload. Verify pong for ping is received.",
+   "droppedByMe": false,
+   "duration": 1002,
+   "expectation": "Nothing in reply to own Pong, but Pong with payload echo'ed in reply to Ping. Clean close with normal code.",
+   "expected": {
+      "OK": [
+         [
+            "pong",
+            "ping payload"
+         ]
+      ]
+   },
+   "expectedClose": {
+      "closeCode": [
+         1000
+      ],
+      "closedByMe": true,
+      "requireClean": true
+   },
+   "failedByMe": false,
+   "httpRequest": "GET / HTTP/1.1\r\nUser-Agent: AutobahnTestSuite/25.10.1-0.10.9\r\nHost: host.docker.internal:18091\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nSec-WebSocket-Key: MpAukdXZaoZRQNES+mQ/yA==\r\nSec-WebSocket-Version: 13\r\n\r\n",
+   "httpResponse": "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Accept: uZmh9d8keFNDN7rOd4mbO9k8gC4=\r\n\r\n",
+   "id": "2.9",
+   "isServer": false,
+   "localCloseCode": null,
+   "localCloseReason": null,
+   "received": [],
+   "remoteCloseCode": null,
+   "remoteCloseReason": null,
+   "reportCompressionRatio": false,
+   "reportTime": false,
+   "result": "Actual events differ from any expected.",
+   "resultClose": "Connection was properly closed",
+   "rxFrameStats": {
+      "8": 1
+   },
+   "rxOctetStats": {
+      "2": 1,
+      "129": 1
+   },
+   "started": "2026-09-27T20:27:07.462Z",
+   "trafficStats": null,
+   "txFrameStats": {
+      "8": 1,
+      "9": 1,
+      "10": 1
+   },
+   "txOctetStats": {
+      "6": 1,
+      "18": 1,
+      "30": 1,
+      "254": 1
+   },
+   "wasClean": true,
+   "wasCloseHandshakeTimeout": false,
+   "wasNotCleanReason": null,
+   "wasOpenHandshakeTimeout": false,
+   "wasServerConnectionDropTimeout": false,
+   "wirelog": [
+      [
+         "TO",
+         [
+            254,
+            "474554202f20485454502f312e310d0a557365722d4167656e743a204175746f6261686e5465737453756974652f32352e31302e312d302e31302e390d0a486f ..."
+         ],
+         false
+      ],
+      [
+         "RO",
+         [
+            129,
+            "485454502f312e312031303120537769746368696e672050726f746f636f6c730d0a436f6e6e656374696f6e3a20557067726164650d0a557067726164653a20 ..."
+         ]
+      ],
+      [
+         "TF",
+         [
+            24,
+            "unsolicited pong payload"
+         ],
+         10,
+         true,
+         0,
+         "09446d2b",
+         null,
+         null,
+         false
+      ],
+      [
+         "TO",
+         [
+            30,
+            "8a9809446d2b7c2a1e44652d0e427d21090b792b034c29340c52652b0c4f"
+         ],
+         false
+      ],
+      [
+         "TF",
+         [
+            12,
+            "ping payload"
+         ],
+         9,
+         true,
+         0,
+         "21373f10",
+         null,
+         null,
+         false
+      ],
+      [
+         "TO",
+         [
+            18,
+            "898c21373f10515e517701475e694d585e74"
+         ],
+         false
+      ],
+      [
+         "TI",
+         1
+      ],
+      [
+         "TIE"
+      ],
+      [
+         "TF",
+         [
+            0,
+            ""
+         ],
+         8,
+         true,
+         0,
+         "29539e09",
+         null,
+         null,
+         false
+      ],
+      [
+         "TO",
+         [
+            6,
+            "888029539e09"
+         ],
+         false
+      ],
+      [
+         "RO",
+         [
+            2,
+            "8800"
+         ]
+      ],
+      [
+         "RF",
+         [
+            0,
+            ""
+         ],
+         8,
+         true,
+         0,
+         false,
+         null
+      ]
+   ]
+}
