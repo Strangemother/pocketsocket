@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-OUTPUT_DIR=${OUTPUT_DIR:-"$ROOT_DIR/tools/socketspy-poc/output"}
+OUTPUT_DIR=${OUTPUT_DIR:-"$ROOT_DIR/utils/socketspy-poc/output"}
 DEST="$OUTPUT_DIR/socketspy-bin"
 
 mkdir -p "$OUTPUT_DIR"

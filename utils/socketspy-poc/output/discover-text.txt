@@ -3,5 +3,5 @@
   "endpoints": [],
   "pages_visited": 1,
   "js_files_scanned": 0,
-  "duration": 1327858
+  "duration": 7704730
 }

@@ -35,20 +35,20 @@ dist/pocketsocket-cli --run --print \
 In another terminal:
 
 ```bash
-./tools/autobahn/run.sh
+./utils/autobahn/run.sh
 ```
 
 PowerShell:
 
 ```powershell
-.\tools\autobahn\run.ps1
+.\utils\autobahn\run.ps1
 ```
 
 Command Prompt:
 
 ```bat
-tools\autobahn\start-pocketsocket.cmd
-tools\autobahn\run.cmd
+utils\autobahn\start-pocketsocket.cmd
+utils\autobahn\run.cmd
 ```
 
 The Windows helper starts `dist\pocketsocket-cli.exe` in a separate window.
@@ -60,7 +60,7 @@ stop Pocketsocket; stop the manually started process yourself after testing.
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `PORT` | `18091` | Host Pocketsocket port |
-| `OUTPUT_DIR` | `tools/autobahn/reports` | Autobahn reports and server log |
+| `OUTPUT_DIR` | `utils/autobahn/reports` | Autobahn reports and server log |
 | `AUTOBAHN_IMAGE` | `crossbario/autobahn-testsuite:latest` | Docker image/tag |
 | `AUTOBAHN_CONTAINER_NAME` | `pocketsocket-autobahn` | Temporary container name |
 | `POCKETSOCKET_CLI` | `dist/pocketsocket-cli*` | Compiled server path |
@@ -70,7 +70,7 @@ project's documented Docker example: mass/performance tests and compression
 tests are excluded by default. Remove those entries from the generated config
 if the implementation is ready to evaluate those areas.
 
-Reports are written below `tools/autobahn/reports/` and are kept in Git. The
+Reports are written below `utils/autobahn/reports/` and are kept in Git. The
 config under `reports/config/` is generated for the selected port. After the
 tests finish, each runner opens `reports/index.html` in the system browser.
 Set `BROWSER` on Unix-like systems to choose a specific browser command.

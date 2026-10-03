@@ -9,18 +9,18 @@
     "run_at": ""
   },
   "session": {
-    "id": "fb5682a9-672c-4acd-9ed4-90e4b0b14a56",
+    "id": "46668353-fce3-4a68-8a91-c4415ba76ea8",
     "name": "pocketsocket-echo-smoke",
     "target_url": "ws://127.0.0.1:18090/ws/",
     "state": 2,
     "connections": [
-      "dd7a9d4b-c755-4c72-8446-d689d7ff455f"
+      "e7434fcd-6b96-482f-bcec-881dd87f40c7"
     ],
     "finding_ids": [],
     "message_count": 6,
     "finding_count": 0,
-    "started_at": 1786382869551,
-    "ended_at": 1786382869553,
+    "started_at": 1790541415467,
+    "ended_at": 1790541415469,
     "duration": 2,
     "metadata": {}
   },
@@ -98,5 +98,5 @@
       "_index": 1
     }
   },
-  "generated_at": "2026-08-10T17:27:49.553084561Z"
+  "generated_at": "2026-09-27T20:36:55.46900998Z"
 }

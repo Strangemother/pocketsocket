@@ -1,0 +1,177 @@
+{
+   "agent": "Pocketsocket CLI",
+   "behavior": "FAILED",
+   "behaviorClose": "OK",
+   "case": 69,
+   "closedByMe": true,
+   "createStats": true,
+   "createWirelog": true,
+   "description": "Send a valid UTF-8 text message in two fragments, fragmented on UTF-8 code point boundary.<br><br>MESSAGE FRAGMENT 1:<br>Hello-\u00b5@\u00df\u00f6\u00e4<br>48656c6c6f2dc2b540c39fc3b6c3a4<br><br>MESSAGE FRAGMENT 2:<br>\u00fc\u00e0\u00e1-UTF-8!!<br>c3bcc3a0c3a12d5554462d382121",
+   "droppedByMe": false,
+   "duration": 1001,
+   "expectation": "The message is echo'ed back to us.",
+   "expected": {
+      "OK": [
+         [
+            "message",
+            "Hello-\u00b5@\u00df\u00f6\u00e4\u00fc\u00e0\u00e1-UTF-8!!",
+            false
+         ]
+      ]
+   },
+   "expectedClose": {
+      "closeCode": [
+         1000
+      ],
+      "closedByMe": true,
+      "requireClean": true
+   },
+   "failedByMe": false,
+   "httpRequest": "GET / HTTP/1.1\r\nUser-Agent: AutobahnTestSuite/25.10.1-0.10.9\r\nHost: host.docker.internal:18091\r\nUpgrade: WebSocket\r\nConnection: Upgrade\r\nPragma: no-cache\r\nCache-Control: no-cache\r\nSec-WebSocket-Key: RFN6K2iWwyAkH2pGvlt/Sw==\r\nSec-WebSocket-Version: 13\r\n\r\n",
+   "httpResponse": "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Accept: 8N4WGufp02pBUPolqEQ42zAZWXg=\r\n\r\n",
+   "id": "6.2.2",
+   "isServer": false,
+   "localCloseCode": null,
+   "localCloseReason": null,
+   "received": [],
+   "remoteCloseCode": null,
+   "remoteCloseReason": null,
+   "reportCompressionRatio": false,
+   "reportTime": false,
+   "result": "Actual events differ from any expected.",
+   "resultClose": "Connection was properly closed",
+   "rxFrameStats": {
+      "8": 1
+   },
+   "rxOctetStats": {
+      "2": 1,
+      "129": 1
+   },
+   "started": "2026-09-27T20:27:21.678Z",
+   "trafficStats": null,
+   "txFrameStats": {
+      "0": 1,
+      "1": 1,
+      "8": 1
+   },
+   "txOctetStats": {
+      "6": 1,
+      "20": 1,
+      "21": 1,
+      "254": 1
+   },
+   "wasClean": true,
+   "wasCloseHandshakeTimeout": false,
+   "wasNotCleanReason": null,
+   "wasOpenHandshakeTimeout": false,
+   "wasServerConnectionDropTimeout": false,
+   "wirelog": [
+      [
+         "TO",
+         [
+            254,
+            "474554202f20485454502f312e310d0a557365722d4167656e743a204175746f6261686e5465737453756974652f32352e31302e312d302e31302e390d0a486f ..."
+         ],
+         false
+      ],
+      [
+         "RO",
+         [
+            129,
+            "485454502f312e312031303120537769746368696e672050726f746f636f6c730d0a436f6e6e656374696f6e3a20557067726164650d0a557067726164653a20 ..."
+         ]
+      ],
+      [
+         "TF",
+         [
+            15,
+            "Hello-\u00b5@\u00df\u00f6\u00e4"
+         ],
+         1,
+         false,
+         0,
+         "9b85b19e",
+         null,
+         null,
+         false
+      ],
+      [
+         "TO",
+         [
+            21,
+            "018f9b85b19ed3e0ddf2f4a8732bdb462e5d2d4615"
+         ],
+         false
+      ],
+      [
+         "TF",
+         [
+            14,
+            "\u00fc\u00e0\u00e1-UTF-8!!"
+         ],
+         0,
+         true,
+         0,
+         "8fe9d0cf",
+         null,
+         null,
+         false
+      ],
+      [
+         "TO",
+         [
+            20,
+            "808e8fe9d0cf4c55136f4c48fd9adbaffdf7aec8"
+         ],
+         false
+      ],
+      [
+         "TI",
+         1
+      ],
+      [
+         "TIE"
+      ],
+      [
+         "TF",
+         [
+            0,
+            ""
+         ],
+         8,
+         true,
+         0,
+         "18c72f25",
+         null,
+         null,
+         false
+      ],
+      [
+         "TO",
+         [
+            6,
+            "888018c72f25"
+         ],
+         false
+      ],
+      [
+         "RO",
+         [
+            2,
+            "8800"
+         ]
+      ],
+      [
+         "RF",
+         [
+            0,
+            ""
+         ],
+         8,
+         true,
+         0,
+         false,
+         null
+      ]
+   ]
+}

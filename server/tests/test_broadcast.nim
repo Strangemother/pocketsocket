@@ -5,6 +5,8 @@ import unittest
 import pocketsocketpkg/broadcast
 import pocketsocketpkg/config
 import pocketsocketpkg/hook
+import pocketsocketpkg/connection_context
+import pocketsocketpkg/socket_tools
 from mummy import Message, TextMessage, WebSocket, OpenEvent
 
 suite "broadcast tests":
@@ -70,12 +72,29 @@ suite "broadcast tests":
 
     test "locked_remove_client removes client from clientSheet and context":
         let ws = WebSocket()
+        let uuid = getWebSocketUUID(ws)
+        registerContext(uuid, ConnectionContext(path: "/cleanup-test"))
         # Create a new socket and ensure it is recorded
         locked_record_client(ws) 
         check locked_has_client(ws)
+        check hasContext(uuid)
         
         # Actuate the removal
         locked_remove_client(ws)  # Remove the client
 
         # assert the client is removed.
         check not locked_has_client(ws) 
+        check not hasContext(uuid)
+
+    test "locked_remove_client can preserve context for close callback":
+        let ws = WebSocket()
+        let uuid = getWebSocketUUID(ws)
+        registerContext(uuid, ConnectionContext(path: "/close-test"))
+        locked_record_client(ws)
+
+        locked_remove_client(ws, preserveContext = true)
+
+        check not locked_has_client(ws)
+        check hasContext(uuid)
+        check getContext(uuid).path == "/close-test"
+        removeContext(uuid)

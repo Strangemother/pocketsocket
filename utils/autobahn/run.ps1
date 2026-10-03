@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $RootDir = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
-$SuiteDir = Join-Path $RootDir "tools/autobahn"
+$SuiteDir = $PSScriptRoot
 $OutputDir = if ($env:OUTPUT_DIR) { $env:OUTPUT_DIR } else { Join-Path $SuiteDir "reports" }
 $ConfigDir = Join-Path $OutputDir "config"
 $Port = if ($env:PORT) { $env:PORT } else { "18091" }

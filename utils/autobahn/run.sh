@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-SUITE_DIR="$ROOT_DIR/tools/autobahn"
+SUITE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTPUT_DIR=${OUTPUT_DIR:-"$SUITE_DIR/reports"}
 CONFIG_DIR="$OUTPUT_DIR/config"
 PORT=${PORT:-18091}

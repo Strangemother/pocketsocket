@@ -9,48 +9,27 @@
     "run_at": ""
   },
   "session": {
-    "id": "f59c8cd2-f480-4695-b7db-cf0e8506d9c2",
+    "id": "6a1f18db-4e84-4b4f-8362-b807d2f7e9a0",
     "name": "fuzz",
     "target_url": "ws://127.0.0.1:18090/ws/",
     "state": 2,
     "connections": [],
     "finding_ids": [],
     "message_count": 0,
-    "finding_count": 3,
-    "started_at": 1786382848995,
-    "ended_at": 1786382854116,
-    "duration": 5121,
+    "finding_count": 2,
+    "started_at": 1790541394881,
+    "ended_at": 1790541400001,
+    "duration": 5120,
     "metadata": {}
   },
   "findings": [
     {
-      "id": "d24a501b-7355-47b6-a62c-a2e0e2c9e8da",
-      "check_name": "fuzzer",
-      "severity": "low",
-      "title": "Unusually large response to fuzz payload",
-      "description": "Mutation 'overflow' at path 'action' produced a response of 10028 bytes.",
-      "connection_id": "d9dc6b58-fbbd-4a4e-a990-6da1318ec40d",
-      "evidence": [
-        {
-          "type": "mutation",
-          "label": "mutation name",
-          "value": "overflow"
-        },
-        {
-          "type": "size",
-          "label": "response size bytes",
-          "value": "10028"
-        }
-      ],
-      "timestamp": 1786382849447
-    },
-    {
-      "id": "95e1bfb1-2f7a-4bec-85fc-4dcc9df5447c",
+      "id": "ec00eac9-2a66-473c-8352-3a41f5acc273",
       "check_name": "fuzzer",
       "severity": "medium",
       "title": "Error response to fuzz payload",
       "description": "Mutation 'xss_img@action' at path 'action' triggered an error containing 'error'.",
-      "connection_id": "d9dc6b58-fbbd-4a4e-a990-6da1318ec40d",
+      "connection_id": "60de416c-f5bb-43f6-a38c-b64b8c7f0d70",
       "evidence": [
         {
           "type": "mutation",
@@ -64,15 +43,15 @@
         }
       ],
       "remediation": "Ensure proper input validation and error handling for all WebSocket message fields.",
-      "timestamp": 1786382850351
+      "timestamp": 1790541396237
     },
     {
-      "id": "8f780f5e-ef03-43a1-9bc5-34c758f1267f",
+      "id": "5e9bf589-2386-4cc9-b5ad-ab8e0907e31e",
       "check_name": "fuzzer",
       "severity": "medium",
       "title": "Error response to fuzz payload",
       "description": "Mutation 'xss_img@data' at path 'data' triggered an error containing 'error'.",
-      "connection_id": "d9dc6b58-fbbd-4a4e-a990-6da1318ec40d",
+      "connection_id": "60de416c-f5bb-43f6-a38c-b64b8c7f0d70",
       "evidence": [
         {
           "type": "mutation",
@@ -86,21 +65,20 @@
         }
       ],
       "remediation": "Ensure proper input validation and error handling for all WebSocket message fields.",
-      "timestamp": 1786382852610
+      "timestamp": 1790541398495
     }
   ],
   "summary": {
-    "total_findings": 3,
+    "total_findings": 2,
     "by_severity": {
-      "low": 1,
       "medium": 2
     },
-    "duration_ms": 5121000000
+    "duration_ms": 5120000000
   },
   "fuzz_data": {
     "total_payloads": 34,
     "total_errors": 0,
-    "interesting_count": 3
+    "interesting_count": 2
   },
-  "generated_at": "2026-08-10T17:27:34.116048398Z"
+  "generated_at": "2026-09-27T20:36:40.001751819Z"
 }

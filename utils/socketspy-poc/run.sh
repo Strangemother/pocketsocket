@@ -2,13 +2,13 @@
 set -Eeuo pipefail
 
 ROOT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-OUTPUT_DIR=${OUTPUT_DIR:-"$ROOT_DIR/tools/socketspy-poc/output"}
+OUTPUT_DIR=${OUTPUT_DIR:-"$ROOT_DIR/utils/socketspy-poc/output"}
 PORT=${PORT:-18090}
 TARGET=${TARGET:-"ws://127.0.0.1:${PORT}/ws/"}
 MUTATIONS=${MUTATIONS:-4}
 RESPONSE_TIMEOUT_MS=${RESPONSE_TIMEOUT_MS:-150}
-SCRIPT_FILE="$ROOT_DIR/tools/socketspy-poc/pocketsocket-echo.yaml"
-SESSION_FILE="$ROOT_DIR/tools/socketspy-poc/pocketsocket-session.jsonl"
+SCRIPT_FILE="$ROOT_DIR/utils/socketspy-poc/pocketsocket-echo.yaml"
+SESSION_FILE="$ROOT_DIR/utils/socketspy-poc/pocketsocket-session.jsonl"
 
 mkdir -p "$OUTPUT_DIR"
 
@@ -31,7 +31,7 @@ find_cli() {
 }
 
 build_socketspy_command() {
-    SOCKETSPY_CMD=("$ROOT_DIR/tools/socketspy-poc/prepare-socketspy.sh")
+    SOCKETSPY_CMD=("$ROOT_DIR/utils/socketspy-poc/prepare-socketspy.sh")
     SOCKETSPY_CMD=("$(${SOCKETSPY_CMD[0]})")
 }
 
