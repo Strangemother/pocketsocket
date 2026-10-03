@@ -1,103 +1,104 @@
-<div markdown=1 align="center">
-
 # Pocketsocket v2
 
-WebSocket server for CLI or Python.
+**A standalone WebSocket server with a small Python API.**
 
-+ standalone 
-+ dependency-free 
-+ zero-configuration 
+> Standalone · Dependency-free · Zero-configuration
 
----
+Pocketsocket runs the WebSocket server separately from your application. It
+manages connections and protocol details, then gives your Python code events
+to handle.
 
-</div>
+## On this page
 
+- [Quick start](#quick-start)
+- [Install](#install)
+- [Compatibility](#compatibility)
+- [Run](#run)
+- [Verify a download](#verify-a-download)
+- [Features](#features)
+- [API](#api)
+- [Examples](#examples)
+- [How it works](#how-it-works)
+- [Benchmarks](#benchmarks)
 
-Pocketsocket _acts_ like its own stack. It handles itself, and the websocket process. With Pocketsocket you can implement websockets without thinking about it.
+## Quick start
 
-## Install It
-
-<table border="0" width="100%">
-<tr>
-<td width="50%">
-
-### Standalone
-
-Download the latest binary release from [Releases](https://github.com/strangemother/pocketsocket/releases)
-
-
-</td>
-<td width="50%">
-    
-### Python
-
-Or grab from [PyPi](https://pypi.org/project/pocketsocket/):
+Install the Python package:
 
 ```bash
-$ pip install pocketsocket
+python -m pip install pocketsocket
 ```
 
-</td>
-</tr>
-</table>
+Save this as `server.py`:
 
-## Run It
+```python
+import pocketsocket
+
+
+def echo(uuid, event_type, event):
+    if event_type == pocketsocket.MESSAGE:
+        pocketsocket.send(uuid, event["kind"], event["data"])
+
+
+pocketsocket.hook(echo)
+pocketsocket.run_blocking_server()
+```
+
+Run `python server.py`, then connect a WebSocket client to
+[`ws://127.0.0.1:8090/`](ws://127.0.0.1:8090/).
+
+## Install
 
 ### Standalone CLI
 
-Compiled for Windows, Linux, and MacOS:
-
-```bash
-$ ./pocketsocket-cli --run 
-Run
-Discovering: /workspaces/pocketsocket/server/templates/index.html
-Template Set. Length: 278
-Serving on http://127.0.0.1:8090
-TTL: 664 microseconds and 116 nanoseconds
-```
-
-Navigate to [http://127.0.0.1:8090](http://127.0.0.1:8090) for the web interface, or connect with a WebSocket client: 
-
-+ [ws://127.0.0.1:8090/](ws://127.0.0.1:8090/) 
-+ [ws://127.0.0.1:8090/ws/](ws://127.0.0.1:8090/ws/)
-
+Download the latest binary release from
+[Releases](https://github.com/strangemother/pocketsocket/releases).
 
 ### Python
 
-Ensure you have the latest version of pocketsocket installed, then run the following code:
+Install the package from [PyPI](https://pypi.org/project/pocketsocket/):
 
-```py
-import pocketsocket
-
-def ingress(uuid: str, event_type: int, event: dict):
-    if event_type == 0:  # new connect event
-        pocketsocket.send(uuid, 1, "Howdy...")
-        return
-    # Broadcast the message to everyone
-    # excluding the origin socket.
-    pocketsocket.send_all(event['kind'], event['data'], uuid)
-
-# Ready to go.
-pocketsocket.hook(ingress) 
-
-address = '127.0.0.1'
-port = 8090
-pocketsocket.run_blocking_server(address, port) 
+```bash
+pip install pocketsocket
 ```
 
-And you're ready to go. Connect to the waiting server using http or websockets.
-    
-    http://<address>:<port>
-    ws://<address>:<port>/
-    ws://<address>:<port>/ws/
+## Compatibility
 
-PocketSocket handles the socket lifecycle, handshakes, decoding, and pongs. Your code doesn't.
+The Python package declares Python 3.10 or newer. The current release build
+matrix validates regular, GIL-enabled CPython 3.10–3.14; free-threaded CPython
+is not supported.
 
+The current CI build matrix covers:
+
+- **Standalone CLI:** Windows x64, Linux x64 and ARM64, and macOS Intel and
+  Apple Silicon.
+- **Python wheels:** Linux x64 and ARM64, macOS Intel and Apple Silicon, and
+  Windows x86 and x64.
+
+Check the [release assets](https://github.com/strangemother/pocketsocket/releases)
+and [PyPI](https://pypi.org/project/pocketsocket/) for the artifacts available
+for a particular release.
+
+## Run
+
+### Standalone CLI
+
+Available for Windows, Linux, and macOS:
+
+```console
+$ ./pocketsocket-cli --run
+```
+
+Open [http://127.0.0.1:8090](http://127.0.0.1:8090) for the web interface, or
+connect with a WebSocket client:
+
+- [ws://127.0.0.1:8090/](ws://127.0.0.1:8090/)
+- [ws://127.0.0.1:8090/ws/](ws://127.0.0.1:8090/ws/)
 
 ## Verify a download
 
-Each release includes `SHA256SUMS.txt`. In PowerShell, calculate the hash of the
-downloaded executable:
+Each release includes `SHA256SUMS.txt`. In PowerShell, calculate the hash of
+the downloaded executable:
 
 ```powershell
 Get-FileHash .\pocketsocket-cli-*.exe -Algorithm SHA256
@@ -107,109 +108,196 @@ Compare the resulting `Hash` value with the matching entry in `SHA256SUMS.txt`.
 A matching SHA-256 hash confirms that the downloaded file is identical to the
 release asset. It does not replace antivirus scanning or code signing.
 
-
 ## Features
 
-+ Not async
+### Synchronous Python API, threaded server
 
-    The PocketSocket server is synchronous under the hood. You do not need to worry about incoming socket locks or the colour of functions. Thanks to Nim and the underlying package `mummy`, sockets are threaded by default.
+You can use Pocketsocket without `async`/`await`. The server handles network
+work on worker threads, while your Python callback processes the events. See
+[Receiving events](#receiving-events) for callback behavior and threading
+guidance.
 
-+ Process and thread friendly
+### Managed WebSocket lifecycle
 
-    Run a PocketSocket server on a Python process, thread, or main loop. Messages are thread-safe.
+Pocketsocket handles connection handshakes, socket lifecycle, message decoding,
+and ping/pong frames. Your callback handles application logic; validate
+incoming data and keep callback work appropriate for your workload.
 
-+ Singleton-style interconnected process hook
+### Small footprint
 
-    All processes or threads can receive from the same hook. You don't need to worry about socket locks.
-    
-    - Lock Ignorant: GIL is handled before the `hook` function is called.
-    - Thread Safe: One epoll thread handles all incoming sockets. 
-    
-+ It's quick
+- No Python package dependencies
+- Compiled binary near 1 MB
+- Windows CLI uses less than 4 MB of RAM while idle
+- Approximate memory use:
+  - Waiting socket: ~4 KB
+  - Connected socket: ~40 KB
 
-    The compiled server starts in **sub-millisecond time** on average, with a small compiled footprint. See the [benchmark summary](#benchmarks) for a quick look at the numbers.
-
-
-+ Unmanaged sockets
-
-    Socket handles are managed **before your python layer**. Your code does not need to solve any handshakes, decoding, or pongs.
-
-    Ignore:
-
-    - marshalling or unmarshalling
-    - socket management 
-    - lifecycle handling
-    - pongs and keep-alives
-    - locks or threading issues
-    - flooding, throughput, and concurrency issues
-    
-    Pocketsocket handles all of this for you. Your code needs one hook function.
-
-+ Tiny footprint:
-
-    - No dependencies.
-    - Small Binary: Near 1mb of code when compiled.
-    - Minimal RAM usage: cli (windows) uses less than 4mb of RAM when idle.
-    - Low memory overhead: 
-        - A waiting socket consumes ~4kb of memory. 
-        - A connected socket consumes ~40kb of memory. 
-    - Fast: The server starts in sub-millisecond time on average.
-    - Scalable: The server can handle thousands of concurrent connections with minimal overhead.
-
+These are reference figures, not guarantees; actual usage varies by platform,
+build, and workload.
 
 ## API
 
-The API is deliberately small:
+Pocketsocket provides a small Python API for receiving WebSocket events,
+sending messages, and controlling the server. It handles the connection
+lifecycle, handshakes, decoding, pongs, and socket iteration for you.
 
-| Function | Purpose |
-| --- | --- |
-| `hook(callback)` | Register the function that receives socket events. |
-| `send(uuid, message_kind, message_data)` | Send a message to one socket. |
-| `send_all(message_kind, message_data, origin_uuid)` | Broadcast to all sockets except `origin_uuid`. |
-| `run_blocking_server(address, port)` | Start the server and block the current thread. |
-| `shutdown_server()` | Stop the running server. |
+### Receiving events
 
-Fundamentally, `hook` is the receiver for all events. Your application does not need to manage WebSocket handshakes, decoding, pongs, or socket iteration itself.
+Register a callback with `hook(callback)`. Pocketsocket calls it with the
+socket ID, an event code, and an event dictionary:
 
-
-```py
+```python
 import pocketsocket
 
-def my_hook_func(uuid, event_type, data):
-    ...
-    return 0
 
-pocketsocket.hook(my_hook_func)
-pocketsocket.close_remove_client(uuid)
-pocketsocket.send(uuid, message_kind, message_data)
-pocketsocket.send_all(message_kind, message_data, origin_uuid)
-pocketsocket.run_blocking_server(address, port)
-pocketsocket.run_nonblocking_server(address, port)
-pocketsocket.shutdown_server()
+def on_event(uuid, event_type, event):
+    if event_type == pocketsocket.CONNECT:
+        print(f"Connected: {uuid}")
+    elif event_type == pocketsocket.MESSAGE:
+        print(event["kind"], event["data"])
+
+
+pocketsocket.hook(on_event)
 ```
 
-### Hook Event Data
+The callback runs on a server worker thread. Keep callback work short so it
+does not tie up a worker, and synchronize application state that is shared
+across threads.
 
-Your hook receives three values:
+The callback arguments are:
 
-| Value | Meaning |
+| Argument | Description |
 | --- | --- |
-| `uuid` | The numeric identifier for the socket. |
-| `event_type` | The lifecycle event: `0` connect, `1` message, `2` error, or `3` close. |
-| `event` | The event payload, containing `kind` and `data` for message events. |
+| `uuid` | Numeric ID of the socket. |
+| `event_type` | Lifecycle event code. Use the constants below instead of numeric values. |
+| `event` | Dictionary with `kind` (message kind) and `data` (message payload). The payload is meaningful for message events. |
 
-The hook is the one place where your application receives socket events. 
+Event constants:
 
-- Return `1` to request that the current socket is closed
-- return `0` or nothing to keep the socket open.
+| Constant | Value | When it is sent |
+| --- | ---: | --- |
+| `pocketsocket.CONNECT` | `0` | A client connects. Return `1` to reject the connection. |
+| `pocketsocket.MESSAGE` | `1` | A client sends a message. |
+| `pocketsocket.ERROR` | `2` | An error occurs on the connection. |
+| `pocketsocket.CLOSE` | `3` | A client disconnects. |
+
+Return `1` from the callback to close the current connection; return `0` or
+`None` to leave it open.
+
+### Message kinds
+
+Use these constants for the `etype` argument to `send` and `send_all`:
+
+| Constant | Value | Message type |
+| --- | ---: | --- |
+| `pocketsocket.TEXT` | `0` | Text |
+| `pocketsocket.BINARY` | `1` | Binary |
+| `pocketsocket.PING` | `2` | Ping |
+| `pocketsocket.PONG` | `3` | Pong |
+
+### Sending and closing connections
+
+#### `send(uuid, etype, data)`
+
+Send a message to one connected socket. `uuid` is the socket ID, `etype` is a
+message-kind constant, and `data` is the message string. Returns `0` on
+success or `1` if the socket is not connected.
+
+```python
+pocketsocket.send(uuid, pocketsocket.TEXT, "Hello")
+```
+
+#### `send_all(etype, data, origin_uuid)`
+
+Send a message to every connected socket except `origin_uuid`. Pass `None` to
+broadcast to everyone. Returns `0`.
+
+```python
+# Relay a message to everyone except its sender.
+pocketsocket.send_all(event["kind"], event["data"], uuid)
+
+# Send to every connected socket.
+pocketsocket.send_all(pocketsocket.TEXT, "Server announcement", None)
+```
+
+#### `close_client(uuid)`
+
+Close the specified connection and remove it from the active client registry.
+
+```python
+pocketsocket.close_client(uuid)
+```
+
+### Starting and stopping the server
+
+Both server functions accept the same options:
+
+```python
+pocketsocket.run_blocking_server(
+    address="127.0.0.1",
+    port=8090,
+    worker_threads=0,
+    max_message_len=64 * 1024,
+    max_body_len=1024 * 1024,
+    tcp_no_delay=True,
+)
+```
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `address` | `"127.0.0.1"` | Address to bind the server to. |
+| `port` | `8090` | Port to listen on. |
+| `worker_threads` | `0` | Worker count. `0` uses the server's default based on the available processors; set a positive value to choose a count explicitly. |
+| `max_message_len` | `65536` | Maximum accepted WebSocket message size, in bytes. |
+| `max_body_len` | `1048576` | Maximum accepted HTTP request body size, in bytes. |
+| `tcp_no_delay` | `True` | Configure TCP_NODELAY for the server's sockets. |
+
+- `run_blocking_server(...)` serves on the calling thread and blocks until the
+  server stops.
+- `run_nonblocking_server(...)` starts the server on a background thread and
+  returns once it is ready.
+- `shutdown_server()` stops the running server.
+- `is_server_running()` returns `True` if the server is running, otherwise
+  `False`.
+- `get_port()` returns the bound port, or `0` when no server has been created.
+
+Use one server instance at a time.
+
+### Server modes
+
+These options are disabled by default and can be enabled or disabled with a
+boolean:
+
+```python
+pocketsocket.set_broadcast_mode(True)
+pocketsocket.set_echo_mode(True)
+pocketsocket.set_print_mode(True)
+```
+
+| Function | Effect |
+| --- | --- |
+| `set_broadcast_mode(mode)` | Automatically forwards each inbound message to every other client, without requiring the Python callback to relay it. |
+| `set_echo_mode(mode)` | Automatically reflects each inbound message back to its sender. |
+| `set_print_mode(mode)` | Enables per-event logging. Logging is off by default. |
+
+These modes do not replace the event hook; the hook still receives events.
+
+### Package version
+
+`version()` returns the installed package version as a string, prefixed with
+`v`:
+
+```python
+print(pocketsocket.version())
+```
 
 ## Examples
 
-### Echo Server
+### Echo server
 
 Call `send` from inside the hook to echo a message back to its socket:
 
-```py
+```python
 import pocketsocket
 
 address = '127.0.0.1'
@@ -223,9 +311,9 @@ pocketsocket.hook(echo_receiver)
 pocketsocket.run_blocking_server(address, port)
 ```
 
-### Broadcast Server
+### Broadcast server
 
-```py
+```python
 import pocketsocket
 
 address = '127.0.0.1'
@@ -242,62 +330,23 @@ pocketsocket.hook(broadcast_receiver)
 pocketsocket.run_blocking_server(address, port)
 ```
 
+## How it works
 
-## How does it Work
+The Python package uses a compiled native extension written in
+[Nim](https://nim-lang.org/) and the `nim-mummy` server. The server manages
+WebSocket connections and protocol events; Python receives connect, message,
+error, and close events through one callback and can send messages through the
+API.
 
-Pocketsocket is written in [nim-lang](https://nim-lang.org/), pre-compiled into an isolated `.pyd`. The Pocketsocket server runs independently of your python code, handling the life-cycle of incoming sockets. It's self-threading and process-safe, allowing you to leverage the Websocket stack without handling any of it.
-
-
-1. Built on-top of nim-mummy server, and its websocket tooling
-2. Pocketsocket runs isolated and independent of your python code
-3. It exposes a single ingress hook, and some send methods
-
-**Why is it built this way?**
-
-I love websockets, but the underlying framework can be a hassle to functionalize correctly. The wider issues are solved (ingress management), but micro-challenges severely limit scalability.
-
-In many frameworks within the python eco-system some issue occur when upscaling:
-
-+ Throughput concurrency
-
-    After a few hundred connections, most framework struggle to iterate the open sockets.
-
-+ Socket floods
-
-    Guarding against flooding is a challenge when python extrapolates the underlying pipe and socket iteration stages. Notably, managing _how much_ comes through a socket isn't always a choice. Compound that with many messages, a single socket can block hundreds of others.
-
-+ Overhead
-
-    Ingress routines do take time and memory. All sockets need allocating and this also takes memory. In addition larger solutions need processes or threading, and thus a router and shared memory space.
-    When scaling horizontal, memory sharing and concurrency through the pipes becomes a challenge.
-
-+ _The colour of a function_
-
-    Initially I considered async as the next step to solve these challenges, but with that we change the colour of functions and correctly overloading each process is overhead.
-
-**What we actually want**
-
-+ Offload the boring, allow access to the significant events.
-+ Concurrency management (many sockets), and an isolated error stack.
-+ Zero barriers, no effort initial steps
-+ ability to scale horizontal or vertical **without a refactor**
-
-Essentially I want to _open sockets_ and just receive agnostic events. My internal framework does _whatever I want to do_; the websockets are irrelevant.
-
----
-
-This solution absolutely exists for other protocols - for example _pipes_, _UDP sockets_, HTTP are all stackless (you don't need to manage the socket life-cycle.) and they will scale absolutely.
-
-However websockets still has its limits when it comes to implementation. I maintain it's because Websockets are a hassle to scale.
-
----
-
-Pocketsocket _acts_ like its own stack. It handles itself, and the websocket process. With Pocketsocket you (the developer) can implement websockets without thinking about it.
-
+This keeps socket lifecycle and protocol handling in the server while leaving
+application behavior in Python.
 
 ## Benchmarks
 
-These are light reference numbers from Linux on x86_64. See [BENCHMARKS.md](docs/BENCHMARKS.md) for methodology and the full comparison.
+These are startup reference numbers from Linux on x86_64. They do not measure
+message throughput or maximum connection capacity, and results vary by
+hardware and workload. See [BENCHMARKS.md](docs/BENCHMARKS.md) for methodology
+and the full comparison.
 
 | Test | Result |
 | --- | --- |
@@ -305,11 +354,12 @@ These are light reference numbers from Linux on x86_64. See [BENCHMARKS.md](docs
 | Python module startup | 1.0678 ms average, 50% under 1 ms |
 | CLI versus other Python WebSocket servers | 7.8x to 34.5x faster at startup |
 
-### Run the Benchmarks Yourself
+### Run the benchmarks yourself
 
 ```bash
 # Run the complete suite and generate a report
 ./run_benchmarks.py -n 20 -o benchmark_report.txt
 ```
 
-For build flags, memory notes, and other lower-level details, see [DEV_NOTES.md](docs/DEV_NOTES.md).
+For build flags, memory notes, and other lower-level details, see
+[DEV_NOTES.md](docs/DEV_NOTES.md).
